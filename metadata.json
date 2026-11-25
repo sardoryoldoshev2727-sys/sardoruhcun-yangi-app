@@ -1,0 +1,6 @@
+{
+  "name": "Lal Anaar — Do'konchi ilovasi",
+  "description": "Termizdagi Brightly Mega Water (Lal Anaar) ulgurji sharbat va ichimliklar buyurtma tizimi — do'konchilar uchun tezkor javon, chegirma va yetkazib berish nazorati.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
