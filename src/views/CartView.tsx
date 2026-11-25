@@ -1,19 +1,22 @@
 import React from 'react';
 import { Calendar, Clock, Lock, Pencil, Repeat, ShoppingCart, Sparkles, Trash2 } from 'lucide-react';
-import { AnorSeeds } from '../components/AnorSeeds';
 import { ProductCard } from '../components/ProductCard';
+import { CartSkeleton } from '../components/Skeletons';
 import { useStore } from '../context/StoreContext';
-import { DAYS, PRODUCTS, SLOTS, formatSom, getTier } from '../data/products';
+import { getDayLabel, getSlotLabel } from '../i18n';
+import { DAYS, SLOTS, formatSom } from '../utils/catalog';
 
 export const CartView: React.FC = () => {
   const {
     cart,
-    cartCount,
-    cartSubtotal,
-    monthTotal,
+    productsById,
+    productsLoading,
+    checkoutQuote,
     day,
     slot,
     note,
+    lang,
+    t,
     setDay,
     setSlot,
     setNote,
@@ -24,60 +27,62 @@ export const CartView: React.FC = () => {
 
   const ids = Object.keys(cart).map(Number);
 
+  if (productsLoading && ids.length > 0) {
+    return <CartSkeleton />;
+  }
+
   if (ids.length === 0) {
     return (
-      <div className="py-16 px-4 text-center max-w-sm mx-auto">
-        <div className="w-18 h-18 rounded-3xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center mx-auto mb-4 shadow-sm">
-          <ShoppingCart className="w-8 h-8" />
+      <div className="py-12 px-4 text-center max-w-sm mx-auto bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl">
+        <div className="w-16 h-16 rounded-2xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center mx-auto mb-4">
+          <ShoppingCart className="w-7 h-7" />
         </div>
-        <h2 className="text-xl font-extrabold text-stone-900 dark:text-white">Savat bo&apos;sh</h2>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1.5 mb-6">
-          Javoningizdan bir bosishda to&apos;ldiring yoki katalogdan tanlang
+        <h2 className="text-xl font-bold text-[#221819] dark:text-white">{t.emptyCartTitle}</h2>
+        <p className="text-sm text-[#6F6466] dark:text-stone-400 mt-1.5 mb-5">
+          {t.emptyCartSub}
         </p>
-        <div className="flex flex-col sm:flex-row gap-2.5 justify-center">
+        <div className="space-y-2.5">
           <button
             type="button"
             onClick={() => {
               fillShelfToCart(false);
               goTab('cart');
             }}
-            className="h-11 px-5 rounded-full bg-gradient-to-b from-[#22C55E] to-[#16A34A] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+            className="w-full min-h-[44px] px-5 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
           >
             <Repeat className="w-4 h-4" />
-            <span>Odatdagi buyurtma</span>
+            <span>{t.addUsualOrder}</span>
           </button>
           <button
             type="button"
             onClick={() => goTab('cat')}
-            className="h-11 px-5 rounded-full bg-white dark:bg-[#1E191B] border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-bold text-sm inline-flex items-center justify-center card-elevated"
+            className="w-full min-h-[44px] px-5 rounded-xl bg-[#F6F4F3] dark:bg-stone-900 border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm inline-flex items-center justify-center"
           >
-            Katalogga o&apos;tish
+            {t.goToCatalog}
           </button>
         </div>
       </div>
     );
   }
 
-  const { cur } = getTier(monthTotal + cartSubtotal);
-  const discount = (cartSubtotal * cur) / 100;
-  const total = cartSubtotal - discount;
+  const { boxCount, subtotal, discountPct, discountAmount, total } = checkoutQuote;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-4 items-start">
-      {/* Left Column: Cart Items + Bulk Actions */}
+      {/* Left Column: Single green savings line + Cart Items */}
       <div className="space-y-3">
-        {cur > 0 && (
-          <div className="rounded-2xl px-4 py-3 bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 flex items-center gap-2.5 text-xs font-bold text-[#15803D] dark:text-[#4ADE80]">
+        {discountPct > 0 && (
+          <div className="rounded-xl px-3.5 py-3 bg-[#EBF6EF] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2.5 text-sm font-semibold text-[#1E7A46] dark:text-[#4ADE80]">
             <Sparkles className="w-4 h-4 flex-none" />
             <span className="tabular-nums">
-              {cur}% chegirma faol — bu buyurtmada {formatSom(discount)} tejaysiz!
+              {t.discountSavingsLine(discountPct, formatSom(discountAmount))}
             </span>
           </div>
         )}
 
         <div className="space-y-2.5">
           {ids.map((id) => {
-            const p = PRODUCTS[id];
+            const p = productsById[id];
             return p ? <ProductCard key={id} product={p} mode="cart" /> : null;
           })}
         </div>
@@ -86,122 +91,118 @@ export const CartView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'confirmClear' })}
-            className="flex-1 h-10.5 rounded-full bg-white dark:bg-[#1E191B] border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 font-bold text-[13px] inline-flex items-center justify-center gap-1.5 card-elevated hover:border-red-300 dark:hover:border-red-900 transition-colors"
+            className="flex-1 min-h-[44px] rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm inline-flex items-center justify-center gap-1.5 card-calm"
           >
-            <Trash2 className="w-4 h-4 text-[#B91C1C] dark:text-[#F87171]" />
-            <span>Tozalash</span>
+            <Trash2 className="w-4 h-4 text-[#C0262D] dark:text-[#F87171]" />
+            <span>{t.clearCartBtn}</span>
           </button>
           <button
             type="button"
             onClick={() => goTab('cat')}
-            className="flex-[1.5] h-10.5 rounded-full bg-stone-900 dark:bg-stone-800 hover:bg-stone-800 text-white font-bold text-[13px] inline-flex items-center justify-center gap-1.5 transition-colors"
+            className="flex-[1.5] min-h-[44px] rounded-xl bg-[#221819] dark:bg-stone-800 text-white font-semibold text-sm inline-flex items-center justify-center gap-1.5"
           >
             <ShoppingCart className="w-4 h-4" />
-            <span>Xaridni davom ettirish</span>
+            <span>{t.continueShopping}</span>
           </button>
         </div>
       </div>
 
-      {/* Right Column: Loyalty Impact + Schedule + Perforated Receipt */}
+      {/* Right Column: Schedule + Receipt summary (No AnorSeeds block here!) */}
       <div className="space-y-3.5 lg:sticky lg:top-0">
-        <AnorSeeds sum={monthTotal + cartSubtotal} />
-
-        {/* Delivery schedule */}
-        <section className="bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 card-elevated space-y-3">
-          <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
+        <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-3">
+          <h2 className="text-base font-bold text-[#221819] dark:text-white flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#800020] dark:text-[#F4728A]" />
-            <span>Qachon yetkazamiz?</span>
+            <span>{t.whenDeliverTitle}</span>
           </h2>
 
-          <div className="grid grid-cols-3 bg-stone-100 dark:bg-stone-900 rounded-xl p-1 gap-1">
-            {DAYS.map((d, i) => (
+          <div className="grid grid-cols-3 bg-[#F6F4F3] dark:bg-stone-900 rounded-xl p-1 gap-1">
+            {DAYS.map((_, i) => (
               <button
-                key={d}
+                key={i}
                 type="button"
                 onClick={() => setDay(i)}
-                className={`h-9 rounded-lg text-[13px] transition-all ${
+                className={`min-h-[44px] rounded-lg text-sm transition-colors ${
                   i === day
-                    ? 'bg-white dark:bg-[#1E191B] text-[#800020] dark:text-[#F4728A] font-bold shadow-xs'
-                    : 'text-stone-500 dark:text-stone-400 font-semibold'
+                    ? 'bg-white dark:bg-[#1C1819] text-[#800020] dark:text-[#F4728A] font-bold border border-[#E7E1E1] dark:border-stone-700'
+                    : 'text-[#6F6466] dark:text-stone-400 font-semibold'
                 }`}
               >
-                {d}
+                {getDayLabel(i, lang)}
               </button>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {SLOTS.map((s, i) => (
+            {SLOTS.map((_, i) => (
               <button
-                key={s}
+                key={i}
                 type="button"
                 onClick={() => setSlot(i)}
-                className={`h-10 px-3 rounded-xl border text-[12.5px] flex items-center justify-center gap-1.5 transition-all ${
+                className={`min-h-[44px] px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-colors ${
                   i === slot
-                    ? 'bg-[#FBECEF] dark:bg-[#361820] border-[#800020]/50 text-[#800020] dark:text-[#F4728A] font-bold'
-                    : 'bg-stone-50 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-semibold'
+                    ? 'bg-[#FBECEF] dark:bg-[#361820] border-[#800020] text-[#800020] dark:text-[#F4728A] font-bold'
+                    : 'bg-[#F6F4F3] dark:bg-stone-900 border-[#E7E1E1] dark:border-stone-700 text-[#6F6466] dark:text-stone-300 font-semibold'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5" />
-                <span>{s}</span>
+                <Clock className="w-3.5 h-3.5 flex-none" />
+                <span className="truncate">{getSlotLabel(i, lang)}</span>
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 h-10.5 bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-3 focus-within:border-[#800020]">
-            <Pencil className="w-4 h-4 text-stone-400 flex-none" />
+          <div className="flex items-center gap-2.5 min-h-[44px] bg-[#F6F4F3] dark:bg-stone-900 border border-[#E7E1E1] dark:border-stone-700 rounded-xl px-3 focus-within:border-[#800020]">
+            <Pencil className="w-4 h-4 text-[#6F6466] flex-none" />
             <input
               type="text"
-              placeholder="Izoh: «orqa eshikdan»"
+              placeholder={t.commentPlaceholder}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 outline-none"
+              className="flex-1 bg-transparent text-sm text-[#221819] dark:text-stone-100 placeholder:text-[#6F6466] outline-none"
             />
           </div>
         </section>
 
-        {/* Perforated Receipt summary */}
-        <section className="relative bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 card-elevated space-y-2.5 text-sm overflow-hidden">
-          <span className="hidden md:block absolute -left-2.5 bottom-16 w-5 h-5 rounded-full bg-[#F6F2F1] dark:bg-[#110D0E] border border-stone-200 dark:border-stone-800" />
-          <span className="hidden md:block absolute -right-2.5 bottom-16 w-5 h-5 rounded-full bg-[#F6F2F1] dark:bg-[#110D0E] border border-stone-200 dark:border-stone-800" />
-
-          <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white">
-            Buyurtma yakuni
+        <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-2.5 text-sm">
+          <h2 className="text-base font-bold text-[#221819] dark:text-white">
+            {t.orderSummaryTitle}
           </h2>
-          <div className="flex justify-between text-stone-600 dark:text-stone-300">
-            <span>Mahsulotlar · {cartCount} quti</span>
-            <span className="font-semibold tabular-nums">{formatSom(cartSubtotal)}</span>
-          </div>
-          <div className="flex justify-between text-stone-600 dark:text-stone-300">
-            <span>Chegirma {cur}%</span>
-            <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums">
-              −{formatSom(discount)}
+          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+            <span>{t.productsCountLine(boxCount)}</span>
+            <span className="font-semibold tabular-nums text-[#221819] dark:text-white">
+              {formatSom(subtotal)}
             </span>
           </div>
-          <div className="flex justify-between text-stone-600 dark:text-stone-300">
-            <span>Yetkazish</span>
-            <span className="font-bold text-[#16A34A] dark:text-[#4ADE80]">Bepul</span>
+          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+            <span>{t.discountLine(discountPct)}</span>
+            <span className="font-bold text-[#1E7A46] dark:text-[#4ADE80] tabular-nums">
+              −{formatSom(discountAmount)}
+            </span>
           </div>
-          <div className="flex justify-between text-stone-600 dark:text-stone-300">
-            <span>To&apos;lov turi</span>
-            <span>naqd / o&apos;tkazma</span>
+          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+            <span>{t.deliveryLabel}</span>
+            <span className="font-semibold text-[#1E7A46] dark:text-[#4ADE80]">{t.freeLabel}</span>
           </div>
-          <div className="flex justify-between pt-3 mt-1 border-t border-dashed border-stone-300 dark:border-stone-700 text-base font-extrabold text-stone-900 dark:text-white">
-            <span>To&apos;lovga jami</span>
-            <span className="tabular-nums text-[#800020] dark:text-[#F4728A]">{formatSom(total)}</span>
+          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+            <span>{t.paymentTypeLabel}</span>
+            <span>{t.paymentMethodsValue}</span>
+          </div>
+          <div className="flex justify-between pt-3 mt-1 border-t border-dashed border-[#E7E1E1] dark:border-stone-700 text-base font-bold text-[#221819] dark:text-white">
+            <span>{t.totalDueLabel}</span>
+            <span className="text-xl tabular-nums text-[#800020] dark:text-[#F4728A]">
+              {formatSom(total)}
+            </span>
           </div>
 
           <button
             type="button"
-            onClick={() => setSheet({ type: 'pin' })}
-            className="hidden md:inline-flex w-full h-11.5 mt-2 rounded-full bg-gradient-to-b from-[#22C55E] to-[#16A34A] hover:from-[#16A34A] hover:to-[#15803D] text-white font-bold text-sm items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-[0.98] transition-all"
+            onClick={() => setSheet({ type: 'confirmOrder' })}
+            className="hidden md:inline-flex w-full min-h-[48px] mt-2 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base items-center justify-center gap-2"
           >
             <Lock className="w-4 h-4" />
-            <span>Buyurtma berish</span>
+            <span>{t.placeOrderBtn}</span>
           </button>
         </section>
       </div>
     </div>
   );
 };
-

@@ -1,32 +1,45 @@
 import React from 'react';
-import { Check, CheckCircle2, Clock, Copy, MapPin, MessageCircle, Phone, Repeat, Truck, XCircle } from 'lucide-react';
-import { AnorSeeds } from '../components/AnorSeeds';
+import {
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Repeat,
+  Truck,
+  XCircle,
+} from 'lucide-react';
 import { ProductVisual } from '../components/ProductVisual';
+import { OrdersSkeleton } from '../components/Skeletons';
 import { useStore } from '../context/StoreContext';
-import { DAYS, PRODUCTS, SLOTS, formatSom } from '../data/products';
+import { getDayLabel, getProductName, getSlotLabel, getStatusLabel } from '../i18n';
 import type { OrderStatus } from '../types';
+import { formatSom } from '../utils/catalog';
 
 function statusMeta(status: OrderStatus) {
   switch (status) {
     case "Yo'lda":
       return {
         cls: 'bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A]',
-        icon: <Truck className="w-3 h-3" />,
+        icon: <Truck className="w-3.5 h-3.5" />,
       };
     case 'Yetkazildi':
       return {
-        cls: 'bg-emerald-50 dark:bg-emerald-950/40 text-[#15803D] dark:text-[#4ADE80]',
-        icon: <CheckCircle2 className="w-3 h-3" />,
+        cls: 'bg-[#EBF6EF] dark:bg-emerald-950/40 text-[#1E7A46] dark:text-[#4ADE80]',
+        icon: <CheckCircle2 className="w-3.5 h-3.5" />,
       };
-    case 'Qabul qilindi':
+    case 'Yuborildi':
+    case 'Tasdiqlandi':
       return {
-        cls: 'bg-amber-50 dark:bg-amber-950/40 text-[#B45309] dark:text-[#FBBF24]',
-        icon: <Clock className="w-3 h-3" />,
+        cls: 'bg-amber-50 dark:bg-amber-950/40 text-[#B7791F] dark:text-[#FBBF24]',
+        icon: <Clock className="w-3.5 h-3.5" />,
       };
     default:
       return {
-        cls: 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400',
-        icon: <XCircle className="w-3 h-3" />,
+        cls: 'bg-[#EFECEC] dark:bg-stone-800 text-[#6F6466] dark:text-stone-400',
+        icon: <XCircle className="w-3.5 h-3.5" />,
       };
   }
 }
@@ -34,45 +47,53 @@ function statusMeta(status: OrderStatus) {
 export const OrdersView: React.FC = () => {
   const {
     orders,
+    ordersLoading,
+    productsById,
     orderSeg,
     setOrderSeg,
     autoOrder,
     toggleAutoOrder,
     openPage,
+    openOrderDetail,
     repeatOrderToCart,
+    goTab,
+    lang,
+    t,
   } = useStore();
 
   const filtered = orders.filter((o) => {
-    if (orderSeg === 0) return !['Yetkazildi', 'Bekor qilindi'].includes(o[2]);
-    if (orderSeg === 1) return o[2] === 'Yetkazildi';
-    return o[2] === 'Bekor qilindi';
+    if (orderSeg === 0) return !['Yetkazildi', 'Bekor qilindi'].includes(o.status);
+    if (orderSeg === 1) return o.status === 'Yetkazildi';
+    return o.status === 'Bekor qilindi';
   });
 
   return (
     <div className="space-y-3">
       {/* Weekly Auto-order toggle card */}
-      <div className="bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-3.5 card-elevated flex items-center gap-3">
-        <span className="w-10 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
-          <Repeat className="w-4.5 h-4.5" />
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 card-calm flex items-center gap-3">
+        <span className="w-11 h-11 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+          <Repeat className="w-5 h-5" />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm text-stone-900 dark:text-white">Avto-buyurtma</div>
-          <div className="text-xs text-stone-500 dark:text-stone-400">
-            {autoOrder
-              ? 'Har dushanba tayyorlanadi — siz tasdiqlaysiz'
-              : 'Har hafta bir xil olsangiz, yoqing'}
+          <div className="font-bold text-base text-[#221819] dark:text-white">
+            {t.autoOrderTitle}
+          </div>
+          <div className="text-xs text-[#6F6466] dark:text-stone-400">
+            {autoOrder ? t.autoOrderOnSub : t.autoOrderOffSub}
           </div>
         </div>
         <button
           type="button"
-          aria-label="Avto-buyurtma"
+          role="switch"
+          aria-checked={autoOrder}
+          aria-label={t.autoOrderTitle}
           onClick={toggleAutoOrder}
           className={`w-12 h-7 rounded-full relative transition-colors flex-none ${
             autoOrder ? 'bg-[#800020] dark:bg-[#C81E45]' : 'bg-stone-300 dark:bg-stone-700'
           }`}
         >
           <span
-            className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-xs transition-all ${
+            className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all ${
               autoOrder ? 'left-[22px]' : 'left-0.5'
             }`}
           />
@@ -80,16 +101,16 @@ export const OrdersView: React.FC = () => {
       </div>
 
       {/* Segment switch */}
-      <div className="grid grid-cols-3 bg-stone-200/80 dark:bg-stone-800 rounded-xl p-1 gap-1">
-        {['Faol', 'Yetkazildi', 'Bekor'].map((label, i) => (
+      <div className="grid grid-cols-3 bg-[#EFECEC] dark:bg-stone-800 rounded-xl p-1 gap-1">
+        {[t.segActive, t.segDelivered, t.segCancelled].map((label, i) => (
           <button
             key={label}
             type="button"
             onClick={() => setOrderSeg(i)}
-            className={`h-9 rounded-lg text-[13px] transition-all ${
+            className={`min-h-[44px] rounded-lg text-sm transition-colors ${
               i === orderSeg
-                ? 'bg-white dark:bg-[#1E191B] text-[#800020] dark:text-[#F4728A] font-bold shadow-xs'
-                : 'text-stone-500 dark:text-stone-400 font-semibold'
+                ? 'bg-white dark:bg-[#1C1819] text-[#800020] dark:text-[#F4728A] font-bold border border-[#E7E1E1] dark:border-stone-700'
+                : 'text-[#6F6466] dark:text-stone-400 font-semibold'
             }`}
           >
             {label}
@@ -97,68 +118,96 @@ export const OrdersView: React.FC = () => {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="py-12 text-center text-sm text-stone-500 dark:text-stone-400">
-          Bu yerda hozircha buyurtma yo&apos;q
+      {ordersLoading ? (
+        <OrdersSkeleton />
+      ) : filtered.length === 0 ? (
+        <div className="py-12 px-4 text-center bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl">
+          <h3 className="text-base font-bold text-[#221819] dark:text-white">
+            {t.emptyOrdersTitle}
+          </h3>
+          <p className="text-sm text-[#6F6466] dark:text-stone-400 mt-1 mb-4">
+            {t.emptyOrdersSub}
+          </p>
+          <button
+            type="button"
+            onClick={() => goTab('cat')}
+            className="min-h-[44px] px-5 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base"
+          >
+            {t.emptyOrdersCta}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
           {filtered.map((o) => {
-            const st = statusMeta(o[2]);
+            const st = statusMeta(o.status);
             return (
               <div
-                key={o[0]}
-                className="bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-3.5 card-elevated card-interactive"
+                key={o.id}
+                onClick={() => openOrderDetail(o.id)}
+                className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 card-calm cursor-pointer hover:border-[#800020]"
               >
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="text-xs font-bold text-stone-500 dark:text-stone-400 tabular-nums">
-                    Buyurtma #{o[0]} <span aria-hidden="true">·</span> {o[1]}
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="text-xs font-semibold text-[#6F6466] dark:text-stone-400 tabular-nums">
+                    {t.orderNumberPrefix}{o.id} <span aria-hidden="true">·</span> {o.dateLabel}
                   </div>
                   <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold ${st.cls}`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${st.cls}`}
                   >
                     {st.icon}
-                    <span>{o[2]}</span>
+                    <span>{getStatusLabel(o.status, lang)}</span>
                   </span>
                 </div>
 
-                <div className="flex items-baseline justify-between gap-3 mb-3 pb-2.5 border-b border-stone-100 dark:border-stone-800">
-                  <div className="text-xs text-stone-500 dark:text-stone-400 tabular-nums">
-                    {o[4]} quti mahsulot
+                {o.pendingSync && (
+                  <div className="mb-2 text-xs font-semibold text-[#B7791F]">
+                    {t.pendingSyncBadge}
                   </div>
-                  <div className="font-extrabold text-[15.5px] text-stone-900 dark:text-white tabular-nums">
-                    {formatSom(o[3])}
+                )}
+
+                <div className="flex items-baseline justify-between gap-3 mb-3 pb-2.5 border-b border-[#E7E1E1] dark:border-stone-800">
+                  <div className="text-xs text-[#6F6466] dark:text-stone-400 tabular-nums">
+                    {o.boxCount} {t.boxUnit}
+                  </div>
+                  <div className="text-xl font-bold text-[#221819] dark:text-white tabular-nums">
+                    {formatSom(o.totalSum)}
                   </div>
                 </div>
 
                 <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-3">
-                  {o[5].map((pid) => {
-                    const prod = PRODUCTS[pid];
-                    return prod ? (
-                      <ProductVisual key={pid} product={prod} size="mini" showBadge={false} />
-                    ) : null;
+                  {o.items.slice(0, 4).map((it) => {
+                    const prod = productsById[it.productId];
+                    return prod ? <ProductVisual key={it.productId} product={prod} size="mini" /> : null;
                   })}
                 </div>
 
-                {orderSeg === 0 ? (
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  {o.status === "Yo'lda" ? (
+                    <button
+                      type="button"
+                      onClick={() => openPage('track')}
+                      className="flex-1 min-h-[44px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-sm inline-flex items-center justify-center gap-1.5"
+                    >
+                      <Truck className="w-4 h-4" />
+                      <span>{t.trackOrderBtn}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => repeatOrderToCart(o.items)}
+                      className="flex-1 min-h-[44px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-sm inline-flex items-center justify-center gap-1.5"
+                    >
+                      <Repeat className="w-4 h-4" />
+                      <span>{t.repeatOrderBtn}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => openPage('track')}
-                    className="w-full h-10 rounded-full border border-[#800020]/25 bg-[#FBECEF]/65 dark:bg-[#361820]/65 text-[#800020] dark:text-[#F4728A] font-bold text-[13px] inline-flex items-center justify-center gap-1.5 hover:bg-[#FBECEF] dark:hover:bg-[#361820] transition-colors"
+                    onClick={() => openOrderDetail(o.id)}
+                    className="min-h-[44px] px-4 rounded-xl border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm"
                   >
-                    <Truck className="w-4 h-4" />
-                    <span>Buyurtmani kuzatish</span>
+                    {t.detailsBtn}
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => repeatOrderToCart(o[5])}
-                    className="w-full h-10 rounded-full bg-gradient-to-b from-[#22C55E] to-[#16A34A] text-white font-bold text-[13px] inline-flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active:scale-[0.98] transition-transform"
-                  >
-                    <Repeat className="w-3.5 h-3.5" />
-                    <span>Takrorlash · Savatga qo&apos;shish</span>
-                  </button>
-                )}
+                </div>
               </div>
             );
           })}
@@ -168,8 +217,184 @@ export const OrdersView: React.FC = () => {
   );
 };
 
+export const OrderDetailView: React.FC = () => {
+  const {
+    orders,
+    selectedOrderId,
+    productsById,
+    lang,
+    t,
+    repeatOrderToCart,
+    setSheet,
+    openPage,
+    goTab,
+  } = useStore();
+
+  const order = orders.find((o) => o.id === selectedOrderId) || orders[0];
+  if (!order) return null;
+
+  const canCancel = order.status === 'Yuborildi' || order.status === 'Tasdiqlandi';
+  const st = statusMeta(order.status);
+
+  const steps: { key: OrderStatus; label: string }[] = [
+    { key: 'Yuborildi', label: getStatusLabel('Yuborildi', lang) },
+    { key: 'Tasdiqlandi', label: getStatusLabel('Tasdiqlandi', lang) },
+    { key: "Yo'lda", label: getStatusLabel("Yo'lda", lang) },
+    { key: 'Yetkazildi', label: getStatusLabel('Yetkazildi', lang) },
+  ];
+  const currentIdx = steps.findIndex((s) => s.key === order.status);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-[#221819] dark:text-white tabular-nums">
+            {t.orderNumberPrefix}{order.id}
+          </h2>
+          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold ${st.cls}`}>
+            {st.icon}
+            <span>{getStatusLabel(order.status, lang)}</span>
+          </span>
+        </div>
+        <div className="text-xs text-[#6F6466] dark:text-stone-400">
+          {order.dateLabel} · {getDayLabel(order.deliveryDay, lang)}, {getSlotLabel(order.deliverySlot, lang)}
+        </div>
+        {order.cancelReason && (
+          <div className="text-xs font-semibold text-[#C0262D] dark:text-[#F87171]">
+            {order.cancelReason}
+          </div>
+        )}
+      </div>
+
+      {/* 4-Step Status Timeline */}
+      {order.status !== 'Bekor qilindi' && (
+        <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-3">
+          <h3 className="text-base font-bold text-[#221819] dark:text-white">
+            {t.timelineTitle}
+          </h3>
+          <div className="space-y-3.5">
+            {steps.map((step, i) => {
+              const done = currentIdx >= i;
+              return (
+                <div key={step.key} className="relative pl-7">
+                  <span
+                    className={`absolute left-0 top-0.5 w-4 h-4 rounded-full border-2 ${
+                      done
+                        ? 'bg-[#800020] border-[#800020] dark:bg-[#E11D48] dark:border-[#E11D48]'
+                        : 'bg-white dark:bg-[#1C1819] border-stone-300 dark:border-stone-600'
+                    }`}
+                  />
+                  {i < steps.length - 1 && (
+                    <span
+                      className={`absolute left-[7px] top-4 -bottom-3.5 w-[2px] ${
+                        currentIdx > i ? 'bg-[#800020] dark:bg-[#E11D48]' : 'bg-[#E7E1E1] dark:bg-stone-700'
+                      }`}
+                    />
+                  )}
+                  <div
+                    className={`text-sm ${
+                      done
+                        ? 'font-bold text-[#221819] dark:text-white'
+                        : 'font-normal text-[#6F6466] dark:text-stone-400'
+                    }`}
+                  >
+                    {step.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Itemized list + totals */}
+      <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-3">
+        <h3 className="text-base font-bold text-[#221819] dark:text-white">
+          {t.itemsListTitle}
+        </h3>
+        <div className="divide-y divide-[#E7E1E1] dark:divide-stone-800">
+          {order.items.map((it) => {
+            const prod = productsById[it.productId];
+            if (!prod) return null;
+            return (
+              <div key={it.productId} className="py-2.5 flex items-center justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#221819] dark:text-stone-100 truncate">
+                    {getProductName(prod, lang)} {prod.vol}
+                  </div>
+                  <div className="text-xs text-[#6F6466] dark:text-stone-400 tabular-nums">
+                    {it.qty} {t.boxUnit} × {formatSom(it.boxPrice)}
+                  </div>
+                </div>
+                <strong className="font-bold text-[#221819] dark:text-white tabular-nums flex-none">
+                  {formatSom(it.qty * it.boxPrice)}
+                </strong>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="pt-2.5 border-t border-[#E7E1E1] dark:border-stone-800 space-y-1.5 text-sm">
+          <div className="flex justify-between text-[#6F6466] dark:text-stone-400">
+            <span>{t.productsCountLine(order.boxCount)}</span>
+            <span className="tabular-nums">{formatSom(order.subtotal)}</span>
+          </div>
+          {order.discountPct > 0 && (
+            <div className="flex justify-between text-[#1E7A46] dark:text-[#4ADE80] font-semibold">
+              <span>{t.discountLine(order.discountPct)}</span>
+              <span className="tabular-nums">−{formatSom(order.discountAmount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t border-dashed border-[#E7E1E1] dark:border-stone-700 font-bold text-base text-[#221819] dark:text-white">
+            <span>{t.totalDueLabel}</span>
+            <span className="text-xl text-[#800020] dark:text-[#F4728A] tabular-nums">
+              {formatSom(order.totalSum)}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Actions */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => repeatOrderToCart(order.items)}
+          className="w-full min-h-[44px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
+        >
+          <Repeat className="w-4 h-4" />
+          <span>{t.repeatOrderBtn}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            goTab('me');
+            openPage('chat');
+          }}
+          className="w-full min-h-[44px] rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-base inline-flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="w-4 h-4 text-[#800020] dark:text-[#F4728A]" />
+          <span>{t.writeOperatorBtn}</span>
+        </button>
+        {canCancel && (
+          <button
+            type="button"
+            onClick={() => setSheet({ type: 'cancelOrder', orderId: order.id })}
+            className="w-full min-h-[44px] rounded-xl border border-[#C0262D]/40 text-[#C0262D] dark:text-[#F87171] font-semibold text-base"
+          >
+            {t.cancelOrderBtn}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const TrackView: React.FC = () => {
-  const { goTab, openPage, showToast } = useStore();
+  const { orders, selectedOrderId, confirmOrderHandover, goTab, openPage, showToast, t } = useStore();
+  const activeOrder =
+    orders.find((o) => o.id === selectedOrderId) ||
+    orders.find((o) => o.status === "Yo'lda") ||
+    orders[0];
 
   const copyPickupCode = () => {
     if (navigator.clipboard?.writeText) {
@@ -177,35 +402,33 @@ export const TrackView: React.FC = () => {
     }
     showToast({
       icon: 'check',
-      title: 'Kod nusxalandi: 4817',
-      text: 'Haydovchi kelganda shu kodni ayting',
+      title: '4817',
+      text: t.pickupCodeLabel,
       tone: 'ok',
     });
   };
 
   return (
     <div className="space-y-4">
-      {/* Stylized Termiz Route & Live ETA Card */}
-      <div className="bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 card-elevated">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-              Yetib keladi
+            <div className="text-xs font-semibold text-[#6F6466] dark:text-stone-400">
+              {t.arrivingLabel}
             </div>
-            <div className="text-xl font-extrabold text-stone-900 dark:text-white mt-0.5 tabular-nums">
+            <div className="text-xl font-bold text-[#221819] dark:text-white mt-0.5 tabular-nums">
               Bugun 14:00–17:00
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-xs font-extrabold">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-xs font-semibold">
             <Truck className="w-3.5 h-3.5" />
-            <span>Yo&apos;lda · 3-navbat</span>
+            <span>{t.driverRouteLabel}</span>
           </span>
         </div>
 
-        {/* Bespoke Stylized Termiz Route Canvas SVG */}
-        <div className="my-3.5 rounded-xl bg-stone-50 dark:bg-[#161213] border border-stone-200/80 dark:border-stone-800 p-3 overflow-hidden">
-          <svg viewBox="0 0 360 112" className="w-full h-28" aria-label="Yetkazish yo'nalishi">
-            {/* Subtle Termiz street grid */}
+        {/* Clean Route SVG */}
+        <div className="my-3.5 rounded-xl bg-[#F6F4F3] dark:bg-[#161213] border border-[#E7E1E1] dark:border-stone-800 p-3 overflow-hidden">
+          <svg viewBox="0 0 360 112" className="w-full h-28" aria-label={t.trackOrderBtn}>
             <g stroke="currentColor" className="text-stone-200 dark:text-stone-800" strokeWidth="1">
               <line x1="0" y1="26" x2="360" y2="26" />
               <line x1="0" y1="58" x2="360" y2="58" />
@@ -214,8 +437,6 @@ export const TrackView: React.FC = () => {
               <line x1="155" y1="0" x2="155" y2="112" />
               <line x1="255" y1="0" x2="255" y2="112" />
             </g>
-
-            {/* Full planned dashed path */}
             <path
               d="M 42 78 C 110 78, 125 34, 195 40 C 250 45, 275 68, 318 46"
               fill="none"
@@ -225,8 +446,6 @@ export const TrackView: React.FC = () => {
               strokeDasharray="6 5"
               strokeLinecap="round"
             />
-
-            {/* Completed progress path */}
             <path
               d="M 42 78 C 110 78, 125 34, 195 40 C 218 42, 236 48, 250 53"
               fill="none"
@@ -234,26 +453,17 @@ export const TrackView: React.FC = () => {
               strokeWidth="4.5"
               strokeLinecap="round"
             />
-
-            {/* Origin: Zavod */}
             <circle cx="42" cy="78" r="7" fill="#800020" />
             <circle cx="42" cy="78" r="3" fill="#FFFFFF" />
-
-            {/* Live Truck Marker */}
-            <g transform="translate(250, 53)">
-              <circle r="13" fill="#16A34A" opacity="0.2" />
-              <circle r="8.5" fill="#16A34A" stroke="#FFFFFF" strokeWidth="2.5" />
-            </g>
-
-            {/* Destination: Baraka do'koni */}
+            <circle cx="250" cy="53" r="8" fill="#1E7A46" stroke="#FFFFFF" strokeWidth="2.5" />
             <circle cx="318" cy="46" r="7" fill="#FFFFFF" stroke="#800020" strokeWidth="3" />
           </svg>
 
-          <div className="flex items-center justify-between text-[11px] font-bold text-stone-600 dark:text-stone-300 mt-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#6F6466] dark:text-stone-300 mt-1">
             <span>Zavod · Fayoztepa 7</span>
-            <span className="text-[#16A34A] dark:text-[#4ADE80]">~22 daqiqa qoldi</span>
+            <span className="text-[#1E7A46] dark:text-[#4ADE80]">~22 daq</span>
             <span className="text-[#800020] dark:text-[#F4728A] inline-flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
+              <MapPin className="w-3.5 h-3.5" />
               Alpomish 14
             </span>
           </div>
@@ -262,81 +472,34 @@ export const TrackView: React.FC = () => {
         <div className="grid grid-cols-4 gap-1.5 mb-2">
           <span className="h-1.5 rounded-full bg-[#800020] dark:bg-[#E11D48]" />
           <span className="h-1.5 rounded-full bg-[#800020] dark:bg-[#E11D48]" />
-          <span className="h-1.5 rounded-full step-active-bar" />
-          <span className="h-1.5 rounded-full bg-stone-200 dark:bg-stone-800" />
+          <span className="h-1.5 rounded-full bg-[#800020] dark:bg-[#E11D48]" />
+          <span className="h-1.5 rounded-full bg-[#E7E1E1] dark:bg-stone-800" />
         </div>
 
-        <div className="grid grid-cols-4 text-[11.5px] text-stone-500 dark:text-stone-400">
-          <span>Qabul</span>
-          <span>Yig&apos;ildi</span>
+        <div className="grid grid-cols-4 text-xs text-[#6F6466] dark:text-stone-400">
+          <span>Yuborildi</span>
+          <span>Tasdiq</span>
           <strong className="text-[#800020] dark:text-[#F4728A]">Yo&apos;lda</strong>
           <span>Yetkazildi</span>
         </div>
       </div>
 
-      <section>
-        <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white mb-2">
-          Holat
-        </h2>
-        <div className="bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 card-elevated space-y-4">
-          {[
-            { title: 'Qabul qilindi', sub: '09:12 · operator Madina', state: 'done' },
-            { title: "Omborda yig'ildi", sub: '11:40', state: 'done' },
-            { title: "Yo'lda", sub: '13:05 · siz navbatda 3-chisiz', state: 'now' },
-            { title: 'Yetkazildi', sub: 'Haydovchiga qabul kodini aytasiz', state: 'next' },
-          ].map((step, i, arr) => (
-            <div key={step.title} className="relative pl-7">
-              <span
-                className={`absolute left-0 top-1 w-4 h-4 rounded-full border-2 ${
-                  step.state === 'done'
-                    ? 'bg-[#800020] border-[#800020] dark:bg-[#E11D48] dark:border-[#E11D48]'
-                    : step.state === 'now'
-                      ? 'bg-white dark:bg-[#1E191B] border-[5px] border-[#800020] dark:border-[#E11D48]'
-                      : 'bg-white dark:bg-[#1E191B] border-stone-300 dark:border-stone-600'
-                }`}
-              />
-              {i < arr.length - 1 && (
-                <span
-                  className={`absolute left-[7px] top-5 -bottom-4 w-[2px] ${
-                    step.state === 'done'
-                      ? 'bg-[#800020] dark:bg-[#E11D48]'
-                      : 'bg-stone-200 dark:bg-stone-700'
-                  }`}
-                />
-              )}
-              <strong className="block text-sm font-bold text-stone-900 dark:text-white">
-                {step.title}
-              </strong>
-              <span className="text-xs text-stone-500 dark:text-stone-400">{step.sub}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Driver card */}
-      <div className="rounded-2xl p-4 bg-gradient-to-br from-[#8B0000] to-[#560013] text-white flex items-center gap-3 shadow-md shadow-[#800020]/20">
-        <span className="w-11 h-11 rounded-full bg-white/20 border border-white/20 font-extrabold flex items-center justify-center flex-none">
+      {/* Flat solid burgundy Driver card */}
+      <div className="rounded-2xl p-4 bg-[#800020] text-white flex items-center gap-3">
+        <span className="w-11 h-11 rounded-full bg-white/15 font-bold flex items-center justify-center flex-none">
           A
         </span>
         <div className="flex-1 min-w-0">
-          <strong className="block font-bold">Akmal</strong>
-          <small className="block text-xs opacity-85">Haydovchi · Isuzu 01 A 123 BC</small>
+          <strong className="block font-bold text-base">Akmal</strong>
+          <small className="block text-xs text-white/85">Isuzu 01 A 123 BC</small>
         </div>
-        <button
-          type="button"
+        <a
+          href="tel:+998901234545"
           aria-label="Qo'ng'iroq qilish"
-          onClick={() =>
-            showToast({
-              icon: 'phone',
-              title: "Qo'ng'iroq",
-              text: '+998 90 *** ** 45 ga ulanmoqda…',
-              tone: 'ok',
-            })
-          }
-          className="w-10.5 h-10.5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center flex-none"
+          className="w-11 h-11 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center flex-none"
         >
-          <Phone className="w-4 h-4" />
-        </button>
+          <Phone className="w-4.5 h-4.5" />
+        </a>
         <button
           type="button"
           aria-label="Chatga o'tish"
@@ -344,25 +507,23 @@ export const TrackView: React.FC = () => {
             goTab('me');
             openPage('chat');
           }}
-          className="w-10.5 h-10.5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center flex-none"
+          className="w-11 h-11 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center flex-none"
         >
-          <MessageCircle className="w-4 h-4" />
+          <MessageCircle className="w-4.5 h-4.5" />
         </button>
       </div>
 
-      {/* Interactive Ticket-style Pickup Code */}
+      {/* Pickup Code */}
       <button
         type="button"
         onClick={copyPickupCode}
-        className="w-full relative bg-white dark:bg-[#1E191B] border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 text-center card-elevated card-interactive overflow-hidden"
+        className="w-full bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 text-center card-calm"
       >
-        <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#F6F2F1] dark:bg-[#110D0E] border border-stone-200 dark:border-stone-800" />
-        <span className="absolute -right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#F6F2F1] dark:bg-[#110D0E] border border-stone-200 dark:border-stone-800" />
-        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 dark:text-stone-400">
-          <span>Qabul kodi — haydovchiga ayting</span>
+        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#6F6466] dark:text-stone-400">
+          <span>{t.pickupCodeLabel}</span>
           <Copy className="w-3.5 h-3.5" />
         </div>
-        <div className="text-3xl font-extrabold tracking-[0.28em] text-[#800020] dark:text-[#F4728A] mt-1 tabular-nums">
+        <div className="text-2xl font-bold tracking-[0.28em] text-[#800020] dark:text-[#F4728A] mt-1 tabular-nums">
           4 8 1 7
         </div>
       </button>
@@ -370,31 +531,26 @@ export const TrackView: React.FC = () => {
       <div className="flex gap-2.5">
         <button
           type="button"
-          onClick={() =>
-            showToast({
-              icon: 'check',
-              title: 'Rahmat!',
-              text: 'Qabul qilganingiz yozildi',
-              tone: 'ok',
-            })
-          }
-          className="flex-1 h-11 rounded-full bg-gradient-to-b from-[#22C55E] to-[#16A34A] text-white font-bold text-sm shadow-sm shadow-emerald-600/20 active:scale-[0.98] transition-transform"
+          onClick={() => {
+            if (activeOrder) void confirmOrderHandover(activeOrder.id);
+          }}
+          className="flex-1 min-h-[44px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-sm"
         >
-          Hammasi joyida
+          {t.everythingOkBtn}
         </button>
         <button
           type="button"
           onClick={() =>
             showToast({
               icon: 'info',
-              title: 'Kamchilik',
-              text: "Qaysi mahsulot — tanlaysiz va rasm qo'shasiz",
+              title: t.reportIssueBtn,
+              text: t.writeOperatorBtn,
               tone: 'warn',
             })
           }
-          className="flex-1 h-11 rounded-full bg-white dark:bg-[#1E191B] border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-bold text-sm card-elevated"
+          className="flex-1 min-h-[44px] rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm card-calm"
         >
-          Kamchilik bor
+          {t.reportIssueBtn}
         </button>
       </div>
     </div>
@@ -402,47 +558,61 @@ export const TrackView: React.FC = () => {
 };
 
 export const SuccessView: React.FC = () => {
-  const { lastOrderId, day, slot, monthTotal, openPage, goTab } = useStore();
+  const { lastOrderId, day, slot, shop, lang, t, openOrderDetail, goTab } = useStore();
 
   return (
     <div className="max-w-md mx-auto pt-4 space-y-5 text-center">
-      <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-[#16A34A] dark:text-[#4ADE80] flex items-center justify-center mx-auto shadow-inner">
-        <Check className="w-10 h-10 stroke-[2.6]" />
+      <div className="w-16 h-16 rounded-full bg-[#EBF6EF] dark:bg-emerald-950/50 text-[#1E7A46] dark:text-[#4ADE80] flex items-center justify-center mx-auto">
+        <Check className="w-8 h-8 stroke-[2.5]" />
       </div>
 
       <div>
-        <h2 className="text-xl font-extrabold text-stone-900 dark:text-white">
-          Buyurtma qabul qilindi
+        <h2 className="text-2xl font-bold text-[#221819] dark:text-white">
+          {t.successTitle}
         </h2>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-1.5 leading-relaxed">
-          #{lastOrderId} · {DAYS[day]}, {SLOTS[slot].toLowerCase()}
-          <br />
-          Operator tasdiqlashi bilan xabar keladi
+        <p className="text-base font-semibold text-[#800020] dark:text-[#F4728A] mt-1 tabular-nums">
+          {t.orderNumberPrefix}{lastOrderId}
         </p>
       </div>
 
-      <div className="text-left">
-        <AnorSeeds sum={monthTotal} />
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 text-left space-y-2.5 text-sm card-calm">
+        <div className="flex justify-between gap-2">
+          <span className="text-[#6F6466] dark:text-stone-400">{t.expectedDeliveryLabel}</span>
+          <strong className="font-bold text-[#221819] dark:text-white">
+            {getDayLabel(day, lang)}, {getSlotLabel(slot, lang)}
+          </strong>
+        </div>
+        <div className="flex justify-between gap-2 items-center">
+          <span className="text-[#6F6466] dark:text-stone-400">{t.operatorPhoneLabel}</span>
+          <a
+            href={`tel:${(shop?.operatorPhone || '+998901234567').replace(/\s+/g, '')}`}
+            className="font-bold text-[#800020] dark:text-[#F4728A] tabular-nums inline-flex items-center gap-1"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>{shop?.operatorPhone || '+998 90 123 45 67'}</span>
+          </a>
+        </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <button
           type="button"
-          onClick={() => openPage('track')}
-          className="w-full h-12 rounded-full bg-gradient-to-b from-[#960A28] to-[#74001B] text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-md shadow-[#800020]/25"
+          onClick={() => {
+            if (lastOrderId) openOrderDetail(lastOrderId);
+          }}
+          className="w-full min-h-[48px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
         >
           <Truck className="w-4 h-4" />
-          <span>Buyurtmani kuzatish</span>
+          <span>{t.trackOrderBtn}</span>
         </button>
         <button
           type="button"
           onClick={() => goTab('home')}
-          className="w-full h-12 rounded-full bg-white dark:bg-[#1E191B] border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 font-bold text-sm"
+          className="w-full min-h-[48px] rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-base"
         >
-          Bosh sahifa
+          {t.navHome}
         </button>
       </div>
     </div>
   );
 };
-

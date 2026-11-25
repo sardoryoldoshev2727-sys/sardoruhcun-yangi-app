@@ -1,10 +1,13 @@
-export type TabId = 'home' | 'cat' | 'cart' | 'ord' | 'me';
+export type TabId = 'home' | 'cat' | 'promo' | 'cart' | 'ord' | 'me';
+
+export type Lang = 'uz' | 'ru';
 
 export type CatalogSortMode = 'default' | 'hot' | 'priceAsc' | 'priceDesc' | 'available';
 
 export type SubPageId =
   | null
   | 'track'
+  | 'orderDetail'
   | 'success'
   | 'notif'
   | 'chat'
@@ -13,14 +16,18 @@ export type SubPageId =
   | 'about';
 
 export type OrderStatus =
+  | 'Yuborildi'
+  | 'Tasdiqlandi'
   | "Yo'lda"
   | 'Yetkazildi'
-  | 'Qabul qilindi'
   | 'Bekor qilindi';
+
+export type ProductBadgeType = 'natural' | 'promo' | 'new' | 'out';
 
 export interface Product {
   id: number;
   name: string;
+  nameRu?: string;
   vol: string;
   blk: number;
   one: number;
@@ -29,13 +36,63 @@ export interface Product {
   ph: string;
   photo: string;
   out: boolean;
+  promoPct?: number;
+  isNew?: boolean;
 }
 
 /** [productId, usualBoxes, cycleDays, daysPassed] */
 export type ShelfItem = [number, number, number, number];
 
-/** [orderId, dateLabel, status, totalSum, boxCount, previewProductIds] */
-export type OrderItem = [number, string, OrderStatus, number, number, number[]];
+export interface OrderLineItem {
+  productId: number;
+  qty: number;
+  boxPrice: number;
+}
+
+export interface OrderRecord {
+  id: number;
+  dateLabel: string;
+  status: OrderStatus;
+  subtotal: number;
+  discountPct: number;
+  discountAmount: number;
+  totalSum: number;
+  boxCount: number;
+  deliveryDay: number;
+  deliverySlot: number;
+  comment: string;
+  items: OrderLineItem[];
+  cancelReason?: string;
+  pendingSync?: boolean;
+  handoverConfirmed?: boolean;
+}
+
+export interface ShopInfo {
+  name: string;
+  owner: string;
+  phone: string;
+  address: string;
+  locationConfirmed: boolean;
+  agent: string;
+  operatorName: string;
+  operatorPhone: string;
+}
+
+export interface SessionInfo {
+  userName: string;
+  tierName: string;
+  monthTotal: number;
+  ordersCount: number;
+  debtAmount: number;
+}
+
+export interface CheckoutQuote {
+  boxCount: number;
+  subtotal: number;
+  discountPct: number;
+  discountAmount: number;
+  total: number;
+}
 
 /** [type, title, subtitle, timeLabel, unreadFlag] */
 export type NotificationItem = [
@@ -54,7 +111,9 @@ export type SheetState =
   | { type: 'prod'; id: number }
   | { type: 'quickQty'; id: number }
   | { type: 'pick' }
+  | { type: 'confirmOrder' }
   | { type: 'pin'; changeMode?: boolean }
+  | { type: 'cancelOrder'; orderId: number }
   | { type: 'confirmClear' };
 
 export interface ToastItem {
@@ -73,3 +132,4 @@ export interface StockInfo {
   txt: string;
   sub: string;
 }
+

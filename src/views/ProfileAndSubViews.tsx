@@ -13,194 +13,254 @@ import {
   Store,
   TrendingDown,
   Truck,
+  Type,
   Wallet,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { LOGO } from '../data/assets';
-import { formatSom } from '../data/products';
+import { formatSom } from '../utils/catalog';
 
 export const ProfileView: React.FC = () => {
   const {
     monthTotal,
+    session,
+    shop,
     unreadChat,
     darkMode,
+    largeText,
+    lang,
+    t,
     toggleTheme,
+    toggleLargeText,
+    setLang,
     openPage,
     setSheet,
-    showToast,
   } = useStore();
 
   return (
     <div className="space-y-3">
-      {/* Dilnoza hero card */}
-      <div className="relative rounded-2xl p-4 bg-gradient-to-br from-[#88001E] via-[#6D0017] to-[#45000E] text-white shadow-lg shadow-[#800020]/20 overflow-hidden">
-        <svg
-          viewBox="0 0 180 180"
-          className="absolute -right-8 -top-10 w-44 h-44 text-white/[0.08] pointer-events-none"
-          fill="none"
-          aria-hidden="true"
-        >
-          <circle cx="90" cy="90" r="80" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="90" cy="90" r="54" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-
-        <div className="relative flex items-center gap-3">
-          <span className="w-12 h-12 rounded-2xl bg-white/20 border border-white/25 font-extrabold text-xl flex items-center justify-center flex-none shadow-inner">
-            D
+      {/* Flat solid burgundy hero card (no gradient, no decorative SVG blobs) */}
+      <div className="rounded-2xl p-4 bg-[#800020] text-white">
+        <div className="flex items-center gap-3">
+          <span className="w-12 h-12 rounded-xl bg-white/15 font-bold text-xl flex items-center justify-center flex-none">
+            {(session?.userName || 'D')[0]}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-lg font-extrabold leading-tight">Dilnoza</h3>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-bold">
-                <Droplet className="w-3 h-3" />
-                <span>Kumush</span>
+              <h3 className="text-xl font-bold leading-tight">{session?.userName || 'Dilnoza'}</h3>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-white/15 text-xs font-semibold">
+                <Droplet className="w-3.5 h-3.5" />
+                <span>{session?.tierName || 'Kumush'}</span>
               </span>
             </div>
-            <small className="block text-xs opacity-90 truncate mt-0.5">
-              «Baraka» do&apos;koni · Termiz, Alpomish 14
+            <small className="block text-xs text-white/85 truncate mt-0.5">
+              {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
             </small>
-            <div className="mt-2 flex items-center gap-2 text-[10.5px] text-white/80">
-              <div className="flex-1 h-1.5 rounded-full bg-white/20 overflow-hidden">
+            <div className="mt-2.5 flex items-center gap-2 text-xs text-white/90">
+              <div className="flex-1 h-1.5 rounded-full bg-white/25 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-amber-300"
+                  className="h-full rounded-full bg-white"
                   style={{ width: `${Math.min(100, Math.round((monthTotal / 2000000) * 100))}%` }}
                 />
               </div>
-              <span className="font-bold text-amber-200 tabular-nums">Oltin: 2 mln</span>
+              <span className="font-semibold tabular-nums">2 mln</span>
             </div>
           </div>
         </div>
 
-        <div className="relative grid grid-cols-3 gap-2 mt-3.5">
-          <div className="rounded-xl bg-white/15 border border-white/10 p-2.5">
-            <strong className="block text-sm font-extrabold tabular-nums">
+        <div className="grid grid-cols-3 gap-2 mt-3.5">
+          <div className="rounded-xl bg-white/15 p-2.5">
+            <strong className="block text-sm font-bold tabular-nums">
               {(monthTotal / 1e6).toFixed(2).replace('.', ',')} mln
             </strong>
-            <span className="text-[11px] opacity-85">bu oy xarid</span>
+            <span className="text-xs text-white/85">{t.monthPurchaseLabel}</span>
           </div>
-          <div className="rounded-xl bg-white/15 border border-white/10 p-2.5">
-            <strong className="block text-sm font-extrabold tabular-nums">14</strong>
-            <span className="text-[11px] opacity-85">buyurtma</span>
+          <div className="rounded-xl bg-white/15 p-2.5">
+            <strong className="block text-sm font-bold tabular-nums">
+              {session?.ordersCount ?? 14}
+            </strong>
+            <span className="text-xs text-white/85">{t.ordersCountLabel}</span>
           </div>
-          <div className="rounded-xl bg-white/15 border border-white/10 p-2.5">
-            <strong className="block text-sm font-extrabold tabular-nums">
+          <div className="rounded-xl bg-white/15 p-2.5">
+            <strong className="block text-sm font-bold tabular-nums">
               {formatSom(monthTotal * 0.05).replace(" so'm", '')}
             </strong>
-            <span className="text-[11px] opacity-85">tejadingiz</span>
+            <span className="text-xs text-white/85">{t.savedLabel}</span>
           </div>
         </div>
       </div>
 
       {/* Support */}
-      <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200/90 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800 card-elevated">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
         <button
           type="button"
           onClick={() => openPage('chat')}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-[#ECF1FC] dark:bg-[#1B253A] text-[#2B59B5] dark:text-[#7DA3F2] flex items-center justify-center flex-none">
-            <MessageCircle className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#F6F4F3] dark:bg-stone-800 text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <MessageCircle className="w-5 h-5" />
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">OsonChat</div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">
-              Operator Madina · onlayn
+            <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">{t.osonChat}</div>
+            <div className="text-xs text-[#6F6466] dark:text-stone-400">
+              {t.operatorOnline(shop?.operatorName || 'Madina')}
             </div>
           </div>
           {unreadChat > 0 ? (
-            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#800020] text-white text-[11px] font-bold flex items-center justify-center tabular-nums">
+            <span className="min-w-[22px] h-5.5 px-1.5 rounded-full bg-[#800020] text-white text-xs font-bold flex items-center justify-center tabular-nums">
               {unreadChat}
             </span>
           ) : (
-            <ChevronRight className="w-4 h-4 text-stone-400" />
+            <ChevronRight className="w-4 h-4 text-[#6F6466]" />
           )}
         </button>
 
-        <button
-          type="button"
-          onClick={() =>
-            showToast({
-              icon: 'phone',
-              title: "Qo'ng'iroq",
-              text: 'Operatorga ulanmoqda…',
-              tone: 'ok',
-            })
-          }
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+        <a
+          href={`tel:${(shop?.operatorPhone || '+998901234567').replace(/\s+/g, '')}`}
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#15803D] dark:text-[#4ADE80] flex items-center justify-center flex-none">
-            <Phone className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#EBF6EF] dark:bg-emerald-950/40 text-[#1E7A46] dark:text-[#4ADE80] flex items-center justify-center flex-none">
+            <Phone className="w-5 h-5" />
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">
-              Operatorga qo'ng'iroq
+            <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
+              {t.callOperator}
             </div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">9:00 – 18:00</div>
+            <div className="text-xs text-[#6F6466] dark:text-stone-400">{t.workHours}</div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
-        </button>
+          <ChevronRight className="w-4 h-4 text-[#6F6466]" />
+        </a>
       </div>
 
       {/* Store & Finance */}
-      <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
         <button
           type="button"
           onClick={() => openPage('shop')}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
-            <Store className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <Store className="w-5 h-5" />
           </span>
-          <div className="flex-1 font-semibold text-sm text-stone-900 dark:text-stone-100">
-            Do'kon ma'lumotlari
+          <div className="flex-1 font-semibold text-sm text-[#221819] dark:text-stone-100">
+            {t.shopInfoTitle}
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
+          <ChevronRight className="w-4 h-4 text-[#6F6466]" />
         </button>
 
         <button
           type="button"
           onClick={() => openPage('fin')}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[#B45309] dark:text-[#FBBF24] flex items-center justify-center flex-none">
-            <Wallet className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[#B7791F] dark:text-[#FBBF24] flex items-center justify-center flex-none">
+            <Wallet className="w-5 h-5" />
           </span>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">
-              Hisob-kitob
+            <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
+              {t.financeTitle}
             </div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Qarz yo'q</div>
+            <div className="text-xs text-[#6F6466] dark:text-stone-400">{t.noDebtLabel}</div>
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
+          <ChevronRight className="w-4 h-4 text-[#6F6466]" />
         </button>
 
         <button
           type="button"
           onClick={() => setSheet({ type: 'pin', changeMode: true })}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
-            <Lock className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <Lock className="w-5 h-5" />
           </span>
-          <div className="flex-1 font-semibold text-sm text-stone-900 dark:text-stone-100">
-            PIN-kodni o'zgartirish
+          <div className="flex-1 font-semibold text-sm text-[#221819] dark:text-stone-100">
+            {t.changePinTitle}
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
+          <ChevronRight className="w-4 h-4 text-[#6F6466]" />
         </button>
       </div>
 
-      {/* Preferences & About */}
-      <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
+      {/* Preferences: Language O'zbekcha / Русский, Katta yozuv, Dark mode, About */}
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
+        {/* Language Switch */}
+        <div className="w-full min-h-[56px] flex items-center gap-3 px-3.5 py-2.5">
+          <span className="w-10 h-10 rounded-xl bg-[#F6F4F3] dark:bg-stone-800 text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <Globe className="w-5 h-5" />
+          </span>
+          <div className="flex-1 font-semibold text-sm text-[#221819] dark:text-stone-100">
+            {t.languageTitle}
+          </div>
+          <div className="inline-flex rounded-xl bg-[#F6F4F3] dark:bg-stone-900 p-1 border border-[#E7E1E1] dark:border-stone-700">
+            <button
+              type="button"
+              onClick={() => setLang('uz')}
+              className={`min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                lang === 'uz'
+                  ? 'bg-[#800020] text-white'
+                  : 'text-[#6F6466] dark:text-stone-400'
+              }`}
+            >
+              O&apos;zbekcha
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang('ru')}
+              className={`min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                lang === 'ru'
+                  ? 'bg-[#800020] text-white'
+                  : 'text-[#6F6466] dark:text-stone-400'
+              }`}
+            >
+              Русский
+            </button>
+          </div>
+        </div>
+
+        {/* Large Text Toggle ("Katta yozuv") */}
         <button
           type="button"
-          onClick={toggleTheme}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          role="switch"
+          aria-checked={largeText}
+          onClick={toggleLargeText}
+          className="w-full min-h-[56px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-[#ECF1FC] dark:bg-[#1B253A] text-[#2B59B5] dark:text-[#7DA3F2] flex items-center justify-center flex-none">
-            <Moon className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#F6F4F3] dark:bg-stone-800 text-[#221819] dark:text-stone-200 flex items-center justify-center flex-none">
+            <Type className="w-5 h-5" />
           </span>
-          <div className="flex-1 font-semibold text-sm text-stone-900 dark:text-stone-100">
-            Tungi ko'rinish
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
+              {t.largeTextTitle}
+            </div>
+            <div className="text-xs text-[#6F6466] dark:text-stone-400">
+              {t.largeTextSub}
+            </div>
+          </div>
+          <span
+            className={`w-12 h-7 rounded-full relative transition-colors flex-none ${
+              largeText ? 'bg-[#800020] dark:bg-[#C81E45]' : 'bg-stone-300 dark:bg-stone-700'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all ${
+                largeText ? 'left-[22px]' : 'left-0.5'
+              }`}
+            />
+          </span>
+        </button>
+
+        {/* Dark Mode Toggle */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={darkMode}
+          onClick={toggleTheme}
+          className="w-full min-h-[56px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
+        >
+          <span className="w-10 h-10 rounded-xl bg-[#F6F4F3] dark:bg-stone-800 text-[#221819] dark:text-stone-200 flex items-center justify-center flex-none">
+            <Moon className="w-5 h-5" />
+          </span>
+          <div className="flex-1 font-semibold text-sm text-[#221819] dark:text-stone-100">
+            {t.darkModeTitle}
           </div>
           <span
             className={`w-12 h-7 rounded-full relative transition-colors flex-none ${
@@ -208,7 +268,7 @@ export const ProfileView: React.FC = () => {
             }`}
           >
             <span
-              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-xs transition-all ${
+              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all ${
                 darkMode ? 'left-[22px]' : 'left-0.5'
               }`}
             />
@@ -217,49 +277,28 @@ export const ProfileView: React.FC = () => {
 
         <button
           type="button"
-          onClick={() =>
-            showToast({
-              icon: 'globe',
-              title: 'Til',
-              text: 'Русский тили тез орада',
-              tone: 'blue',
-            })
-          }
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
-        >
-          <span className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#15803D] dark:text-[#4ADE80] flex items-center justify-center flex-none">
-            <Globe className="w-4.5 h-4.5" />
-          </span>
-          <div className="flex-1 font-semibold text-sm text-stone-900 dark:text-stone-100">Til</div>
-          <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-            O'zbekcha
-          </span>
-        </button>
-
-        <button
-          type="button"
           onClick={() => openPage('about')}
-          className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-900/40"
+          className="w-full min-h-[52px] flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
         >
-          <span className="w-9 h-9 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
-            <Info className="w-4.5 h-4.5" />
+          <span className="w-10 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <Info className="w-5 h-5" />
           </span>
-          <div className="flex-1 font-semibold text-sm text-stone-900 dark:text-stone-100">
-            Biz haqimizda
+          <div className="flex-1 font-semibold text-sm text-[#221819] dark:text-stone-100">
+            {t.aboutTitle}
           </div>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
+          <ChevronRight className="w-4 h-4 text-[#6F6466]" />
         </button>
       </div>
 
-      <p className="text-center text-xs text-stone-400 dark:text-stone-500 pt-1">
-        Lal Anaar · 2015 yildan beri
+      <p className="text-center text-xs text-[#6F6466] dark:text-stone-500 pt-1">
+        {t.sinceYear}
       </p>
     </div>
   );
 };
 
 export const ChatView: React.FC = () => {
-  const { chat, sendChatMessage } = useStore();
+  const { chat, sendChatMessage, t } = useStore();
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -287,7 +326,7 @@ export const ChatView: React.FC = () => {
           m[0] === 'sys' ? (
             <div
               key={idx}
-              className="self-center bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300 text-xs font-medium px-3 py-1 rounded-lg"
+              className="self-center bg-[#EFECEC] dark:bg-stone-800 text-[#6F6466] dark:text-stone-300 text-xs font-semibold px-3 py-1 rounded-lg"
             >
               {m[1]}
             </div>
@@ -297,12 +336,12 @@ export const ChatView: React.FC = () => {
               className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-snug ${
                 m[0] === 'me'
                   ? 'ml-auto bg-[#800020] text-white rounded-br-sm'
-                  : 'bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 rounded-bl-sm'
+                  : 'bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 text-[#221819] dark:text-stone-100 rounded-bl-sm'
               }`}
             >
               {m[1]}
               {m[2] && (
-                <small className="block text-[10px] opacity-70 mt-1 text-right">{m[2]}</small>
+                <small className="block text-xs opacity-75 mt-1 text-right">{m[2]}</small>
               )}
             </div>
           ),
@@ -316,7 +355,7 @@ export const ChatView: React.FC = () => {
             key={text}
             type="button"
             onClick={() => sendChatMessage(text)}
-            className="flex-none h-8 px-3 rounded-full border border-[#800020] dark:border-[#F4728A] text-[#800020] dark:text-[#F4728A] bg-white dark:bg-[#1E1A1B] text-xs font-semibold"
+            className="flex-none min-h-[44px] px-3.5 rounded-xl border border-[#800020] dark:border-[#F4728A] text-[#800020] dark:text-[#F4728A] bg-white dark:bg-[#1C1819] text-xs font-semibold"
           >
             {text}
           </button>
@@ -324,7 +363,7 @@ export const ChatView: React.FC = () => {
       </div>
 
       <div className="mt-auto pt-2">
-        <div className="flex items-center gap-2 bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-700 rounded-full p-1 pl-4 shadow-xs">
+        <div className="flex items-center gap-2 bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 rounded-xl p-1 pl-3.5">
           <input
             type="text"
             value={draft}
@@ -332,14 +371,14 @@ export const ChatView: React.FC = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSend();
             }}
-            placeholder="Xabar yozing…"
-            className="flex-1 bg-transparent text-sm text-stone-900 dark:text-stone-100 outline-none"
+            placeholder={t.chatPlaceholder}
+            className="flex-1 min-h-[44px] bg-transparent text-sm text-[#221819] dark:text-stone-100 outline-none"
           />
           <button
             type="button"
-            aria-label="Yuborish"
+            aria-label={t.sendBtn}
             onClick={handleSend}
-            className="w-9 h-9 rounded-full bg-[#800020] hover:bg-[#630019] text-white flex items-center justify-center flex-none"
+            className="w-11 h-11 rounded-xl bg-[#800020] hover:bg-[#630019] text-white flex items-center justify-center flex-none"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -350,78 +389,78 @@ export const ChatView: React.FC = () => {
 };
 
 export const ShopView: React.FC = () => {
-  const { openPage } = useStore();
+  const { shop, openPage, t } = useStore();
   const rows = [
-    ['Nomi', "«Baraka» do'koni"],
-    ['Egasi', 'Dilnoza Karimova'],
-    ['Telefon', '+998 90 *** ** 12'],
-    ['Manzil', 'Termiz, Alpomish 14'],
-    ['Lokatsiya', 'Belgilangan ✓'],
-    ['Agent', 'Sardor · Termiz-2'],
+    ['Nomi', shop?.name || "«Baraka» do'koni"],
+    ['Egasi', shop?.owner || 'Dilnoza Karimova'],
+    ['Telefon', shop?.phone || '+998 90 *** ** 12'],
+    ['Manzil', shop?.address || 'Termiz, Alpomish 14'],
+    ['Lokatsiya', shop?.locationConfirmed ? 'Belgilangan ✓' : '—'],
+    ['Agent', shop?.agent || 'Sardor · Termiz-2'],
   ];
 
   return (
     <div className="space-y-3">
-      <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl px-4 py-1 divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl px-4 py-1 divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between py-2.5 text-sm">
-            <span className="text-stone-500 dark:text-stone-400">{k}</span>
-            <strong className="text-stone-900 dark:text-stone-100">{v}</strong>
+          <div key={k} className="flex items-center justify-between py-3 text-sm">
+            <span className="text-[#6F6466] dark:text-stone-400">{k}</span>
+            <strong className="font-semibold text-[#221819] dark:text-stone-100">{v}</strong>
           </div>
         ))}
       </div>
-      <p className="text-xs text-stone-500 dark:text-stone-400 px-1">
-        O'zgartirish operator orqali — yuk noto'g'ri manzilga ketmasligi uchun.
+      <p className="text-xs text-[#6F6466] dark:text-stone-400 px-1">
+        O&apos;zgartirish operator orqali — yuk noto&apos;g&apos;ri manzilga ketmasligi uchun.
       </p>
       <button
         type="button"
         onClick={() => openPage('chat')}
-        className="w-full h-11 rounded-full bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white font-bold text-sm inline-flex items-center justify-center gap-2"
+        className="w-full min-h-[44px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
       >
-        <MessageCircle className="w-4 h-4 text-[#800020] dark:text-[#F4728A]" />
-        <span>Operatorga yozish</span>
+        <MessageCircle className="w-4 h-4" />
+        <span>{t.writeOperatorBtn}</span>
       </button>
     </div>
   );
 };
 
 export const FinanceView: React.FC = () => {
-  const { monthTotal } = useStore();
+  const { monthTotal, t } = useStore();
   const payments: [string, number, string][] = [
-    ['18-noyabr · #2399', 1468000, 'naqd'],
-    ['11-noyabr · #2310', 1102000, "o'tkazma"],
-    ['4-noyabr · #2244', 986000, 'naqd'],
+    ['18-noyabr · #2399', 1430244, 'naqd'],
+    ['11-noyabr · #2310', 1072683, "o'tkazma"],
+    ['4-noyabr · #2244', 958341, 'naqd'],
   ];
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2.5">
-        <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl p-3.5">
-          <strong className="block text-xl font-extrabold text-[#16A34A] dark:text-[#4ADE80] tabular-nums">
-            0 so'm
+        <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 card-calm">
+          <strong className="block text-xl font-bold text-[#1E7A46] dark:text-[#4ADE80] tabular-nums">
+            0 so&apos;m
           </strong>
-          <span className="text-xs text-stone-500 dark:text-stone-400">qarzingiz</span>
+          <span className="text-xs text-[#6F6466] dark:text-stone-400">{t.noDebtLabel}</span>
         </div>
-        <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl p-3.5">
-          <strong className="block text-xl font-extrabold text-[#800020] dark:text-[#F4728A] tabular-nums">
+        <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 card-calm">
+          <strong className="block text-xl font-bold text-[#800020] dark:text-[#F4728A] tabular-nums">
             {formatSom(monthTotal)}
           </strong>
-          <span className="text-xs text-stone-500 dark:text-stone-400">bu oy xarid</span>
+          <span className="text-xs text-[#6F6466] dark:text-stone-400">{t.monthPurchaseLabel}</span>
         </div>
       </div>
 
       <section>
-        <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white mb-2">
-          To'lovlar
+        <h2 className="text-base font-bold text-[#221819] dark:text-white mb-2">
+          To&apos;lovlar
         </h2>
-        <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl px-4 py-1 divide-y divide-stone-100 dark:divide-stone-800">
+        <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl px-4 py-1 divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
           {payments.map(([title, amt, method]) => (
-            <div key={title} className="flex items-center justify-between py-2.5 text-sm">
+            <div key={title} className="flex items-center justify-between py-3 text-sm">
               <div>
-                <div className="font-medium text-stone-700 dark:text-stone-300">{title}</div>
-                <div className="text-xs text-stone-400">{method}</div>
+                <div className="font-semibold text-[#221819] dark:text-stone-200">{title}</div>
+                <div className="text-xs text-[#6F6466] dark:text-stone-400">{method}</div>
               </div>
-              <strong className="text-[#16A34A] dark:text-[#4ADE80] tabular-nums">
+              <strong className="text-[#1E7A46] dark:text-[#4ADE80] font-bold tabular-nums">
                 {formatSom(amt)} ✓
               </strong>
             </div>
@@ -435,14 +474,14 @@ export const FinanceView: React.FC = () => {
 export const AboutView: React.FC = () => {
   return (
     <div className="space-y-4">
-      <div className="h-40 rounded-2xl bg-gradient-to-br from-[#8B0000] to-[#520015] flex items-center justify-center">
-        <img src={LOGO} alt="Lal Anaar" className="w-20 h-20 rounded-2xl bg-white p-1.5 shadow-md" />
+      <div className="h-36 rounded-2xl bg-[#800020] flex items-center justify-center">
+        <img src={LOGO} alt="Lal Anaar" className="w-20 h-20 rounded-2xl bg-white p-1.5" />
       </div>
 
-      <p className="text-sm leading-relaxed text-stone-700 dark:text-stone-300">
-        <strong className="text-stone-900 dark:text-white">Lal Anaar</strong> — Termizdagi «Brightly
+      <p className="text-sm leading-relaxed text-[#221819] dark:text-stone-300">
+        <strong className="font-bold text-[#221819] dark:text-white">Lal Anaar</strong> — Termizdagi «Brightly
         Mega Water» korxonasining tabiiy sharbat va ichimliklari. 2015 yildan beri ishlab chiqaramiz
-        va O'zbekiston bo'ylab yetkazib beramiz.
+        va O&apos;zbekiston bo&apos;ylab yetkazib beramiz.
       </p>
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -454,41 +493,41 @@ export const AboutView: React.FC = () => {
         ].map(([num, label]) => (
           <div
             key={label}
-            className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl p-3.5"
+            className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 card-calm"
           >
-            <strong className="block text-xl font-extrabold text-[#800020] dark:text-[#F4728A]">
+            <strong className="block text-xl font-bold text-[#800020] dark:text-[#F4728A]">
               {num}
             </strong>
-            <span className="text-xs text-stone-500 dark:text-stone-400">{label}</span>
+            <span className="text-xs text-[#6F6466] dark:text-stone-400">{label}</span>
           </div>
         ))}
       </div>
 
       <section>
-        <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white mb-2">Sifat</h2>
-        <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
+        <h2 className="text-base font-bold text-[#221819] dark:text-white mb-2">Sifat</h2>
+        <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
           <div className="flex items-center gap-3 px-3.5 py-3">
-            <span className="w-10 h-9 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-[11px] font-extrabold flex items-center justify-center flex-none">
+            <span className="w-11 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-xs font-bold flex items-center justify-center flex-none">
               ISO
             </span>
             <div>
-              <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">
+              <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
                 ISO 22000 · HACCP
               </div>
-              <div className="text-xs text-stone-500 dark:text-stone-400">
+              <div className="text-xs text-[#6F6466] dark:text-stone-400">
                 Xalqaro oziq-ovqat xavfsizligi tizimi
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3 px-3.5 py-3">
-            <span className="w-10 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#15803D] dark:text-[#4ADE80] text-[10px] font-extrabold flex items-center justify-center flex-none">
+            <span className="w-11 h-10 rounded-xl bg-[#EBF6EF] dark:bg-emerald-950/40 text-[#1E7A46] dark:text-[#4ADE80] text-xs font-bold flex items-center justify-center flex-none">
               HALAL
             </span>
             <div>
-              <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">
+              <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
                 Halal sertifikati
               </div>
-              <div className="text-xs text-stone-500 dark:text-stone-400">
+              <div className="text-xs text-[#6F6466] dark:text-stone-400">
                 Barcha ichimliklarimiz halol
               </div>
             </div>
@@ -497,46 +536,44 @@ export const AboutView: React.FC = () => {
       </section>
 
       <section>
-        <h2 className="text-[15.5px] font-extrabold text-stone-900 dark:text-white mb-2">
-          Aloqa
-        </h2>
-        <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
+        <h2 className="text-base font-bold text-[#221819] dark:text-white mb-2">Aloqa</h2>
+        <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
           <a
             href="https://t.me/Lal_Anaar_Rasmiy_Kanal"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3.5 py-3 hover:bg-stone-50 dark:hover:bg-stone-900/40"
+            className="min-h-[52px] flex items-center gap-3 px-3.5 py-3 hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
           >
-            <span className="w-9 h-9 rounded-xl bg-[#ECF1FC] dark:bg-[#1B253A] text-[#2B59B5] dark:text-[#7DA3F2] flex items-center justify-center flex-none">
+            <span className="w-10 h-10 rounded-xl bg-[#F6F4F3] dark:bg-stone-800 text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
               <Send className="w-4 h-4" />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">
+              <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">
                 Rasmiy kanal
               </div>
-              <div className="text-xs text-stone-500 dark:text-stone-400">
+              <div className="text-xs text-[#6F6466] dark:text-stone-400">
                 @Lal_Anaar_Rasmiy_Kanal
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-stone-400" />
+            <ChevronRight className="w-4 h-4 text-[#6F6466]" />
           </a>
 
           <a
             href="https://www.google.com/maps/search/?api=1&query=Brightly+Mega+Water+Termiz"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3.5 py-3 hover:bg-stone-50 dark:hover:bg-stone-900/40"
+            className="min-h-[52px] flex items-center gap-3 px-3.5 py-3 hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40"
           >
-            <span className="w-9 h-9 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
+            <span className="w-10 h-10 rounded-xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center flex-none">
               <Store className="w-4 h-4" />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm text-stone-900 dark:text-stone-100">Manzil</div>
-              <div className="text-xs text-stone-500 dark:text-stone-400">
-                Termiz, Fayoztepa ko'chasi 7
+              <div className="font-semibold text-sm text-[#221819] dark:text-stone-100">Manzil</div>
+              <div className="text-xs text-[#6F6466] dark:text-stone-400">
+                Termiz, Fayoztepa ko&apos;chasi 7
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-stone-400" />
+            <ChevronRight className="w-4 h-4 text-[#6F6466]" />
           </a>
         </div>
       </section>
@@ -556,22 +593,22 @@ export const NotifView: React.FC = () => {
         };
       case 'chat':
         return {
-          cls: 'bg-[#ECF1FC] dark:bg-[#1B253A] text-[#2B59B5] dark:text-[#7DA3F2]',
+          cls: 'bg-[#F6F4F3] dark:bg-stone-800 text-[#221819] dark:text-stone-200',
           el: <MessageCircle className="w-4.5 h-4.5" />,
         };
       case 'seed':
         return {
-          cls: 'bg-emerald-50 dark:bg-emerald-950/40 text-[#15803D] dark:text-[#4ADE80]',
+          cls: 'bg-[#EBF6EF] dark:bg-emerald-950/40 text-[#1E7A46] dark:text-[#4ADE80]',
           el: <Droplet className="w-4.5 h-4.5" />,
         };
       case 'low':
         return {
-          cls: 'bg-red-50 dark:bg-red-950/40 text-[#9E2A2B] dark:text-[#F87171]',
+          cls: 'bg-amber-50 dark:bg-amber-950/40 text-[#B7791F] dark:text-[#FBBF24]',
           el: <TrendingDown className="w-4.5 h-4.5" />,
         };
       default:
         return {
-          cls: 'bg-amber-50 dark:bg-amber-950/40 text-[#B45309] dark:text-[#FBBF24]',
+          cls: 'bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A]',
           el: <Sparkles className="w-4.5 h-4.5" />,
         };
     }
@@ -579,7 +616,7 @@ export const NotifView: React.FC = () => {
 
   return (
     <div>
-      <div className="bg-white dark:bg-[#1E1A1B] border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl overflow-hidden divide-y divide-[#E7E1E1] dark:divide-stone-800 card-calm">
         {notifs.map((n, idx) => {
           const ic = iconFor(n[0]);
           return (
@@ -596,30 +633,30 @@ export const NotifView: React.FC = () => {
                   goTab('cat');
                 }
               }}
-              className={`w-full flex items-start gap-3 px-3.5 py-3 text-left transition-colors hover:bg-stone-50 dark:hover:bg-stone-900/40 ${
+              className={`w-full min-h-[56px] flex items-start gap-3 px-3.5 py-3 text-left transition-colors hover:bg-[#F6F4F3] dark:hover:bg-stone-900/40 ${
                 n[4] ? 'bg-[#FBECEF]/45 dark:bg-[#361820]/30' : ''
               }`}
             >
               <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${ic.cls}`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center flex-none ${ic.cls}`}
               >
                 {ic.el}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <strong className="text-sm font-bold text-stone-900 dark:text-white truncate">
+                  <strong className="text-sm font-bold text-[#221819] dark:text-white truncate">
                     {n[1]}
                   </strong>
-                  <small className="text-[11px] text-stone-400 whitespace-nowrap">{n[3]}</small>
+                  <small className="text-xs text-[#6F6466] whitespace-nowrap">{n[3]}</small>
                 </div>
-                <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">{n[2]}</div>
+                <div className="text-xs text-[#6F6466] dark:text-stone-400 mt-0.5">{n[2]}</div>
               </div>
             </button>
           );
         })}
       </div>
-      <p className="text-center text-xs text-stone-400 dark:text-stone-500 mt-3">
-        Muhim xabarlar Telegram'ga ham keladi
+      <p className="text-center text-xs text-[#6F6466] dark:text-stone-500 mt-3">
+        Muhim xabarlar Telegram&apos;ga ham keladi
       </p>
     </div>
   );

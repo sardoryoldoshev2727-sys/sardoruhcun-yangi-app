@@ -1,16 +1,17 @@
 import React from 'react';
-import { Bell, Heart, Megaphone, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { getProductName } from '../i18n';
+import type { Product, ShelfItem } from '../types';
 import {
-  HOT_IDS,
+  formatNumberThin,
   formatSom,
   getBrandName,
-  getFlavorName,
   getPackType,
+  getProductBadge,
   getStockInfo,
   shortName,
-} from '../data/products';
-import type { Product, ShelfItem } from '../types';
+} from '../utils/catalog';
 import { ProductVisual } from './ProductVisual';
 
 interface StepperProps {
@@ -19,28 +20,20 @@ interface StepperProps {
 }
 
 export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }) => {
-  const { cart, updateQty, setSheet, showToast } = useStore();
+  const { cart, t, updateQty, setSheet } = useStore();
   const qty = cart[product.id] || 0;
 
   if (product.out) {
     return (
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          showToast({
-            icon: 'bell',
-            title: 'Kelganda xabar beramiz',
-            text: `${product.name} omborga kelishi bilan`,
-            tone: 'warn',
-          });
-        }}
-        className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 font-bold text-xs transition-transform active:scale-95 ${
-          compact ? 'w-full h-9.5 px-2' : 'h-9.5 px-3.5'
+        disabled
+        aria-disabled="true"
+        className={`inline-flex items-center justify-center rounded-xl bg-[#EFECEC] dark:bg-stone-800 border border-[#E7E1E1] dark:border-stone-700 text-[#6F6466] dark:text-stone-400 font-semibold text-sm cursor-not-allowed ${
+          compact ? 'w-full min-h-[44px] px-2' : 'min-h-[44px] px-4'
         }`}
       >
-        <Bell className="w-3.5 h-3.5" />
-        <span>Kelganda</span>
+        <span className="truncate">{t.notifyWhenBack}</span>
       </button>
     );
   }
@@ -53,12 +46,12 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
           e.stopPropagation();
           updateQty(product.id, 1);
         }}
-        className={`inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-b from-[#22C55E] to-[#16A34A] hover:from-[#16A34A] hover:to-[#15803D] text-white font-bold text-[13px] shadow-[0_3px_10px_rgba(22,163,74,0.28)] ring-1 ring-inset ring-white/20 transition-all active:scale-95 ${
-          compact ? 'w-full h-9.5 px-2.5' : 'h-9.5 px-4 min-w-[108px]'
+        className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#800020] hover:bg-[#630019] active:bg-[#630019] text-white font-semibold text-base transition-colors duration-150 ${
+          compact ? 'w-full min-h-[44px] px-3' : 'min-h-[44px] px-4 min-w-[120px]'
         }`}
       >
-        <ShoppingCart className="w-4 h-4 stroke-[2.2]" />
-        <span>Savatga</span>
+        <ShoppingCart className="w-4 h-4 flex-none" />
+        <span>{t.addToCart}</span>
       </button>
     );
   }
@@ -66,32 +59,31 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center justify-between rounded-full bg-gradient-to-b from-[#960A28] to-[#74001B] text-white px-1 shadow-[0_3px_10px_rgba(128,0,32,0.28)] ring-1 ring-inset ring-white/15 ${
-        compact ? 'w-full h-9.5' : 'h-9.5 min-w-[112px]'
+      className={`inline-flex items-center justify-between rounded-xl bg-[#800020] text-white ${
+        compact ? 'w-full min-h-[44px]' : 'min-h-[44px] min-w-[132px]'
       }`}
     >
       <button
         type="button"
-        aria-label="Kamaytirish"
+        aria-label={t.removeFromCart}
         onClick={() => updateQty(product.id, -1)}
-        className="w-7.5 h-7.5 rounded-full flex items-center justify-center hover:bg-white/15 active:bg-white/25 transition-colors"
+        className="w-11 h-11 rounded-l-xl flex items-center justify-center hover:bg-[#630019] active:bg-[#630019] transition-colors duration-150"
       >
         <Minus className="w-4 h-4 stroke-[2.5]" />
       </button>
       <button
         type="button"
-        title="Miqdorni tez tanlash"
-        aria-label={`${qty} quti, miqdorni tanlash`}
+        aria-label={`${qty} ${t.boxUnit}`}
         onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-        className="min-w-[30px] h-7 px-1.5 rounded-full text-center font-extrabold text-[13.5px] tabular-nums hover:bg-white/20 active:bg-white/25 transition-colors underline decoration-white/45 decoration-dotted underline-offset-2"
+        className="min-w-[36px] h-11 px-1.5 text-center font-bold text-base tabular-nums hover:bg-[#630019] active:bg-[#630019] transition-colors duration-150"
       >
         {qty}
       </button>
       <button
         type="button"
-        aria-label="Ko'paytirish"
+        aria-label={t.addToCart}
         onClick={() => updateQty(product.id, 1)}
-        className="w-7.5 h-7.5 rounded-full flex items-center justify-center hover:bg-white/15 active:bg-white/25 transition-colors"
+        className="w-11 h-11 rounded-r-xl flex items-center justify-center hover:bg-[#630019] active:bg-[#630019] transition-colors duration-150"
       >
         <Plus className="w-4 h-4 stroke-[2.5]" />
       </button>
@@ -99,132 +91,126 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
   );
 };
 
-function PriceDisplay({ amount, className = '' }: { amount: number; className?: string }) {
-  const formatted = formatSom(amount).replace(" so'm", '');
-  return (
-    <span className={`tabular-nums ${className}`}>
-      <span>{formatted}</span>
-      <span className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 ml-1">
-        so'm
-      </span>
-    </span>
-  );
+function renderBadge(product: Product, t: ReturnType<typeof useStore>['t']) {
+  const badgeType = getProductBadge(product);
+  if (!badgeType) return null;
+
+  switch (badgeType) {
+    case 'out':
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#EFECEC] dark:bg-stone-800 text-[#6F6466] dark:text-stone-400 text-xs font-semibold">
+          {t.badgeOut}
+        </span>
+      );
+    case 'promo':
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-xs font-semibold">
+          {t.badgePromo(product.promoPct || 5)}
+        </span>
+      );
+    case 'new':
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F6F4F3] dark:bg-stone-800 border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 text-xs font-semibold">
+          {t.badgeNew}
+        </span>
+      );
+    case 'natural':
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#EBF6EF] dark:bg-emerald-950/50 text-[#1E7A46] dark:text-[#4ADE80] text-xs font-semibold">
+          {t.badgeNatural}
+        </span>
+      );
+  }
 }
 
 interface ProductCardProps {
   product: Product;
   mode?: 'grid' | 'row' | 'cart';
-  showHotBadge?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   mode = 'grid',
-  showHotBadge = false,
 }) => {
-  const { cart, shelf, inShelf, toggleFavorite, setSheet, updateQty } = useStore();
+  const { cart, lang, t, inShelf, toggleFavorite, setSheet, updateQty } = useStore();
   const qty = cart[product.id] || 0;
   const inCart = qty > 0;
   const fav = inShelf(product.id);
-  const st = getStockInfo(product, shelf);
-  const isHot = showHotBadge || HOT_IDS.includes(product.id);
   const brand = getBrandName(product);
   const pack = getPackType(product);
-  const flavor = getFlavorName(product);
-
-  const stockColor =
-    st.cls === 'crit'
-      ? 'text-[#B91C1C] dark:text-[#F87171]'
-      : st.cls === 'warn'
-        ? 'text-[#B45309] dark:text-[#FBBF24]'
-        : 'text-[#15803D] dark:text-[#4ADE80]';
-  const stockBarBg =
-    st.cls === 'crit'
-      ? 'bg-[#DC2626]'
-      : st.cls === 'warn'
-        ? 'bg-[#D97706]'
-        : 'bg-[#16A34A]';
+  const displayName = getProductName(product, lang);
 
   if (mode === 'grid') {
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className={`group relative bg-white dark:bg-[#1E191B] rounded-2xl p-2.5 flex flex-col cursor-pointer card-elevated card-interactive active:scale-[0.985] border ${
+        className={`h-full bg-white dark:bg-[#1C1819] rounded-2xl p-3 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
           inCart
-            ? 'border-[#800020]/70 dark:border-[#E11D48]/70 ring-1 ring-[#800020]/15'
-            : 'border-stone-200/85 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700'
+            ? 'border-[#800020] dark:border-[#E11D48]'
+            : 'border-[#E7E1E1] dark:border-stone-800'
         }`}
       >
-        {/* Top subtle kicker + Heart (44x44 touch target) */}
-        <div className="flex items-center justify-between mb-1.5 min-h-[26px]">
-          {isHot ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold tracking-wider uppercase text-[#800020] dark:text-[#F4728A]">
-              <Megaphone className="w-3 h-3" />
-              <span>TOP · {brand}</span>
-            </span>
-          ) : (
-            <span className="text-[10px] font-bold tracking-wider uppercase text-stone-400 dark:text-stone-500 truncate pr-1">
-              {brand}
-            </span>
-          )}
+        {/* Top corner: max 1 badge + 44x44 Heart tap target */}
+        <div className="flex items-center justify-between gap-1 mb-1.5 min-h-[44px] -mt-1.5">
+          <div className="min-w-0 truncate">{renderBadge(product, t)}</div>
           <button
             type="button"
-            aria-label={fav ? 'Javondan olish' : "Javonga qo'shish"}
+            aria-label={fav ? t.addToShelfBtn : t.myShelfTitle}
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite(product.id);
             }}
-            className="w-9 h-9 -mr-2 -mt-2 flex items-center justify-center rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex-none"
+            className="w-11 h-11 -mr-1.5 flex items-center justify-center rounded-xl hover:bg-[#F6F4F3] dark:hover:bg-stone-800 transition-colors flex-none"
           >
             <Heart
-              className={`w-4 h-4 transition-transform active:scale-125 ${
+              className={`w-5 h-5 ${
                 fav
                   ? 'fill-[#800020] text-[#800020] dark:fill-[#F43F5E] dark:text-[#F43F5E]'
-                  : 'text-stone-400 dark:text-stone-500'
+                  : 'text-[#6F6466] dark:text-stone-400'
               }`}
             />
           </button>
         </div>
 
-        <ProductVisual product={product} size="grid" showBadge={false} />
+        <ProductVisual product={product} size="grid" />
 
-        <div className="mt-2.5 text-center font-bold text-[13px] leading-snug text-stone-900 dark:text-stone-100 line-clamp-2 min-h-[34px]">
-          {product.name}
+        {/* Brand line (12px) */}
+        <div className="mt-2.5 text-xs font-semibold uppercase tracking-wide text-[#6F6466] dark:text-stone-400 truncate">
+          {brand}
         </div>
 
-        <div className="mt-0.5 text-center text-[10.5px] font-medium text-stone-500 dark:text-stone-400 tabular-nums truncate">
-          {product.vol} · {pack} · {product.blk} dona
+        {/* Product name + volume (16px, 2-line clamp) */}
+        <div className="mt-0.5 font-bold text-base leading-snug text-[#221819] dark:text-[#F5F2F2] line-clamp-2 min-h-[2.75rem]">
+          {displayName} {product.vol}
         </div>
 
-        {fav && (
-          <div className="mt-1.5 px-0.5">
-            <div className="flex items-center justify-between text-[10px] font-bold mb-0.5">
-              <span className={stockColor}>{st.txt}</span>
-            </div>
-            <div className="h-[3.5px] w-full rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
-              <div className={`h-full rounded-full ${stockBarBg}`} style={{ width: `${st.pct}%` }} />
-            </div>
-          </div>
-        )}
+        {/* Meta spec (12px) */}
+        <div className="mt-1 text-xs font-normal text-[#6F6466] dark:text-stone-400 tabular-nums truncate">
+          {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
+        </div>
 
-        <div className="mt-2 mb-2.5 text-center">
+        {/* Big box price (20px) + per piece OR cart qty (12px) */}
+        <div className="mt-2.5 mb-3">
           {product.out ? (
-            <span className="text-xs font-extrabold text-[#DC2626] dark:text-[#F87171]">
-              Omborda tugagan
-            </span>
+            <div className="text-base font-bold text-[#C0262D] dark:text-[#F87171]">
+              {t.outOfStock}
+            </div>
           ) : (
             <>
-              <div className="font-extrabold text-[15.5px] text-stone-900 dark:text-white leading-tight">
-                <PriceDisplay amount={product.box} />
+              <div className="text-xl font-bold text-[#221819] dark:text-white leading-tight tabular-nums">
+                {formatNumberThin(product.box)}{' '}
+                <span className="text-sm font-semibold text-[#6F6466] dark:text-stone-400">
+                  so&apos;m
+                </span>
               </div>
               <div
-                className={`text-[10.5px] mt-0.5 tabular-nums ${
+                className={`text-xs mt-0.5 tabular-nums ${
                   inCart
-                    ? 'font-bold text-[#800020] dark:text-[#F4728A]'
-                    : 'font-medium text-stone-400 dark:text-stone-500'
+                    ? 'font-semibold text-[#800020] dark:text-[#F4728A]'
+                    : 'font-normal text-[#6F6466] dark:text-stone-400'
                 }`}
               >
-                {inCart ? `Savatda: ${qty} quti` : `${formatSom(product.one)} / dona`}
+                {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
               </div>
             </>
           )}
@@ -241,38 +227,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className="bg-white dark:bg-[#1E1A1B] border border-[#800020]/30 dark:border-[#E11D48]/40 rounded-2xl p-2.5 flex items-stretch gap-2.5 card-elevated cursor-pointer active:scale-[0.99] transition-transform"
+        className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3 flex items-stretch gap-3 card-calm cursor-pointer"
       >
         <ProductVisual product={product} size="row" />
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="font-bold text-[13.5px] leading-tight text-stone-900 dark:text-stone-100 truncate">
-                {product.name} {product.vol}
+              <div className="font-bold text-base leading-snug text-[#221819] dark:text-[#F5F2F2] line-clamp-2">
+                {displayName} {product.vol}
               </div>
-              <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 tabular-nums">
-                1 quti = {product.blk} dona · {formatSom(product.box)}/quti
+              <div className="text-xs text-[#6F6466] dark:text-stone-400 mt-0.5 tabular-nums">
+                1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.box)}
               </div>
             </div>
             <button
               type="button"
-              aria-label="O'chirish"
+              aria-label={t.removeFromCart}
               onClick={(e) => {
                 e.stopPropagation();
                 updateQty(product.id, -qty);
               }}
-              className="w-8 h-8 -mr-1 -mt-1 rounded-lg flex items-center justify-center text-[#B91C1C] dark:text-[#F87171] hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="w-11 h-11 -mr-1.5 -mt-1.5 rounded-xl flex items-center justify-center text-[#C0262D] dark:text-[#F87171] hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex-none"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4.5 h-4.5" />
             </button>
           </div>
-          <div className="flex items-end justify-between gap-2 mt-2">
+          <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
             <div>
-              <div className="font-extrabold text-[15.5px] text-stone-900 dark:text-white leading-tight">
-                <PriceDisplay amount={product.box * qty} />
+              <div className="text-xl font-bold text-[#221819] dark:text-white leading-tight tabular-nums">
+                {formatSom(product.box * qty)}
               </div>
-              <div className="text-[11px] font-semibold text-[#800020] dark:text-[#F4728A] tabular-nums">
-                {qty} quti ({qty * product.blk} dona)
+              <div className="text-xs font-semibold text-[#800020] dark:text-[#F4728A] tabular-nums">
+                {qty} {t.boxUnit} ({qty * product.blk} {t.pieceUnit})
               </div>
             </div>
             <CartStepper product={product} />
@@ -282,91 +268,73 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     );
   }
 
-  // compact 'row'
+  // catalog 'row' mode (strict catalog anatomy, no stock bar)
   return (
     <div
       onClick={() => setSheet({ type: 'prod', id: product.id })}
-      className={`group bg-white dark:bg-[#1E191B] rounded-2xl p-2.5 flex items-stretch gap-2.5 cursor-pointer card-elevated card-interactive active:scale-[0.99] border ${
-        product.out ? 'opacity-65' : ''
+      className={`h-full bg-white dark:bg-[#1C1819] rounded-2xl p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
+        product.out ? 'opacity-70' : ''
       } ${
         inCart
-          ? 'border-[#800020]/55 dark:border-[#E11D48]/60 ring-1 ring-[#800020]/10'
-          : 'border-stone-200/80 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700'
+          ? 'border-[#800020] dark:border-[#E11D48]'
+          : 'border-[#E7E1E1] dark:border-stone-800'
       }`}
     >
       <ProductVisual product={product} size="row" />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
-          <div className="flex items-start justify-between gap-1.5">
+          <div className="flex items-start justify-between gap-1">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[10px] font-extrabold tracking-wider uppercase text-stone-400 dark:text-stone-500">
-                <span className="truncate">
-                  {brand} · {flavor}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#6F6466] dark:text-stone-400">
+                  {brand}
                 </span>
-                {isHot && (
-                  <span className="inline-flex items-center gap-0.5 text-[#800020] dark:text-[#F4728A] flex-none">
-                    <Megaphone className="w-3 h-3" /> TOP
-                  </span>
-                )}
+                {renderBadge(product, t)}
               </div>
-              <div className="font-bold text-[13.5px] leading-tight text-stone-900 dark:text-stone-100 mt-0.5">
-                {product.name}
-                {product.out && (
-                  <span className="ml-1.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950/40 text-[#B91C1C] dark:text-[#F87171]">
-                    Tugagan
-                  </span>
-                )}
+              <div className="font-bold text-base leading-snug text-[#221819] dark:text-[#F5F2F2] line-clamp-2 mt-0.5">
+                {displayName} {product.vol}
               </div>
             </div>
             <button
               type="button"
-              aria-label={fav ? 'Javondan olish' : "Javonga qo'shish"}
+              aria-label={fav ? t.addToShelfBtn : t.myShelfTitle}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleFavorite(product.id);
               }}
-              className="w-8 h-8 -mr-1.5 -mt-1.5 flex items-center justify-center rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 flex-none"
+              className="w-11 h-11 -mr-2 -mt-2 flex items-center justify-center rounded-xl hover:bg-[#F6F4F3] dark:hover:bg-stone-800 flex-none"
             >
               <Heart
-                className={`w-4 h-4 transition-transform active:scale-125 ${
+                className={`w-5 h-5 ${
                   fav
                     ? 'fill-[#800020] text-[#800020] dark:fill-[#F43F5E] dark:text-[#F43F5E]'
-                    : 'text-stone-400 dark:text-stone-500'
+                    : 'text-[#6F6466] dark:text-stone-400'
                 }`}
               />
             </button>
           </div>
 
-          <div className="mt-0.5 text-[11px] text-stone-500 dark:text-stone-400 tabular-nums">
-            {product.vol} · {pack} · {product.blk} dona/quti
+          <div className="mt-0.5 text-xs text-[#6F6466] dark:text-stone-400 tabular-nums">
+            {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
           </div>
-
-          {fav && (
-            <div className="mt-1.5">
-              <div className="flex items-center justify-between text-[10.5px] font-bold mb-0.5">
-                <span className={stockColor}>{st.txt}</span>
-                {st.sub && <span className="text-stone-400 dark:text-stone-500">{st.sub}</span>}
-              </div>
-              <div className="h-[4px] w-full rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
-                <div className={`h-full rounded-full ${stockBarBg}`} style={{ width: `${st.pct}%` }} />
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2">
+        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
           <div>
-            <div className="font-extrabold text-[15.5px] text-stone-900 dark:text-white leading-tight">
-              <PriceDisplay amount={product.box} />
+            <div className="text-xl font-bold text-[#221819] dark:text-white leading-tight tabular-nums">
+              {formatNumberThin(product.box)}{' '}
+              <span className="text-sm font-semibold text-[#6F6466] dark:text-stone-400">
+                so&apos;m
+              </span>
             </div>
             <div
-              className={`text-[10.5px] tabular-nums ${
+              className={`text-xs tabular-nums ${
                 inCart
-                  ? 'font-bold text-[#800020] dark:text-[#F4728A]'
-                  : 'font-medium text-stone-500 dark:text-stone-400'
+                  ? 'font-semibold text-[#800020] dark:text-[#F4728A]'
+                  : 'font-normal text-[#6F6466] dark:text-stone-400'
               }`}
             >
-              {inCart ? `Savatda: ${qty} quti` : `${formatSom(product.one)} / dona`}
+              {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
             </div>
           </div>
           <CartStepper product={product} />
@@ -383,98 +351,104 @@ interface ShelfRowCardProps {
 }
 
 export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editMode }) => {
-  const { cart, shelf, setSheet, updateShelfUsual, removeShelfItem } = useStore();
+  const { cart, shelf, lang, t, setSheet, updateShelfUsual, removeShelfItem } = useStore();
   const [id, usual] = item;
   const inCart = (cart[id] || 0) > 0;
-  const st = getStockInfo(product, shelf);
+  const st = getStockInfo(product, shelf, lang);
+  const displayName = shortName(getProductName(product, lang));
 
   const stockColor =
     st.cls === 'crit'
-      ? 'text-[#B91C1C] dark:text-[#F87171]'
+      ? 'text-[#C0262D] dark:text-[#F87171]'
       : st.cls === 'warn'
-        ? 'text-[#B45309] dark:text-[#FBBF24]'
-        : 'text-[#15803D] dark:text-[#4ADE80]';
+        ? 'text-[#B7791F] dark:text-[#FBBF24]'
+        : 'text-[#1E7A46] dark:text-[#4ADE80]';
   const stockBarBg =
     st.cls === 'crit'
-      ? 'bg-[#DC2626]'
+      ? 'bg-[#C0262D]'
       : st.cls === 'warn'
-        ? 'bg-[#D97706]'
-        : 'bg-[#16A34A]';
+        ? 'bg-[#B7791F]'
+        : 'bg-[#1E7A46]';
 
   return (
     <div
       onClick={() => {
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`bg-white dark:bg-[#1E1A1B] rounded-2xl p-2.5 flex items-stretch gap-2.5 transition-all card-elevated border ${
-        editMode ? '' : 'cursor-pointer active:scale-[0.99]'
+      className={`bg-white dark:bg-[#1C1819] rounded-2xl p-3 flex items-stretch gap-3 card-calm border transition-colors ${
+        editMode ? '' : 'cursor-pointer'
       } ${
         inCart
-          ? 'border-[#800020]/55 dark:border-[#E11D48]/60 ring-1 ring-[#800020]/10'
-          : 'border-stone-200/80 dark:border-stone-800'
+          ? 'border-[#800020] dark:border-[#E11D48]'
+          : 'border-[#E7E1E1] dark:border-stone-800'
       }`}
     >
       <ProductVisual product={product} size="row" />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <div className="font-bold text-[13.5px] leading-tight text-stone-900 dark:text-stone-100">
-              {shortName(product.name)} {product.vol}
+            <div className="font-bold text-base leading-snug text-[#221819] dark:text-[#F5F2F2] line-clamp-2">
+              {displayName} {product.vol}
             </div>
-            <Heart className="w-4 h-4 fill-[#800020] text-[#800020] dark:fill-[#F43F5E] dark:text-[#F43F5E] flex-none" />
+            <Heart className="w-4.5 h-4.5 fill-[#800020] text-[#800020] dark:fill-[#F43F5E] dark:text-[#F43F5E] flex-none mt-0.5" />
           </div>
-          <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 tabular-nums">
-            1 quti = {product.blk} dona · donasi {formatSom(product.one)}
+          <div className="text-xs text-[#6F6466] dark:text-stone-400 mt-0.5 tabular-nums">
+            1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.one)}
           </div>
-          <div className="mt-1.5">
-            <div className="flex items-center justify-between text-[10.5px] font-bold mb-0.5">
+          <div className="mt-2">
+            <div className="flex items-center justify-between text-xs font-semibold mb-1">
               <span className={stockColor}>{st.txt}</span>
-              <span className="text-stone-400 dark:text-stone-500">{st.sub}</span>
+              {st.sub && <span className="text-[#6F6466] dark:text-stone-400">{st.sub}</span>}
             </div>
-            <div className="h-[4px] w-full rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-[#EFECEC] dark:bg-stone-800 overflow-hidden">
               <div className={`h-full rounded-full ${stockBarBg}`} style={{ width: `${st.pct}%` }} />
             </div>
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2">
+        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
           <div>
-            <div className="font-extrabold text-[15.5px] text-stone-900 dark:text-white leading-tight">
-              <PriceDisplay amount={product.box} />
+            <div className="text-xl font-bold text-[#221819] dark:text-white leading-tight tabular-nums">
+              {formatNumberThin(product.box)}{' '}
+              <span className="text-sm font-semibold text-[#6F6466] dark:text-stone-400">
+                so&apos;m
+              </span>
             </div>
-            <div className="text-[10.5px] font-medium text-stone-500 dark:text-stone-400">
-              {inCart ? `Savatda: ${cart[id]} quti` : 'quti narxi'}
+            <div className="text-xs font-normal text-[#6F6466] dark:text-stone-400">
+              {inCart ? t.inCartQty(cart[id]) : formatSom(product.one) + ' ' + t.perPieceSuffix}
             </div>
           </div>
 
           {editMode ? (
             <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <div className="inline-flex items-center h-9 rounded-full border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 px-1">
+              <div className="inline-flex items-center h-11 rounded-xl border border-[#E7E1E1] dark:border-stone-700 bg-[#F6F4F3] dark:bg-stone-900">
                 <button
                   type="button"
+                  aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-800"
+                  className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#221819] dark:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-800"
                 >
-                  <Minus className="w-3.5 h-3.5" />
+                  <Minus className="w-4 h-4" />
                 </button>
-                <span className="min-w-[22px] text-center font-extrabold text-[13px] tabular-nums">
+                <span className="min-w-[28px] text-center font-bold text-sm tabular-nums">
                   {usual}
                 </span>
                 <button
                   type="button"
+                  aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-[#800020]/10 text-[#800020] dark:text-[#F4728A]"
+                  className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#800020] dark:text-[#F4728A] hover:bg-[#FBECEF]"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
               <button
                 type="button"
-                aria-label="Javondan olib tashlash"
+                aria-label={t.removeFromCart}
                 onClick={() => removeShelfItem(id)}
-                className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#B91C1C] dark:text-[#F87171] flex items-center justify-center"
+                className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#C0262D] dark:text-[#F87171] flex items-center justify-center"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4.5 h-4.5" />
               </button>
             </div>
           ) : (
