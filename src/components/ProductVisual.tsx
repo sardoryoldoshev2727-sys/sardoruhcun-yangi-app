@@ -1,13 +1,13 @@
-import React from 'react';
-import { getBottleShape, getFlavorColor, getFlavorName } from '../utils/catalog';
+import React, { useEffect, useState } from 'react';
+import { getBottleShape, getFlavorColor, getFlavorTint } from '../utils/catalog';
 import type { Product } from '../types';
 
 interface ProductVisualProps {
   product: Product;
-  size?: 'mini' | 'row' | 'grid' | 'large';
+  size?: 'mini' | 'row' | 'grid' | 'large' | 'hero';
 }
 
-const BottleSvg: React.FC<{ product: Product; color: string; className?: string }> = ({
+export const BottleSvg: React.FC<{ product: Product; color: string; className?: string }> = ({
   product,
   color,
   className = '',
@@ -56,51 +56,90 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   size = 'row',
 }) => {
   const color = getFlavorColor(product);
-  const flavorLabel = `${getFlavorName(product)} · ${product.vol}`;
+  const tint = getFlavorTint(product);
+  const [imgFailed, setImgFailed] = useState(false);
 
-  if (size === 'mini') {
+  useEffect(() => {
+    setImgFailed(false);
+  }, [product.id, product.photo]);
+
+  const showPhoto = Boolean(product.photo) && !imgFailed;
+
+  const renderBottle = (imgClass: string, svgClass: string) =>
+    showPhoto ? (
+      <img
+        src={product.photo}
+        alt={product.name}
+        referrerPolicy="no-referrer"
+        decoding="async"
+        onError={() => setImgFailed(true)}
+        onLoad={(e) => {
+          if (e.currentTarget.naturalWidth === 0) setImgFailed(true);
+        }}
+        className={`${imgClass} mix-blend-multiply dark:mix-blend-normal dark:rounded-xl`}
+      />
+    ) : (
+      <BottleSvg product={product} color={color} className={svgClass} />
+    );
+
+  if (size === 'hero') {
     return (
-      <div className="flex-none w-12 h-14 bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-1 p-1 overflow-hidden">
-        {product.photo ? (
+      <div className="relative flex items-center justify-center w-24 h-28 sm:w-28 sm:h-32 flex-none">
+        <div
+          className="absolute bottom-1 w-16 h-3 rounded-full bg-black/30 blur-[5px]"
+          aria-hidden="true"
+        />
+        {showPhoto ? (
           <img
             src={product.photo}
             alt={product.name}
             referrerPolicy="no-referrer"
-            className="max-w-[26px] h-full object-contain"
+            onError={() => setImgFailed(true)}
+            onLoad={(e) => {
+              if (e.currentTarget.naturalWidth === 0) setImgFailed(true);
+            }}
+            className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-[0_10px_14px_rgba(0,0,0,0.3)]"
           />
         ) : (
-          <BottleSvg product={product} color={color} className="w-6 h-10" />
+          <BottleSvg
+            product={product}
+            color="#FFFFFF"
+            className="relative z-10 h-[92%] w-auto drop-shadow-[0_10px_14px_rgba(0,0,0,0.28)]"
+          />
         )}
+      </div>
+    );
+  }
+
+  if (size === 'mini') {
+    return (
+      <div
+        className="relative flex-none w-12 h-14 rounded-xl flex items-center justify-center p-1.5 overflow-hidden dark:bg-zinc-900"
+        style={{ backgroundColor: tint }}
+      >
         <div
-          className="w-2 h-10 rounded-full flex-none"
-          style={{ backgroundColor: color }}
+          className="absolute bottom-1 w-7 h-1.5 rounded-full bg-black/10 blur-[2px]"
           aria-hidden="true"
         />
+        {renderBottle('relative z-10 max-w-full max-h-full object-contain', 'relative z-10 w-7 h-10')}
       </div>
     );
   }
 
   if (size === 'large') {
     return (
-      <div className="h-56 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-4 p-4 overflow-hidden">
-        {product.photo ? (
-          <img
-            src={product.photo}
-            alt={product.name}
-            referrerPolicy="no-referrer"
-            className="max-h-full max-w-[60%] object-contain"
-          />
-        ) : (
-          <BottleSvg product={product} color={color} className="h-[84%] w-auto" />
-        )}
+      <div
+        className="relative h-56 rounded-[20px] flex items-center justify-center p-5 overflow-hidden dark:bg-zinc-900"
+        style={{ backgroundColor: tint }}
+      >
         <div
-          className="w-9 h-44 rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-2"
-          style={{ backgroundColor: color }}
-        >
-          <span className="vertical-flavor text-xs font-bold tracking-wider uppercase whitespace-nowrap leading-none">
-            {flavorLabel}
-          </span>
-        </div>
+          className="absolute bottom-4 w-28 h-4 rounded-full bg-black/12 blur-[5px]"
+          aria-hidden="true"
+        />
+        {renderBottle(
+          'relative z-10 max-h-full max-w-[70%] object-contain',
+          'relative z-10 h-[86%] w-auto',
+        )}
       </div>
     );
   }
@@ -108,29 +147,19 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   if (size === 'grid') {
     return (
       <div
-        className={`w-full h-32 bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 flex items-center justify-center gap-2 px-2 py-2 overflow-hidden ${
+        className={`relative w-full h-40 sm:h-44 rounded-[20px] flex items-center justify-center px-3 pt-5 pb-4 overflow-hidden dark:bg-zinc-900 ${
           product.out ? 'opacity-55' : ''
         }`}
+        style={{ backgroundColor: tint }}
       >
-        {product.photo ? (
-          <img
-            src={product.photo}
-            alt={product.name}
-            referrerPolicy="no-referrer"
-            decoding="async"
-            className="max-w-[68px] h-full object-contain"
-          />
-        ) : (
-          <BottleSvg product={product} color={color} className="w-14 h-24 flex-none" />
-        )}
         <div
-          className="w-6 h-24 rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-1"
-          style={{ backgroundColor: color }}
-        >
-          <span className="vertical-flavor text-xs font-bold tracking-wide uppercase whitespace-nowrap leading-none">
-            {flavorLabel}
-          </span>
-        </div>
+          className="absolute bottom-3 w-20 h-3 rounded-full bg-black/10 blur-[4px]"
+          aria-hidden="true"
+        />
+        {renderBottle(
+          'relative z-10 max-h-full max-w-[74%] object-contain transition-transform duration-200 ease-out group-hover:scale-[1.03]',
+          'relative z-10 w-16 h-28 flex-none transition-transform duration-200 ease-out group-hover:scale-[1.03]',
+        )}
       </div>
     );
   }
@@ -138,29 +167,19 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   // compact 'row'
   return (
     <div
-      className={`flex-none w-[92px] h-[104px] bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-1 p-2 overflow-hidden ${
+      className={`relative flex-none w-[92px] h-[104px] rounded-[20px] flex items-center justify-center p-2.5 overflow-hidden dark:bg-zinc-900 ${
         product.out ? 'opacity-55' : ''
       }`}
+      style={{ backgroundColor: tint }}
     >
-      {product.photo ? (
-        <img
-          src={product.photo}
-          alt={product.name}
-          referrerPolicy="no-referrer"
-          decoding="async"
-          className="max-w-[48px] h-full object-contain"
-        />
-      ) : (
-        <BottleSvg product={product} color={color} className="w-10 h-16 flex-none" />
-      )}
       <div
-        className="w-6 h-[84px] rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-1"
-        style={{ backgroundColor: color }}
-      >
-        <span className="vertical-flavor text-xs font-bold tracking-wide uppercase whitespace-nowrap leading-none">
-          {flavorLabel}
-        </span>
-      </div>
+        className="absolute bottom-2 w-12 h-2 rounded-full bg-black/10 blur-[3px]"
+        aria-hidden="true"
+      />
+      {renderBottle(
+        'relative z-10 max-w-full max-h-full object-contain',
+        'relative z-10 w-11 h-[74px] flex-none',
+      )}
     </div>
   );
 };

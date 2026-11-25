@@ -2,11 +2,13 @@ import React from 'react';
 import {
   Check,
   CheckCircle2,
-  ClipboardList,
+  ClipboardCheck,
   Clock,
   Copy,
+  Home,
   MapPin,
   MessageCircle,
+  Package,
   Phone,
   Repeat,
   Star,
@@ -46,6 +48,97 @@ function statusMeta(status: OrderStatus) {
       };
   }
 }
+
+function getFiveStepIndex(status: OrderStatus): number {
+  switch (status) {
+    case 'Yuborildi':
+      return 0;
+    case 'Tasdiqlandi':
+      return 2; // Qabul qilindi + Tasdiqlandi done, Yuklanmoqda active
+    case "Yo'lda":
+      return 3; // Yo'lda active
+    case 'Yetkazildi':
+      return 4; // Yetkazildi done
+    default:
+      return -1;
+  }
+}
+
+const VerticalOrderTimeline: React.FC<{
+  status: OrderStatus;
+  labels: string[];
+  title: string;
+}> = ({ status, labels, title }) => {
+  const activeIdx = getFiveStepIndex(status);
+  const allDone = status === 'Yetkazildi';
+  const icons = [ClipboardCheck, CheckCircle2, Package, Truck, Home];
+
+  return (
+    <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
+      <h3 className="text-base font-bold text-[#111827] dark:text-white">{title}</h3>
+      <div className="space-y-0">
+        {labels.map((label, idx) => {
+          const Icon = icons[idx] || Package;
+          const isDone = allDone ? idx <= activeIdx : idx < activeIdx;
+          const isActive = !allDone && idx === activeIdx;
+          const isLast = idx === labels.length - 1;
+
+          return (
+            <div key={label} className="relative flex items-start gap-3.5 pb-5 last:pb-0">
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
+                    isDone ? 'bg-[#9B111E] dark:bg-[#F43F5E]' : 'bg-[#E5E7EB] dark:bg-zinc-700'
+                  }`}
+                />
+              )}
+
+              <div className="relative flex-none w-10 h-10 flex items-center justify-center">
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 rounded-full bg-[#9B111E]/25 dark:bg-[#FB7185]/25 animate-ping"
+                  />
+                )}
+                <span
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                    isDone || isActive
+                      ? 'bg-[#9B111E] border-[#9B111E] text-white dark:bg-[#F43F5E] dark:border-[#F43F5E]'
+                      : 'bg-white dark:bg-[#1A1C20] border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-500'
+                  }`}
+                >
+                  {isDone ? (
+                    <Check className="w-5 h-5 stroke-[2.5]" />
+                  ) : (
+                    <Icon className="w-5 h-5" />
+                  )}
+                </span>
+              </div>
+
+              <div className="pt-2 min-w-0 flex-1">
+                <div
+                  className={`text-sm leading-tight ${
+                    isDone || isActive
+                      ? 'font-bold text-[#111827] dark:text-white'
+                      : 'font-medium text-[#6B7280] dark:text-zinc-400'
+                  }`}
+                >
+                  {label}
+                </div>
+                {isActive && (
+                  <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] mt-0.5">
+                    {status === "Yo'lda" ? 'Akmal · ~22 daq' : '...'}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 export const OrdersView: React.FC = () => {
   const {
@@ -87,7 +180,7 @@ export const OrdersView: React.FC = () => {
   return (
     <div className="space-y-3">
       {/* Weekly Auto-order toggle card */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm flex items-center gap-3">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm flex items-center gap-3">
         <span className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
           <Repeat className="w-5 h-5" />
         </span>
@@ -139,7 +232,7 @@ export const OrdersView: React.FC = () => {
         <OrdersSkeleton />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<ClipboardList className="w-5 h-5" />}
+          variant="orders"
           title={`${t.emptyOrdersTitle} · ${t.emptyOrdersSub}`}
           actionLabel={t.emptyOrdersCta}
           onAction={() => goTab('cat')}
@@ -153,7 +246,7 @@ export const OrdersView: React.FC = () => {
               <div
                 key={o.id}
                 onClick={() => openOrderDetail(o.id)}
-                className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm cursor-pointer hover:border-[#9B111E] transition-colors duration-150"
+                className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm cursor-pointer hover:border-[#9B111E] transition-colors duration-150"
               >
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400 tabular-nums">
@@ -188,7 +281,7 @@ export const OrdersView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="text-xl font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+                  <div className="text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
                     {formatSom(o.totalSum)}
                   </div>
                 </div>
@@ -205,7 +298,7 @@ export const OrdersView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => openPage('track')}
-                      className="flex-1 min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors duration-150"
+                      className="flex-1 min-h-[44px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors duration-150"
                     >
                       <Truck className="w-5 h-5" />
                       <span>{t.trackOrderBtn}</span>
@@ -214,7 +307,7 @@ export const OrdersView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => repeatOrderToCart(o.items)}
-                      className="flex-1 min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors duration-150"
+                      className="flex-1 min-h-[44px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors duration-150"
                     >
                       <Repeat className="w-5 h-5" />
                       <span>{t.repeatOrderBtn}</span>
@@ -225,7 +318,7 @@ export const OrdersView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setSheet({ type: 'rateOrder', orderId: o.id })}
-                      className="min-h-[44px] px-3 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-semibold text-sm inline-flex items-center gap-1"
+                      className="min-h-[44px] px-3.5 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-semibold text-sm inline-flex items-center gap-1"
                     >
                       <Star className="w-5 h-5" />
                       <span>{t.rateOrderBtn}</span>
@@ -235,7 +328,7 @@ export const OrdersView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openOrderDetail(o.id)}
-                    className="min-h-[44px] px-4 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm"
+                    className="min-h-[44px] px-4 rounded-full border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm"
                   >
                     {t.detailsBtn}
                   </button>
@@ -270,17 +363,9 @@ export const OrderDetailView: React.FC = () => {
   const st = statusMeta(order.status);
   const rating = ratings[order.id];
 
-  const steps: { key: OrderStatus; label: string }[] = [
-    { key: 'Yuborildi', label: getStatusLabel('Yuborildi', lang) },
-    { key: 'Tasdiqlandi', label: getStatusLabel('Tasdiqlandi', lang) },
-    { key: "Yo'lda", label: getStatusLabel("Yo'lda", lang) },
-    { key: 'Yetkazildi', label: getStatusLabel('Yetkazildi', lang) },
-  ];
-  const currentIdx = steps.findIndex((s) => s.key === order.status);
-
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-2">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-xl font-bold text-[#111827] dark:text-white tabular-nums">
             {t.orderNumberPrefix}{order.id}
@@ -329,49 +414,17 @@ export const OrderDetailView: React.FC = () => {
         )}
       </div>
 
-      {/* 4-Step Status Timeline */}
+      {/* 5-Step Vertical Status Timeline */}
       {order.status !== 'Bekor qilindi' && (
-        <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-3">
-          <h3 className="text-base font-bold text-[#111827] dark:text-white">
-            {t.timelineTitle}
-          </h3>
-          <div className="space-y-3">
-            {steps.map((step, i) => {
-              const done = currentIdx >= i;
-              return (
-                <div key={step.key} className="relative pl-7">
-                  <span
-                    className={`absolute left-0 top-0.5 w-4 h-4 rounded-full border-2 ${
-                      done
-                        ? 'bg-[#9B111E] border-[#9B111E] dark:bg-[#F43F5E] dark:border-[#F43F5E]'
-                        : 'bg-white dark:bg-[#1A1C20] border-zinc-300 dark:border-zinc-600'
-                    }`}
-                  />
-                  {i < steps.length - 1 && (
-                    <span
-                      className={`absolute left-[7px] top-4 -bottom-3 w-[2px] ${
-                        currentIdx > i ? 'bg-[#9B111E] dark:bg-[#F43F5E]' : 'bg-[#E5E7EB] dark:bg-zinc-700'
-                      }`}
-                    />
-                  )}
-                  <div
-                    className={`text-sm ${
-                      done
-                        ? 'font-bold text-[#111827] dark:text-white'
-                        : 'font-normal text-[#6B7280] dark:text-zinc-400'
-                    }`}
-                  >
-                    {step.label}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <VerticalOrderTimeline
+          status={order.status}
+          labels={t.trackFiveSteps}
+          title={t.timelineTitle}
+        />
       )}
 
-      {/* Itemized list + totals */}
-      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-3">
+      {/* Itemized list + totals (28-32px big bold total) */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
         <h3 className="text-base font-bold text-[#111827] dark:text-white">
           {t.itemsListTitle}
         </h3>
@@ -397,10 +450,12 @@ export const OrderDetailView: React.FC = () => {
           })}
         </div>
 
-        <div className="pt-3 border-t border-[#E5E7EB] dark:border-zinc-800 space-y-2 text-sm">
+        <div className="pt-3 border-t border-[#E5E7EB] dark:border-zinc-800 space-y-2 text-[13px]">
           <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
             <span>{t.productsCountLine(order.boxCount)}</span>
-            <span className="tabular-nums whitespace-nowrap">{formatSom(order.subtotal)}</span>
+            <span className="tabular-nums whitespace-nowrap font-semibold text-[#111827] dark:text-white">
+              {formatSom(order.subtotal)}
+            </span>
           </div>
           {order.discountPct > 0 && (
             <div className="flex justify-between text-[#16A34A] dark:text-[#4ADE80] font-semibold">
@@ -408,11 +463,13 @@ export const OrderDetailView: React.FC = () => {
               <span className="tabular-nums whitespace-nowrap">−{formatSom(order.discountAmount)}</span>
             </div>
           )}
-          <div className="flex justify-between pt-2 border-t border-dashed border-[#E5E7EB] dark:border-zinc-700 font-bold text-base text-[#111827] dark:text-white">
-            <span>{t.totalDueLabel}</span>
-            <span className="text-xl text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
-              {formatSom(order.totalSum)}
+          <div className="pt-3 mt-1 border-t border-dashed border-[#E5E7EB] dark:border-zinc-700 space-y-1">
+            <span className="block text-xs font-medium text-[#6B7280] dark:text-zinc-400">
+              {t.totalDueLabel}
             </span>
+            <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
+              {formatSom(order.totalSum)}
+            </div>
           </div>
         </div>
       </section>
@@ -423,7 +480,7 @@ export const OrderDetailView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'rateOrder', orderId: order.id })}
-            className="w-full min-h-[44px] rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-semibold text-base inline-flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-semibold text-base inline-flex items-center justify-center gap-2"
           >
             <Star className="w-5 h-5" />
             <span>{t.rateOrderBtn}</span>
@@ -432,7 +489,7 @@ export const OrderDetailView: React.FC = () => {
         <button
           type="button"
           onClick={() => repeatOrderToCart(order.items)}
-          className="w-full min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
+          className="w-full min-h-[44px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
         >
           <Repeat className="w-5 h-5" />
           <span>{t.repeatOrderBtn}</span>
@@ -443,7 +500,7 @@ export const OrderDetailView: React.FC = () => {
             goTab('me');
             openPage('chat');
           }}
-          className="w-full min-h-[44px] rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-base inline-flex items-center justify-center gap-2"
+          className="w-full min-h-[44px] rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-base inline-flex items-center justify-center gap-2"
         >
           <MessageCircle className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
           <span>{t.writeOperatorBtn}</span>
@@ -452,7 +509,7 @@ export const OrderDetailView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'cancelOrder', orderId: order.id })}
-            className="w-full min-h-[44px] rounded-xl border border-[#9B111E]/40 text-[#9B111E] dark:text-[#F87171] font-semibold text-base"
+            className="w-full min-h-[44px] rounded-full border border-[#9B111E]/40 text-[#9B111E] dark:text-[#F87171] font-semibold text-base"
           >
             {t.cancelOrderBtn}
           </button>
@@ -483,32 +540,33 @@ export const TrackView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm">
+      {/* Rounded Map-Placeholder Card with Driver Name, Call Button & ETA */}
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[24px] p-4 card-calm space-y-4">
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
               {t.arrivingLabel}
             </div>
-            <div className="text-xl font-bold text-[#111827] dark:text-white mt-1 tabular-nums">
+            <div className="text-xl font-extrabold text-[#111827] dark:text-white mt-0.5 tabular-nums">
               Bugun 14:00–17:00
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] text-xs font-semibold">
-            <Truck className="w-4 h-4" />
-            <span>{t.driverRouteLabel}</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] text-xs font-bold tabular-nums">
+            <Clock className="w-4 h-4" />
+            <span>{t.etaShortLabel}</span>
           </span>
         </div>
 
-        {/* Clean Route SVG */}
-        <div className="my-4 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 p-3 overflow-hidden">
-          <svg viewBox="0 0 360 112" className="w-full h-28" aria-label={t.trackOrderBtn}>
+        {/* Clean Route Map Placeholder */}
+        <div className="rounded-[20px] bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 p-3 overflow-hidden">
+          <svg viewBox="0 0 360 116" className="w-full h-28" aria-label={t.trackOrderBtn}>
             <g stroke="currentColor" className="text-zinc-200 dark:text-zinc-800" strokeWidth="1">
               <line x1="0" y1="26" x2="360" y2="26" />
               <line x1="0" y1="58" x2="360" y2="58" />
-              <line x1="0" y1="88" x2="360" y2="88" />
-              <line x1="65" y1="0" x2="65" y2="112" />
-              <line x1="155" y1="0" x2="155" y2="112" />
-              <line x1="255" y1="0" x2="255" y2="112" />
+              <line x1="0" y1="90" x2="360" y2="90" />
+              <line x1="65" y1="0" x2="65" y2="116" />
+              <line x1="155" y1="0" x2="155" y2="116" />
+              <line x1="255" y1="0" x2="255" y2="116" />
             </g>
             <path
               d="M 42 78 C 110 78, 125 34, 195 40 C 250 45, 275 68, 318 46"
@@ -528,13 +586,13 @@ export const TrackView: React.FC = () => {
             />
             <circle cx="42" cy="78" r="7" fill="#9B111E" />
             <circle cx="42" cy="78" r="3" fill="#FFFFFF" />
-            <circle cx="250" cy="53" r="8" fill="#2563EB" stroke="#FFFFFF" strokeWidth="2.5" />
+            <circle cx="250" cy="53" r="12" fill="#9B111E" opacity="0.2" />
+            <circle cx="250" cy="53" r="7.5" fill="#9B111E" stroke="#FFFFFF" strokeWidth="2.5" />
             <circle cx="318" cy="46" r="7" fill="#FFFFFF" stroke="#9B111E" strokeWidth="3" />
           </svg>
 
-          <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280] dark:text-zinc-300 mt-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280] dark:text-zinc-300 mt-1.5">
             <span>Zavod · Fayoztepa 7</span>
-            <span className="text-[#2563EB] dark:text-[#60A5FA]">~22 daq</span>
             <span className="text-[#9B111E] dark:text-[#FB7185] inline-flex items-center gap-1">
               <MapPin className="w-4 h-4" />
               Alpomish 14
@@ -542,61 +600,57 @@ export const TrackView: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 mb-2">
-          <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-          <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-          <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-          <span className="h-2 rounded-full bg-[#E5E7EB] dark:bg-zinc-800" />
-        </div>
-
-        <div className="grid grid-cols-4 text-xs text-[#6B7280] dark:text-zinc-400">
-          <span>Yuborildi</span>
-          <span>Tasdiq</span>
-          <strong className="text-[#9B111E] dark:text-[#FB7185]">Yo&apos;lda</strong>
-          <span>Yetkazildi</span>
+        {/* Driver row inside map card */}
+        <div className="flex items-center gap-3 pt-1">
+          <span className="w-11 h-11 rounded-full bg-[#9B111E] text-white font-bold flex items-center justify-center flex-none">
+            A
+          </span>
+          <div className="flex-1 min-w-0">
+            <strong className="block font-bold text-base text-[#111827] dark:text-white">Akmal</strong>
+            <small className="block text-xs text-[#6B7280] dark:text-zinc-400">
+              Isuzu 01 A 123 BC · {t.driverRouteLabel}
+            </small>
+          </div>
+          <a
+            href="tel:+998901234545"
+            aria-label={t.driverCallLabel}
+            className="min-h-[44px] px-3.5 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] hover:bg-rose-100 inline-flex items-center gap-1.5 text-xs font-bold flex-none"
+          >
+            <Phone className="w-4 h-4" />
+            <span>{t.driverCallLabel}</span>
+          </a>
+          <button
+            type="button"
+            aria-label={t.writeOperatorBtn}
+            onClick={() => {
+              goTab('me');
+              openPage('chat');
+            }}
+            className="w-11 h-11 rounded-full bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] hover:bg-blue-100 flex items-center justify-center flex-none"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
-      {/* Driver card */}
-      <div className="rounded-xl p-4 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 card-calm flex items-center gap-3">
-        <span className="w-11 h-11 rounded-full bg-[#9B111E] text-white font-bold flex items-center justify-center flex-none">
-          A
-        </span>
-        <div className="flex-1 min-w-0">
-          <strong className="block font-bold text-base text-[#111827] dark:text-white">Akmal</strong>
-          <small className="block text-xs text-[#6B7280] dark:text-zinc-400">Isuzu 01 A 123 BC</small>
-        </div>
-        <a
-          href="tel:+998901234545"
-          aria-label="Qo'ng'iroq qilish"
-          className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] hover:bg-rose-100 flex items-center justify-center flex-none"
-        >
-          <Phone className="w-5 h-5" />
-        </a>
-        <button
-          type="button"
-          aria-label="Chatga o'tish"
-          onClick={() => {
-            goTab('me');
-            openPage('chat');
-          }}
-          className="w-11 h-11 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] hover:bg-blue-100 flex items-center justify-center flex-none"
-        >
-          <MessageCircle className="w-5 h-5" />
-        </button>
-      </div>
+      {/* Vertical 5-Step Timeline */}
+      <VerticalOrderTimeline
+        status={activeOrder?.status || "Yo'lda"}
+        labels={t.trackFiveSteps}
+        title={t.timelineTitle}
+      />
 
       {/* Pickup Code */}
       <button
         type="button"
         onClick={copyPickupCode}
-        className="w-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 text-center card-calm"
+        className="w-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 text-center card-calm"
       >
         <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
           <span>{t.pickupCodeLabel}</span>
           <Copy className="w-4 h-4" />
         </div>
-        <div className="text-2xl font-bold tracking-[0.28em] text-[#9B111E] dark:text-[#FB7185] mt-1 tabular-nums">
+        <div className="text-2xl font-extrabold tracking-[0.28em] text-[#9B111E] dark:text-[#FB7185] mt-1 tabular-nums">
           4 8 1 7
         </div>
       </button>
@@ -607,7 +661,7 @@ export const TrackView: React.FC = () => {
           onClick={() => {
             if (activeOrder) void confirmOrderHandover(activeOrder.id);
           }}
-          className="flex-1 min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150"
+          className="flex-1 min-h-[44px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150"
         >
           {t.everythingOkBtn}
         </button>
@@ -621,7 +675,7 @@ export const TrackView: React.FC = () => {
               tone: 'warn',
             })
           }
-          className="flex-1 min-h-[44px] rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm card-calm"
+          className="flex-1 min-h-[44px] rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm card-calm"
         >
           {t.reportIssueBtn}
         </button>
@@ -648,7 +702,7 @@ export const SuccessView: React.FC = () => {
         </p>
       </div>
 
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 text-left space-y-3 text-sm card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 text-left space-y-3 text-sm card-calm">
         <div className="flex justify-between gap-2">
           <span className="text-[#6B7280] dark:text-zinc-400">{t.expectedDeliveryLabel}</span>
           <strong className="font-bold text-[#111827] dark:text-white">
@@ -673,7 +727,7 @@ export const SuccessView: React.FC = () => {
           onClick={() => {
             if (lastOrderId) openOrderDetail(lastOrderId);
           }}
-          className="w-full min-h-[48px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
+          className="w-full min-h-[48px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
         >
           <Truck className="w-5 h-5" />
           <span>{t.trackOrderBtn}</span>
@@ -681,7 +735,7 @@ export const SuccessView: React.FC = () => {
         <button
           type="button"
           onClick={() => goTab('home')}
-          className="w-full min-h-[48px] rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-base"
+          className="w-full min-h-[48px] rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-base"
         >
           {t.navHome}
         </button>

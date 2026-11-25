@@ -106,12 +106,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
+              className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
 
@@ -286,12 +286,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[88dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 max-h-[88dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
 
@@ -362,10 +362,10 @@ export const SheetsAndModals: React.FC = () => {
                   </div>
                 )}
                 <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-[#E5E7EB] dark:border-zinc-700">
-                  <span className="text-base font-bold text-[#111827] dark:text-white">
+                  <span className="text-sm font-bold text-[#111827] dark:text-white">
                     {t.totalDueLabel}
                   </span>
-                  <span className="text-xl font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
+                  <span className="text-[26px] font-extrabold text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
                     {formatSom(checkoutQuote.total)}
                   </span>
                 </div>
@@ -424,12 +424,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[90dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 max-h-[90dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto md:hidden" />
 
@@ -545,12 +545,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[85dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 max-h-[85dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="flex items-center justify-between mb-3">
@@ -609,12 +609,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="flex items-start justify-between gap-2 mb-3">
@@ -698,12 +698,12 @@ export const SheetsAndModals: React.FC = () => {
           className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
         >
           <motion.div
-            initial={{ y: 24, opacity: 0.9 }}
+            initial={{ y: '100%', opacity: 0.92 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            exit={{ y: '100%', opacity: 0.85 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
+            className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
           >
             <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto md:hidden" />
             <div className="flex items-start justify-between gap-2">
@@ -837,12 +837,12 @@ export const SheetsAndModals: React.FC = () => {
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
             <motion.div
-              initial={{ y: 24, opacity: 0.9 }}
+              initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="text-center">

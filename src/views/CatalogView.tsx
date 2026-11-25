@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, LayoutGrid, List, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, LayoutGrid, List, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ProductCard } from '../components/ProductCard';
 import { CatalogSkeleton } from '../components/Skeletons';
@@ -286,7 +286,7 @@ export const CatalogView: React.FC = () => {
         <CatalogSkeleton viewMode={viewMode} />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Search className="w-5 h-5" />}
+          variant="search"
           title={`${t.emptySearchTitle} · ${t.emptySearchHint}`}
           actionLabel={hasAnyFilter ? t.clearFilters : undefined}
           onAction={hasAnyFilter ? resetCatalogFilters : undefined}

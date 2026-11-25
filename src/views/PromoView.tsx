@@ -1,5 +1,4 @@
 import React from 'react';
-import { Tag } from 'lucide-react';
 import { AnorSeeds } from '../components/AnorSeeds';
 import { ProductCard } from '../components/ProductCard';
 import { CatalogSkeleton } from '../components/Skeletons';
@@ -50,7 +49,7 @@ export const PromoView: React.FC = () => {
           <CatalogSkeleton viewMode="grid" />
         ) : discountedProducts.length === 0 ? (
           <EmptyState
-            icon={<Tag className="w-5 h-5" />}
+            variant="default"
             title={t.emptySearchTitle}
             actionLabel={t.goToCatalog}
             onAction={() => goTab('cat')}
@@ -73,7 +72,7 @@ export const PromoView: React.FC = () => {
           <CatalogSkeleton viewMode="grid" />
         ) : newProducts.length === 0 ? (
           <EmptyState
-            icon={<Tag className="w-5 h-5" />}
+            variant="default"
             title={t.emptySearchTitle}
             actionLabel={t.goToCatalog}
             onAction={() => goTab('cat')}

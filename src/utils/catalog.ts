@@ -86,6 +86,53 @@ export function getPackType(p: Product): string {
   return 'PET';
 }
 
+export const FLAVOR_TINTS: Record<string, string> = {
+  Anor: '#FCE8EA',
+  Olcha: '#F9E1E7',
+  "Olxo'ri": '#EFE3EC',
+  Olma: '#FDF3DC',
+  Shaftoli: '#FDEBDD',
+  Mango: '#FEF1D6',
+  Ananas: '#FBF5D5',
+  Qovun: '#F8F6D8',
+  Nok: '#EEF3DC',
+  Apelsin: '#FDE9D9',
+  Aloe: '#E3F1E8',
+};
+
+export const CATEGORY_CIRCLE_COLORS: Record<string, string> = {
+  Hammasi: '#9B111E',
+  Javonim: '#9B111E',
+  '1 L': '#9B111E',
+  '0,9 L': '#EA580C',
+  '0,5 L': '#B91C1C',
+  Gazli: '#6D2856',
+  'Bolalar uchun': '#D97706',
+  "Urug'li": '#16A34A',
+  Banka: '#EA580C',
+  'Aloe vera': '#059669',
+};
+
+export function getCategoryCircleColor(cat: string): string {
+  return CATEGORY_CIRCLE_COLORS[cat] || '#9B111E';
+}
+
+export function getFlavorTint(p: Product): string {
+  const lower = p.name.toLowerCase();
+  if (lower.includes('anor')) return FLAVOR_TINTS.Anor;
+  if (lower.includes('olcha')) return FLAVOR_TINTS.Olcha;
+  if (lower.includes("olxo'ri")) return FLAVOR_TINTS["Olxo'ri"];
+  if (lower.includes('olma')) return FLAVOR_TINTS.Olma;
+  if (lower.includes('shaftoli')) return FLAVOR_TINTS.Shaftoli;
+  if (lower.includes('mango')) return FLAVOR_TINTS.Mango;
+  if (lower.includes('ananas')) return FLAVOR_TINTS.Ananas;
+  if (lower.includes('qovun')) return FLAVOR_TINTS.Qovun;
+  if (lower.includes('nok')) return FLAVOR_TINTS.Nok;
+  if (lower.includes('apelsin')) return FLAVOR_TINTS.Apelsin;
+  if (lower.includes('aloe')) return FLAVOR_TINTS.Aloe;
+  return '#F4F5F7';
+}
+
 export function getFlavorColor(p: Product): string {
   for (const [key, color] of FLAVOR_LIST) {
     if (p.name.includes(key)) return color;
@@ -110,7 +157,6 @@ export function getProductBadge(p: Product): ProductBadgeType | null {
   if (p.out) return 'out';
   if (p.promoPct && p.promoPct > 0) return 'promo';
   if (p.isNew) return 'new';
-  if (/sharbati/i.test(p.name) && !/Juice/i.test(p.name)) return 'natural';
   return null;
 }
 

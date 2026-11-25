@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowUp,
   Bell,
   Check,
@@ -32,7 +33,11 @@ import { LOGO } from '../api';
 import { getCategoryLabel, getProductName } from '../i18n';
 import { syncTelegramBackButton } from '../telegram';
 import type { TabId, ToastItem } from '../types';
-import { CATEGORIES, QUICK_HOME_CATEGORIES, formatSom } from '../utils/catalog';
+import {
+  CATEGORIES,
+  formatSom,
+  getCategoryCircleColor,
+} from '../utils/catalog';
 import { HomeView } from '../views/HomeView';
 import { ListRowsSkeleton } from './Skeletons';
 
@@ -118,7 +123,16 @@ export const AppShell: React.FC = () => {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const prevCartCountRef = useRef(cartCount);
   const [showToTop, setShowToTop] = useState(false);
+  const [pillBumpKey, setPillBumpKey] = useState(0);
+
+  useEffect(() => {
+    if (cartCount > prevCartCountRef.current) {
+      setPillBumpKey((k) => k + 1);
+    }
+    prevCartCountRef.current = cartCount;
+  }, [cartCount]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -168,14 +182,11 @@ export const AppShell: React.FC = () => {
     { id: 'me', label: t.navProfile, icon: User },
   ];
 
-  const showSearchStrip = !page && (tab === 'home' || tab === 'cat');
-  const activeCategories = tab === 'home' ? QUICK_HOME_CATEGORIES : CATEGORIES;
+  const showCatalogStrip = !page && tab === 'cat';
 
   const { discountPct, discountAmount, total: discountedTotal } = checkoutQuote;
-  const showMobileDock =
-    (!page && (tab === 'home' || tab === 'cat' || tab === 'promo')) ||
-    (!page && tab === 'cart' && cartCount > 0);
-  const showDockNudge = showMobileDock && cartCount > 0;
+  const showFloatingCartPill =
+    !page && (tab === 'home' || tab === 'cat' || tab === 'promo') && cartCount > 0;
   const cartIds = Object.keys(cart).map(Number);
 
   const nudgeLineText = discountNudge.nextTier
@@ -598,9 +609,9 @@ export const AppShell: React.FC = () => {
             </header>
 
             {/* Compact Sticky Search & Category Filter Bar on Catalog */}
-            {showSearchStrip && tab === 'cat' && (
+            {showCatalogStrip && (
               <div className="bg-white dark:bg-[#1A1C20] border-b border-[#E5E7EB] dark:border-zinc-800 px-3 py-3 flex-none z-10">
-                <div className="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-[#F4F5F7] dark:bg-[#121316] border border-[#E5E7EB] dark:border-zinc-700 focus-within:border-[#9B111E]">
+                <div className="flex items-center gap-2 min-h-[44px] px-3.5 rounded-full bg-[#F4F5F7] dark:bg-[#121316] border border-[#E5E7EB] dark:border-zinc-700 focus-within:border-[#9B111E]">
                   <Search className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185] flex-none" />
                   <input
                     ref={searchInputRef}
@@ -622,21 +633,34 @@ export const AppShell: React.FC = () => {
                   )}
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2 -mx-3 px-3">
-                  {activeCategories.map((c) => {
+                  {CATEGORIES.map((c) => {
                     const active = c === cat;
+                    const circleColor = getCategoryCircleColor(c);
                     return (
                       <button
                         key={c}
                         type="button"
                         onClick={() => setCat(c)}
-                        className={`flex-none min-h-[44px] px-4 rounded-full text-sm font-semibold whitespace-nowrap border transition-colors duration-150 ${
+                        className={`flex-none min-h-[44px] px-3.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap border inline-flex items-center gap-2 transition-colors duration-150 ${
                           active
                             ? 'bg-[#9B111E] text-white border-[#9B111E]'
                             : 'bg-white dark:bg-[#1A1C20] text-[#111827] dark:text-zinc-300 border-[#E5E7EB] dark:border-zinc-700'
                         }`}
                       >
-                        {c === 'Javonim' ? '♥ ' : ''}
-                        {getCategoryLabel(c, lang)}
+                        {c === 'Javonim' ? (
+                          <Heart
+                            className={`w-3.5 h-3.5 flex-none ${
+                              active ? 'fill-white text-white' : 'fill-[#9B111E] text-[#9B111E]'
+                            }`}
+                          />
+                        ) : (
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-none"
+                            style={{ backgroundColor: active ? '#FFFFFF' : circleColor }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span>{getCategoryLabel(c, lang)}</span>
                       </button>
                     );
                   })}
@@ -649,52 +673,20 @@ export const AppShell: React.FC = () => {
               ref={scrollRef}
               onScroll={handleScroll}
               className={`flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-3 md:px-6 pt-4 ${
-                showDockNudge
-                  ? 'pb-[calc(212px+env(safe-area-inset-bottom))] md:pb-28 xl:pb-8'
-                  : showMobileDock
-                    ? 'pb-[calc(176px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
-                    : 'pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-8'
+                showFloatingCartPill
+                  ? 'pb-[calc(164px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
+                  : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-8'
               }`}
             >
-              {showSearchStrip && tab === 'home' && (
-                <div className="mb-4 space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      goTab('cat');
-                      window.setTimeout(() => searchInputRef.current?.focus(), 60);
-                    }}
-                    className="w-full flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] text-sm card-calm text-left"
-                  >
-                    <Search className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185] flex-none" />
-                    <span className="truncate">{t.searchShortPlaceholder}</span>
-                  </button>
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0">
-                    {activeCategories.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => {
-                          setCat(c);
-                          goTab('cat');
-                        }}
-                        className="flex-none min-h-[44px] px-4 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-sm font-semibold text-[#111827] dark:text-zinc-200 whitespace-nowrap hover:border-[#9B111E] transition-colors duration-150"
-                      >
-                        {c === 'Javonim' ? '♥ ' : ''}
-                        {getCategoryLabel(c, lang)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <motion.div
                 key={`${tab}-${page || 'root'}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
               >
-                <React.Suspense fallback={<div className="p-4"><ListRowsSkeleton count={4} /></div>}>{renderPageContent()}</React.Suspense>
+                <React.Suspense fallback={<div className="p-4"><ListRowsSkeleton count={4} /></div>}>
+                  {renderPageContent()}
+                </React.Suspense>
               </motion.div>
             </main>
 
@@ -704,12 +696,10 @@ export const AppShell: React.FC = () => {
               aria-label={t.scrollToTop}
               onClick={scrollToTop}
               className={`absolute right-3 ${
-                showDockNudge
-                  ? 'bottom-[calc(184px+env(safe-area-inset-bottom))] md:bottom-24 xl:bottom-6'
-                  : showMobileDock
-                    ? 'bottom-[calc(148px+env(safe-area-inset-bottom))] md:bottom-20 xl:bottom-6'
-                    : 'bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-6'
-              } w-11 h-11 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white flex items-center justify-center z-20 transition-opacity duration-150 ${
+                showFloatingCartPill
+                  ? 'bottom-[calc(146px+env(safe-area-inset-bottom))] md:bottom-24 xl:bottom-6'
+                  : 'bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-6'
+              } w-11 h-11 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#9B111E] dark:text-[#FB7185] shadow-md flex items-center justify-center z-20 transition-opacity duration-150 ${
                 showToTop
                   ? 'opacity-100 pointer-events-auto'
                   : 'opacity-0 pointer-events-none'
@@ -718,73 +708,66 @@ export const AppShell: React.FC = () => {
               <ArrowUp className="w-5 h-5" />
             </button>
 
-            {/* Sticky Bottom Payment Dock with Discount Nudge progress bar */}
-            {showMobileDock && (
-              <div
-                className={`absolute left-0 right-0 bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 bg-white dark:bg-[#1A1C20] border-t border-[#E5E7EB] dark:border-zinc-800 px-3 py-2 space-y-2 z-20 ${
-                  tab === 'cart' ? 'md:hidden' : 'xl:hidden'
-                }`}
-              >
-                {showDockNudge && (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span
-                        className={`font-semibold truncate ${
-                          discountNudge.nextTier
-                            ? 'text-[#6B7280] dark:text-zinc-300'
-                            : 'text-[#16A34A] dark:text-[#4ADE80]'
-                        }`}
-                      >
-                        {nudgeLineText}
-                      </span>
-                      <span className="font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap flex-none">
-                        {discountNudge.progressPct}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
+            {/* Floating Cart Pill (16px above bottom nav, height 56px, radius 999, bordeaux, hidden on cart page) */}
+            <AnimatePresence>
+              {showFloatingCartPill && (
+                <motion.div
+                  key="floatingCartPill"
+                  initial={{ y: 20, opacity: 0, scale: 0.96 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 20, opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="xl:hidden absolute left-3 right-3 bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4 z-20 flex justify-center pointer-events-none"
+                >
+                  <motion.button
+                    key={pillBumpKey}
+                    type="button"
+                    initial={pillBumpKey > 0 ? { scale: 1 } : false}
+                    animate={pillBumpKey > 0 ? { scale: [1, 1.045, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    onClick={() => goTab('cart')}
+                    className="pointer-events-auto w-full max-w-md h-14 px-3.5 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white pill-float-shadow flex items-center gap-3 transition-colors duration-150"
+                  >
+                    {/* Count badge with rolling number */}
+                    <span className="min-w-[30px] h-7 px-2 rounded-full bg-white text-[#9B111E] text-xs font-extrabold flex items-center justify-center tabular-nums overflow-hidden flex-none">
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={cartCount}
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          transition={{ duration: 0.16, ease: 'easeOut' }}
+                        >
+                          {cartCount}
+                        </motion.span>
+                      </AnimatePresence>
+                    </span>
+
+                    {/* Bold tabular total + thin discount progress line inside */}
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="text-sm sm:text-base font-extrabold text-white tabular-nums leading-tight whitespace-nowrap truncate">
+                        {formatSom(discountedTotal)}
+                      </div>
                       <div
-                        className={`h-full rounded-full transition-all duration-200 ease-out ${
-                          discountNudge.nextTier ? 'bg-[#9B111E]' : 'bg-[#16A34A]'
-                        }`}
-                        style={{ width: `${discountNudge.progressPct}%` }}
-                      />
+                        className="mt-1 h-1 w-full rounded-full bg-white/25 overflow-hidden"
+                        aria-hidden="true"
+                      >
+                        <div
+                          className="h-full rounded-full bg-white transition-all duration-200 ease-out"
+                          style={{ width: `${Math.max(8, discountNudge.progressPct)}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <small className="block text-xs font-normal text-[#6B7280] dark:text-zinc-400 truncate">
-                      {t.totalToPayShort}
-                      {cartCount > 0 ? ` · ${cartCount} ${t.boxUnit}` : ''}
-                    </small>
-                    <strong className="block text-base font-bold text-[#111827] dark:text-white tabular-nums leading-tight whitespace-nowrap">
-                      {cartCount > 0 ? formatSom(discountedTotal) : "0 so'm"}
-                    </strong>
-                  </div>
-
-                  {tab === 'cart' ? (
-                    <button
-                      type="button"
-                      onClick={() => setSheet({ type: 'confirmOrder' })}
-                      className="min-h-[44px] px-4 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-base inline-flex items-center gap-2 whitespace-nowrap flex-none transition-colors duration-150"
-                    >
-                      <Lock className="w-5 h-5" />
-                      <span>{t.placeOrderBtn}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => goTab(cartCount > 0 ? 'cart' : 'cat')}
-                      className="min-h-[44px] px-4 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center gap-2 whitespace-nowrap flex-none transition-colors duration-150"
-                    >
-                      <span>{t.goToCartBtn}</span>
-                      <ShoppingCart className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+                    {/* 'Savat' + arrow */}
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white whitespace-nowrap flex-none pl-1">
+                      <span>{t.cartLabel}</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Mobile 5-Tab Bottom Navigation */}
             <nav className="md:hidden absolute left-0 right-0 bottom-0 min-h-[60px] bg-white dark:bg-[#1A1C20] border-t border-[#E5E7EB] dark:border-zinc-800 grid grid-cols-5 z-30 pb-[env(safe-area-inset-bottom)]">

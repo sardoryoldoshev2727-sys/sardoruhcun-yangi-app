@@ -26,6 +26,16 @@ export interface Translations {
   retryBtn: string;
   loadErrorTitle: string;
   // Home
+  greetingHello: (name: string) => string;
+  nextDeliveryChip: string;
+  heroSlides: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    cta: string;
+    productId: number;
+    targetTab: 'promo' | 'cat';
+  }[];
   activeDelivery: string;
   queuePos: string;
   orderNumberPrefix: string;
@@ -55,6 +65,10 @@ export interface Translations {
   smartRefillEmpty: string;
   smartRefillAddAllBtn: string;
   daysLeftEstimate: (days: number) => string;
+  boxMetaLine: (pieces: number) => string;
+  trackFiveSteps: string[];
+  driverCallLabel: string;
+  etaShortLabel: string;
   // Catalog
   filtersBtn: string;
   brandLabel: string;
@@ -266,6 +280,34 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     profileLabel: 'Profil',
     retryBtn: 'Qayta urinish',
     loadErrorTitle: "Ma'lumot yuklanmadi",
+    greetingHello: (name) => `Assalomu alaykum, ${name}`,
+    nextDeliveryChip: 'Ertaga 9–13',
+    heroSlides: [
+      {
+        eyebrow: 'Haftalik aksiya',
+        title: 'Anor sharbati 1 L ga 5% chegirma',
+        subtitle: '9 donali qutida · doimiy ulgurji narxda',
+        cta: 'Aksiyani ko‘rish',
+        productId: 1,
+        targetTab: 'promo',
+      },
+      {
+        eyebrow: 'Yangi mahsulot',
+        title: 'Olxo‘ri sharbati 1 L endi omborda',
+        subtitle: 'Qutisi 127 566 so‘m · javonda tez ketadi',
+        cta: 'Katalogga o‘tish',
+        productId: 0,
+        targetTab: 'cat',
+      },
+      {
+        eyebrow: 'Hamkorlik darajasi',
+        title: '2 mln so‘mdan 10% gacha chegirma',
+        subtitle: 'Har bir buyurtmada avtomatik tejamkorlik',
+        cta: 'Shartlarni ko‘rish',
+        productId: 4,
+        targetTab: 'promo',
+      },
+    ],
     activeDelivery: 'Faol yetkazish',
     queuePos: '3-navbat',
     orderNumberPrefix: 'Buyurtma #',
@@ -295,6 +337,16 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     smartRefillAddAllBtn: 'Hammasini savatga',
     daysLeftEstimate: (days) =>
       days <= 0 ? '≈ Bugun tugaydi' : `≈ ${days} kunda tugaydi`,
+    boxMetaLine: (pieces) => `1 quti = ${pieces} dona`,
+    trackFiveSteps: [
+      'Qabul qilindi',
+      'Tasdiqlandi',
+      'Yuklanmoqda',
+      "Yo'lda",
+      'Yetkazildi',
+    ],
+    driverCallLabel: "Qo'ng'iroq",
+    etaShortLabel: '~22 daq',
     filtersBtn: 'Filtrlar',
     brandLabel: 'Brend',
     flavorLabel: "Ta'm",
@@ -502,6 +554,34 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     profileLabel: 'Профиль',
     retryBtn: 'Повторить',
     loadErrorTitle: 'Не удалось загрузить данные',
+    greetingHello: (name) => `Здравствуйте, ${name}`,
+    nextDeliveryChip: 'Завтра 9–13',
+    heroSlides: [
+      {
+        eyebrow: 'Акция недели',
+        title: 'Скидка 5% на Гранатовый сок 1 Л',
+        subtitle: 'В коробке 9 шт. · выгодная оптовая цена',
+        cta: 'Смотреть акцию',
+        productId: 1,
+        targetTab: 'promo',
+      },
+      {
+        eyebrow: 'Новинка склада',
+        title: 'Сливовый сок 1 Л уже в наличии',
+        subtitle: 'Коробка 127 566 сум · высокая оборачиваемость',
+        cta: 'В каталог',
+        productId: 0,
+        targetTab: 'cat',
+      },
+      {
+        eyebrow: 'Партнёрский уровень',
+        title: 'Скидка до 10% при заказе от 2 млн',
+        subtitle: 'Автоматическая экономия на каждом заказе',
+        cta: 'Условия скидки',
+        productId: 4,
+        targetTab: 'promo',
+      },
+    ],
     activeDelivery: 'Активная доставка',
     queuePos: '3-й в очереди',
     orderNumberPrefix: 'Заказ #',
@@ -531,6 +611,16 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     smartRefillAddAllBtn: 'Всё в корзину',
     daysLeftEstimate: (days) =>
       days <= 0 ? '≈ Закончится сегодня' : `≈ Закончится через ${days} дн.`,
+    boxMetaLine: (pieces) => `1 кор. = ${pieces} шт.`,
+    trackFiveSteps: [
+      'Принят',
+      'Подтверждён',
+      'Загружается',
+      'В пути',
+      'Доставлен',
+    ],
+    driverCallLabel: 'Позвонить',
+    etaShortLabel: '~22 мин',
     filtersBtn: 'Фильтры',
     brandLabel: 'Бренд',
     flavorLabel: 'Вкус',

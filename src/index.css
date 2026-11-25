@@ -72,6 +72,39 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
+.pill-float-shadow {
+  box-shadow:
+    0 12px 28px -6px rgba(155, 17, 30, 0.38),
+    0 4px 12px -2px rgba(17, 24, 39, 0.16);
+}
+
+.dark .pill-float-shadow {
+  box-shadow:
+    0 12px 28px -6px rgba(0, 0, 0, 0.65),
+    0 4px 12px -2px rgba(155, 17, 30, 0.35);
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #eef0f3 25%, #f8f9fb 50%, #eef0f3 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #27272a 25%, #323238 50%, #27272a 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
 /* Custom calm range slider */
 input[type='range'].calm-slider {
   -webkit-appearance: none;

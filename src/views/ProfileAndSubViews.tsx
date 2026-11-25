@@ -3,6 +3,7 @@ import {
   BarChart3,
   Bell,
   Calculator,
+  Check,
   ChevronRight,
   Droplet,
   Globe,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Store,
   TrendingDown,
+  TrendingUp,
   Truck,
   Type,
   Wallet,
@@ -488,7 +490,7 @@ export const MonthlyReportView: React.FC = () => {
           up ? 'text-[#16A34A] dark:text-[#4ADE80]' : 'text-[#9B111E] dark:text-[#FB7185]'
         }`}
       >
-        <span>{up ? '▲' : '▼'}</span>
+        {up ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
         <span>{Math.abs(pct)}%</span>
       </span>
     );
@@ -505,7 +507,7 @@ export const MonthlyReportView: React.FC = () => {
       .join('\n');
 
     const shareText = [
-      `📊 Lal Anaar · ${report.monthLabel}`,
+      `Lal Anaar · ${report.monthLabel}`,
       `• ${t.reportSpentLabel}: ${formatSom(report.totalSpent)}`,
       `• ${t.reportBoxesLabel}: ${report.totalBoxes} ${t.boxUnit}`,
       `• ${t.reportSavedLabel}: ${formatSom(report.savedByDiscounts)}`,
@@ -566,26 +568,28 @@ export const MonthlyReportView: React.FC = () => {
         })}
       </div>
 
-      {/* 4 KPI Totals with previous month delta */}
+      {/* Hero Big Bold Total Spent (28-32px) + Secondary KPIs */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-1">
-          <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-            {t.reportSpentLabel}
+        <div className="col-span-2 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs sm:text-[13px] font-semibold text-[#6B7280] dark:text-zinc-400">
+              {t.reportSpentLabel}
+            </span>
+            <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
+              {renderDelta(report.spentDeltaPct)}
+              <span className="truncate">{t.reportComparePrev}</span>
+            </div>
           </div>
-          <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+          <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
             {formatSom(report.totalSpent)}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-            {renderDelta(report.spentDeltaPct)}
-            <span className="truncate">{t.reportComparePrev}</span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-1">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1">
           <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
             {t.reportBoxesLabel}
           </div>
-          <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+          <div className="text-lg sm:text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
             {report.totalBoxes} {t.boxUnit}
           </div>
           <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
@@ -594,11 +598,11 @@ export const MonthlyReportView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-1">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1">
           <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
             {t.reportSavedLabel}
           </div>
-          <div className="text-base sm:text-xl font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+          <div className="text-lg sm:text-xl font-extrabold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
             {formatSom(report.savedByDiscounts)}
           </div>
           <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
@@ -607,16 +611,18 @@ export const MonthlyReportView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-1">
-          <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-            {t.reportProfitLabel}
+        <div className="col-span-2 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs sm:text-[13px] font-semibold text-[#6B7280] dark:text-zinc-400">
+              {t.reportProfitLabel}
+            </span>
+            <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
+              {renderDelta(report.profitDeltaPct)}
+              <span className="truncate">{t.reportComparePrev}</span>
+            </div>
           </div>
-          <div className="text-base sm:text-xl font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+          <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
             {formatSom(report.estimatedProfit)}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-            {renderDelta(report.profitDeltaPct)}
-            <span className="truncate">{t.reportComparePrev}</span>
           </div>
         </div>
       </div>
@@ -813,7 +819,7 @@ export const ShopView: React.FC = () => {
     ['Egasi', shop?.owner || 'Dilnoza Karimova'],
     ['Telefon', shop?.phone || '+998 90 *** ** 12'],
     ['Manzil', shop?.address || 'Termiz, Alpomish 14'],
-    ['Lokatsiya', shop?.locationConfirmed ? 'Belgilangan ✓' : '—'],
+    ['Lokatsiya', shop?.locationConfirmed ? 'Belgilangan' : '—'],
     ['Agent', shop?.agent || 'Sardor · Termiz-2'],
   ];
 
@@ -895,8 +901,9 @@ export const FinanceView: React.FC = () => {
                   <div className="font-semibold text-[#111827] dark:text-zinc-200">{p.title}</div>
                   <div className="text-xs text-[#6B7280] dark:text-zinc-400">{p.method}</div>
                 </div>
-                <strong className="text-[#111827] dark:text-white font-bold tabular-nums whitespace-nowrap">
-                  {formatSom(p.amount)} ✓
+                <strong className="text-[#111827] dark:text-white font-bold tabular-nums whitespace-nowrap inline-flex items-center gap-1.5">
+                  <span>{formatSom(p.amount)}</span>
+                  <Check className="w-4 h-4 text-[#16A34A]" />
                 </strong>
               </div>
             ))}

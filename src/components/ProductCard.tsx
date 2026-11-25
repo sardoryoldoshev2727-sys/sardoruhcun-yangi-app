@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
@@ -46,7 +47,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
           e.stopPropagation();
           updateQty(product.id, 1);
         }}
-        className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150 ${
+        className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150 ${
           compact ? 'w-full min-h-[44px] px-3' : 'min-h-[44px] px-4 min-w-[120px]'
         }`}
       >
@@ -59,7 +60,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center justify-between rounded-xl bg-[#9B111E] text-white ${
+      className={`inline-flex items-center justify-between rounded-full bg-[#9B111E] text-white ${
         compact ? 'w-full min-h-[44px]' : 'min-h-[44px] min-w-[132px]'
       }`}
     >
@@ -67,7 +68,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
         type="button"
         aria-label={t.removeFromCart}
         onClick={() => updateQty(product.id, -1)}
-        className="w-11 h-11 rounded-l-xl flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
+        className="w-11 h-11 rounded-l-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
       >
         <Minus className="w-5 h-5 stroke-[2.2]" />
       </button>
@@ -83,7 +84,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
         type="button"
         aria-label={t.addToCart}
         onClick={() => updateQty(product.id, 1)}
-        className="w-11 h-11 rounded-r-xl flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
+        className="w-11 h-11 rounded-r-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
       >
         <Plus className="w-5 h-5 stroke-[2.2]" />
       </button>
@@ -98,28 +99,24 @@ function renderBadge(product: Product, t: ReturnType<typeof useStore>['t']) {
   switch (badgeType) {
     case 'out':
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#EEF0F3] dark:bg-zinc-800 text-[#6B7280] dark:text-zinc-400 text-xs font-semibold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#6B7280] dark:text-zinc-300 text-xs font-bold shadow-xs">
           {t.badgeOut}
         </span>
       );
     case 'promo':
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-semibold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#9B111E] text-white text-xs font-bold shadow-xs">
           {t.badgePromo(product.promoPct || 5)}
         </span>
       );
     case 'new':
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2563EB] dark:text-[#60A5FA] text-xs font-semibold">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#2563EB] text-white text-xs font-bold shadow-xs">
           {t.badgeNew}
         </span>
       );
-    case 'natural':
-      return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#F4F5F7] dark:bg-zinc-800 text-[#374151] dark:text-zinc-300 border border-[#E5E7EB] dark:border-zinc-700 text-xs font-semibold">
-          {t.badgeNatural}
-        </span>
-      );
+    default:
+      return null;
   }
 }
 
@@ -141,18 +138,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const displayName = getProductName(product, lang);
 
   if (mode === 'grid') {
+    const badge = renderBadge(product, t);
+
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className={`h-full bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
+        className={`group h-full bg-white dark:bg-[#1A1C20] rounded-[24px] p-2.5 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
           inCart
             ? 'border-[#9B111E] dark:border-[#F43F5E]'
             : 'border-[#E5E7EB] dark:border-zinc-800 hover:border-zinc-300'
         }`}
       >
-        {/* Top corner: max 1 pill badge + 44x44 Heart tap target */}
-        <div className="flex items-center justify-between gap-1 mb-2 min-h-[44px] -mt-1">
-          <div className="min-w-0 truncate">{renderBadge(product, t)}</div>
+        {/* Flavor-tinted hero bottle tile (radius 20) with corner badges & morphing + button */}
+        <div className="relative rounded-[20px] overflow-hidden">
+          <ProductVisual product={product} size="grid" />
+
+          {/* Top-left badge (only isNew / promoPct / out) */}
+          {badge && (
+            <div className="absolute top-2 left-2 z-20 pointer-events-none max-w-[68%] truncate">
+              {badge}
+            </div>
+          )}
+
+          {/* Top-right favorite toggle (44x44 tap target) */}
           <button
             type="button"
             aria-label={fav ? t.addToShelfBtn : t.myShelfTitle}
@@ -160,64 +168,104 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               toggleFavorite(product.id);
             }}
-            className="w-11 h-11 -mr-1 flex items-center justify-center rounded-xl hover:bg-[#FCE8EA] dark:hover:bg-rose-950/40 transition-colors flex-none"
+            className="absolute top-0.5 right-0.5 z-20 w-11 h-11 flex items-center justify-center rounded-full text-[#6B7280] hover:text-[#9B111E] transition-colors"
           >
-            <Heart
-              className={`w-5 h-5 ${
-                fav
-                  ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                  : 'text-[#6B7280] dark:text-zinc-400'
-              }`}
-            />
-          </button>
-        </div>
-
-        <ProductVisual product={product} size="grid" />
-
-        {/* Brand line (12px) */}
-        <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400 truncate">
-          {brand}
-        </div>
-
-        {/* Product name + volume (16px, 2-line clamp) */}
-        <div className="mt-1 font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.75rem] break-words">
-          {displayName} {product.vol}
-        </div>
-
-        {/* Meta spec (12px) */}
-        <div className="mt-1 text-xs font-normal text-[#6B7280] dark:text-zinc-400 tabular-nums truncate">
-          {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
-        </div>
-
-        {/* Big box price (single-line) + per piece OR cart qty (12px) */}
-        <div className="mt-3 mb-3">
-          {product.out ? (
-            <div className="text-base font-bold text-[#9B111E] dark:text-[#F87171] whitespace-nowrap">
-              {t.outOfStock}
-            </div>
-          ) : (
-            <>
-              <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
-                {formatNumberThin(product.box)}{' '}
-                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-                  so&apos;m
-                </span>
-              </div>
-              <div
-                className={`text-xs mt-1 tabular-nums truncate ${
-                  inCart
-                    ? 'font-semibold text-[#9B111E] dark:text-[#FB7185]'
-                    : 'font-normal text-[#6B7280] dark:text-zinc-400'
+            <span className="w-8 h-8 rounded-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xs flex items-center justify-center">
+              <Heart
+                className={`w-4 h-4 ${
+                  fav
+                    ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
+                    : 'text-[#6B7280] dark:text-zinc-300'
                 }`}
-              >
-                {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
-              </div>
-            </>
+              />
+            </span>
+          </button>
+
+          {/* Bottom-right 40px '+' button that morphs into compact pill stepper (- 2 +) */}
+          {!product.out && (
+            <div
+              className="absolute bottom-2 right-2 z-20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {qty === 0 ? (
+                  <motion.button
+                    key="add"
+                    type="button"
+                    aria-label={t.addToCart}
+                    initial={{ scale: 0.8, opacity: 0.6 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    onClick={() => updateQty(product.id, 1)}
+                    className="relative w-10 h-10 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] active:scale-95 text-white shadow-md flex items-center justify-center transition-colors duration-150 after:absolute after:-inset-0.5 after:content-['']"
+                  >
+                    <Plus className="w-5 h-5 stroke-[2.4]" />
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="stepper"
+                    initial={{ scale: 0.8, opacity: 0.7 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="h-10 rounded-full bg-[#9B111E] text-white shadow-md inline-flex items-center px-0.5"
+                  >
+                    <button
+                      type="button"
+                      aria-label={t.removeFromCart}
+                      onClick={() => updateQty(product.id, -1)}
+                      className="relative w-8 h-10 rounded-l-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+                    >
+                      <Minus className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${qty} ${t.boxUnit}`}
+                      onClick={() => setSheet({ type: 'quickQty', id: product.id })}
+                      className="relative min-w-[26px] h-10 px-1 text-center font-extrabold text-sm tabular-nums hover:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+                    >
+                      {qty}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t.addToCart}
+                      onClick={() => updateQty(product.id, 1)}
+                      className="relative w-8 h-10 rounded-r-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+                    >
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
 
-        <div className="mt-auto">
-          <CartStepper product={product} compact />
+        {/* Product name (max 2 lines) */}
+        <div className="mt-2.5 px-1 font-bold text-sm leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.45rem] break-words">
+          {displayName} {product.vol}
+        </div>
+
+        {/* Small grey pack meta ('1 quti = 9 dona') */}
+        <div className="mt-0.5 px-1 text-xs font-normal text-[#6B7280] dark:text-zinc-400 tabular-nums truncate">
+          {t.boxMetaLine(product.blk)}
+        </div>
+
+        {/* Bold single-line price */}
+        <div className="mt-auto pt-2 px-1 pb-0.5">
+          {product.out ? (
+            <div className="text-sm font-bold text-[#9B111E] dark:text-[#F87171] whitespace-nowrap">
+              {t.outOfStock}
+            </div>
+          ) : (
+            <div className="text-base sm:text-lg font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              {formatNumberThin(product.box)}{' '}
+              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+                so&apos;m
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -227,7 +275,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3 flex items-stretch gap-3 card-calm cursor-pointer"
+        className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-3 flex items-stretch gap-3 card-calm cursor-pointer"
       >
         <ProductVisual product={product} size="row" />
         <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -237,7 +285,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {displayName} {product.vol}
               </div>
               <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
-                1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.box)}
+                {t.boxMetaLine(product.blk)} · {formatSom(product.box)}
               </div>
             </div>
             <button
@@ -254,7 +302,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
           <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
             <div>
-              <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
                 {formatSom(product.box * qty)}
               </div>
               <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
@@ -272,7 +320,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => setSheet({ type: 'prod', id: product.id })}
-      className={`h-full bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
+      className={`h-full bg-white dark:bg-[#1A1C20] rounded-[20px] p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
         product.out ? 'opacity-70' : ''
       } ${
         inCart
@@ -315,13 +363,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           <div className="mt-1 text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
-            {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
+            {t.boxMetaLine(product.blk)} · {pack}
           </div>
         </div>
 
         <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+            <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
               <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
                 so&apos;m
@@ -375,7 +423,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
       onClick={() => {
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex items-stretch gap-3 card-calm border transition-colors ${
+      className={`bg-white dark:bg-[#1A1C20] rounded-[20px] p-3 flex items-stretch gap-3 card-calm border transition-colors ${
         editMode ? '' : 'cursor-pointer'
       } ${
         inCart
@@ -393,7 +441,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
             <Heart className="w-5 h-5 fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185] flex-none mt-1" />
           </div>
           <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
-            1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.one)}
+            {t.boxMetaLine(product.blk)} · {formatSom(product.one)}
           </div>
           <div className="mt-2">
             <div className="flex items-center justify-between gap-2 text-xs font-semibold mb-1">
@@ -411,7 +459,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
 
         <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+            <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
               <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
                 so&apos;m
@@ -424,12 +472,12 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
 
           {editMode ? (
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <div className="inline-flex items-center h-11 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900">
+              <div className="inline-flex items-center h-11 rounded-full border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900">
                 <button
                   type="button"
                   aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
-                  className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#111827] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[#111827] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 >
                   <Minus className="w-5 h-5" />
                 </button>
@@ -440,7 +488,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                   type="button"
                   aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA]"
+                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA]"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
@@ -449,7 +497,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                 type="button"
                 aria-label={t.removeFromCart}
                 onClick={() => removeShelfItem(id)}
-                className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-red-950/40 text-[#9B111E] dark:text-[#F87171] flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-[#FCE8EA] dark:bg-red-950/40 text-[#9B111E] dark:text-[#F87171] flex items-center justify-center"
               >
                 <X className="w-5 h-5" />
               </button>
