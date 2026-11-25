@@ -1,4 +1,4 @@
-import { PHOTOS } from './data/assets';
+import { LOGO, PHOTOS } from './data/assets';
 import { generateIdempotencyKey, getTelegramInitData } from './telegram';
 import type {
   ChatMessage,
@@ -6,12 +6,15 @@ import type {
   NotificationItem,
   OrderLineItem,
   OrderRecord,
+  PaymentRecord,
   Product,
   SessionInfo,
   ShelfItem,
   ShopInfo,
 } from './types';
 import { getTier } from './utils/catalog';
+
+export { LOGO };
 
 const API_DELAY_MS = 300;
 
@@ -39,7 +42,7 @@ const RAW_PRODUCTS: {
   { name: 'Mango sharbati', nameRu: 'Манговый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p04' },
   { name: 'Qovun sharbati', nameRu: 'Дынный сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p09' },
   { name: 'Nok sharbati', nameRu: 'Грушевый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p10' },
-  { name: 'Apelsin sharbati', nameRu: 'Апельсиновый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p02', promoPct: 5 },
+  { name: 'Apelsin sharbati', nameRu: 'Апельсиновый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p02' },
   { name: 'Aloe vera', nameRu: 'Алоэ вера', vol: '1 L', blk: 9, one: 17436, cat: 'Aloe vera', ph: 'p11' },
   { name: 'Shaftoli sharbati Juice', nameRu: 'Персиковый нектар Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p12' },
   { name: 'Olma-uzum sharbati Juice', nameRu: 'Яблоко-виноград Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p13' },
@@ -54,7 +57,7 @@ const RAW_PRODUCTS: {
   { name: 'Anor ichimligi gazli', nameRu: 'Гранатовый напиток газ.', vol: '0,5 L', blk: 12, one: 6333, cat: 'Gazli', ph: 'p34' },
   { name: 'Anor ichimligi gazli', nameRu: 'Гранатовый напиток газ.', vol: '1,5 L', blk: 6, one: 12833, cat: 'Gazli', ph: 'p36' },
   { name: 'Juice Drink Anor banka', nameRu: 'Juice Drink Гранат банка', vol: '0,25 L', blk: 12, one: 5250, cat: 'Banka', ph: '' },
-  { name: 'Aloe vera anor', nameRu: 'Алоэ вера гранат', vol: '0,5 L', blk: 12, one: 7834, cat: 'Aloe vera', ph: 'p18', isNew: true },
+  { name: 'Aloe vera anor', nameRu: 'Алоэ вера гранат', vol: '0,5 L', blk: 12, one: 7834, cat: 'Aloe vera', ph: 'p18' },
 ];
 
 const MOCK_PRODUCTS: Product[] = RAW_PRODUCTS.map((p, i) => ({
@@ -352,3 +355,15 @@ export async function confirmHandover(id: number): Promise<OrderRecord> {
   }
   return updated;
 }
+
+const MOCK_PAYMENTS: PaymentRecord[] = [
+  { id: '2399', title: '18-noyabr · #2399', amount: 1430244, method: 'naqd' },
+  { id: '2310', title: '11-noyabr · #2310', amount: 1072683, method: "o'tkazma" },
+  { id: '2244', title: '4-noyabr · #2244', amount: 958341, method: 'naqd' },
+];
+
+export async function getPayments(): Promise<PaymentRecord[]> {
+  await delay();
+  return MOCK_PAYMENTS.map((p) => ({ ...p }));
+}
+

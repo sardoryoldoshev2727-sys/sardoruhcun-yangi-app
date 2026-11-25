@@ -13,17 +13,17 @@ export const PromoView: React.FC = () => {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-[#221819] dark:text-white leading-tight">
+        <h2 className="text-xl font-bold text-[#111827] dark:text-white leading-tight">
           {t.promoTitle}
         </h2>
-        <p className="text-sm text-[#6F6466] dark:text-stone-400 mt-0.5">
+        <p className="text-sm text-[#5A6270] dark:text-zinc-400 mt-0.5">
           {t.promoSub}
         </p>
       </div>
 
       {/* Monthly discount progress (moved here from Cart) */}
       <section className="space-y-2">
-        <h3 className="text-base font-bold text-[#221819] dark:text-white">
+        <h3 className="text-base font-bold text-[#111827] dark:text-white">
           {t.monthlyProgress}
         </h3>
         <AnorSeeds sum={monthTotal} />
@@ -31,7 +31,7 @@ export const PromoView: React.FC = () => {
 
       {/* Current Promo Discounts */}
       <section className="space-y-2.5">
-        <h3 className="text-xl font-bold text-[#221819] dark:text-white">
+        <h3 className="text-xl font-bold text-[#111827] dark:text-white">
           {t.currentDiscounts}
         </h3>
         {productsLoading ? (
@@ -47,7 +47,7 @@ export const PromoView: React.FC = () => {
 
       {/* New Products */}
       <section className="space-y-2.5">
-        <h3 className="text-xl font-bold text-[#221819] dark:text-white">
+        <h3 className="text-xl font-bold text-[#111827] dark:text-white">
           {t.newArrivals}
         </h3>
         {productsLoading ? (

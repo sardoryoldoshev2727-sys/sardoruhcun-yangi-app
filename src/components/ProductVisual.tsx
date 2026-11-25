@@ -28,8 +28,8 @@ const BottleSvg: React.FC<{ product: Product; color: string; className?: string 
 
       {shape === 'round' && (
         <>
-          <rect x="26.5" y="6" width="11" height="7" rx="2.5" fill="#B7791F" />
-          <rect x="25" y="11" width="14" height="3" rx="1.5" fill="#926015" />
+          <rect x="26.5" y="6" width="11" height="7" rx="2.5" fill="#D97706" />
+          <rect x="25" y="11" width="14" height="3" rx="1.5" fill="#B45309" />
           <circle cx="32" cy="40" r="22" fill={color} />
           <rect x="12" y="34" width="40" height="12" rx="3" fill="#FFFFFF" opacity="0.94" />
         </>
@@ -37,8 +37,8 @@ const BottleSvg: React.FC<{ product: Product; color: string; className?: string 
 
       {shape === 'pet' && (
         <>
-          <rect x="26" y="4" width="12" height="6.5" rx="2.5" fill="#B7791F" />
-          <rect x="25" y="9.5" width="14" height="2.5" rx="1.2" fill="#926015" />
+          <rect x="26" y="4" width="12" height="6.5" rx="2.5" fill="#D97706" />
+          <rect x="25" y="9.5" width="14" height="2.5" rx="1.2" fill="#B45309" />
           <path
             d="M27 12h10l4.5 10c2.2 3.4 3.5 6 3.5 10.5v27.5a6 6 0 0 1-6 6H25a6 6 0 0 1-6-6V32.5c0-4.5 1.3-7.1 3.5-10.5z"
             fill={color}
@@ -60,7 +60,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'mini') {
     return (
-      <div className="flex-none w-12 h-14 bg-[#F6F4F3] dark:bg-[#252021] rounded-xl border border-[#E7E1E1] dark:border-stone-700 flex items-center justify-center gap-1 p-1 overflow-hidden">
+      <div className="flex-none w-12 h-14 bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-1 p-1 overflow-hidden">
         {product.photo ? (
           <img
             src={product.photo}
@@ -82,7 +82,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'large') {
     return (
-      <div className="h-56 rounded-2xl bg-[#F6F4F3] dark:bg-[#252021] border border-[#E7E1E1] dark:border-stone-700 flex items-center justify-center gap-5 p-4 overflow-hidden">
+      <div className="h-56 rounded-2xl bg-[#F8F9FA] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-5 p-4 overflow-hidden">
         {product.photo ? (
           <img
             src={product.photo}
@@ -108,7 +108,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   if (size === 'grid') {
     return (
       <div
-        className={`w-full h-32 bg-[#F6F4F3] dark:bg-[#252021] rounded-xl border border-[#E7E1E1] dark:border-stone-800 flex items-center justify-center gap-2 px-2 py-2 overflow-hidden ${
+        className={`w-full h-32 bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-800 flex items-center justify-center gap-2 px-2 py-2 overflow-hidden ${
           product.out ? 'opacity-55' : ''
         }`}
       >
@@ -138,7 +138,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   // compact 'row'
   return (
     <div
-      className={`flex-none w-[92px] h-[104px] bg-[#F6F4F3] dark:bg-[#252021] rounded-xl border border-[#E7E1E1] dark:border-stone-700 flex items-center justify-center gap-1.5 p-1.5 overflow-hidden ${
+      className={`flex-none w-[92px] h-[104px] bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-1.5 p-1.5 overflow-hidden ${
         product.out ? 'opacity-55' : ''
       }`}
     >

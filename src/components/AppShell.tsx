@@ -27,7 +27,7 @@ import {
   X,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { LOGO } from '../data/assets';
+import { LOGO } from '../api';
 import { getCategoryLabel, getProductName } from '../i18n';
 import { syncTelegramBackButton } from '../telegram';
 import type { TabId, ToastItem } from '../types';
@@ -199,7 +199,7 @@ export const AppShell: React.FC = () => {
             <h1 className="text-base font-bold leading-tight truncate">
               {t.orderNumberPrefix}{selectedOrderId || 2481}
             </h1>
-            <small className="block text-xs text-white/85 tabular-nums">
+            <small className="block text-xs text-white/90 tabular-nums">
               {t.driverRouteLabel}
             </small>
           </div>
@@ -244,7 +244,7 @@ export const AppShell: React.FC = () => {
             <h1 className="text-base font-bold leading-tight truncate">
               {shop?.operatorName || 'Madina'}
             </h1>
-            <small className="block text-xs text-white/85">
+            <small className="block text-xs text-white/90">
               {t.operatorOnline(shop?.operatorName || 'Madina')}
             </small>
           </div>
@@ -287,7 +287,7 @@ export const AppShell: React.FC = () => {
             <h1 className="text-base font-bold leading-tight truncate">
               {t.appName} · {t.navCatalog}
             </h1>
-            <small className="block text-xs text-white/85 truncate">
+            <small className="block text-xs text-white/90 truncate">
               {products.length} {t.productsInBoxMeta}
             </small>
           </div>
@@ -299,7 +299,7 @@ export const AppShell: React.FC = () => {
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {cartCount}
               </span>
             )}
@@ -328,7 +328,7 @@ export const AppShell: React.FC = () => {
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {cartCount}
               </span>
             )}
@@ -351,7 +351,7 @@ export const AppShell: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">{t.cartTitle}</h1>
             {cartCount > 0 && (
-              <small className="block text-xs text-white/85 tabular-nums">
+              <small className="block text-xs text-white/90 tabular-nums">
                 {cartCount} {t.boxUnit}
               </small>
             )}
@@ -382,7 +382,7 @@ export const AppShell: React.FC = () => {
           >
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {cartCount}
               </span>
             )}
@@ -403,7 +403,7 @@ export const AppShell: React.FC = () => {
           >
             <Bell className="w-5 h-5" />
             {unreadNotifCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {unreadNotifCount}
               </span>
             )}
@@ -423,7 +423,7 @@ export const AppShell: React.FC = () => {
           />
           <div className="min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">{t.appName}</h1>
-            <small className="block text-xs text-white/85 truncate">
+            <small className="block text-xs text-white/90 truncate">
               {session?.userName || 'Dilnoza'} · {shop?.name || "«Baraka» do'koni"}
             </small>
           </div>
@@ -436,7 +436,7 @@ export const AppShell: React.FC = () => {
         >
           <Bell className="w-5 h-5" />
           {unreadNotifCount > 0 && (
-            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
               {unreadNotifCount}
             </span>
           )}
@@ -449,7 +449,7 @@ export const AppShell: React.FC = () => {
         >
           <User className="w-5 h-5" />
           {unreadChat > 0 && (
-            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
               {unreadChat}
             </span>
           )}
@@ -486,30 +486,30 @@ export const AppShell: React.FC = () => {
 
   const toastToneClass =
     toast?.tone === 'warn'
-      ? 'bg-[#B7791F]'
+      ? 'bg-[#D97706]'
       : toast?.tone === 'red'
-        ? 'bg-[#C0262D]'
+        ? 'bg-[#DC2626]'
         : toast?.tone === 'blue'
-          ? 'bg-[#221819]'
-          : 'bg-[#1E7A46]';
+          ? 'bg-[#2563EB]'
+          : 'bg-[#16A34A]';
 
   return (
-    <div className="min-h-[100dvh] bg-[#E7E1E1] dark:bg-[#080607] md:p-4 flex justify-center overflow-x-hidden">
-      <div className="relative w-full max-w-7xl h-[100dvh] md:h-[calc(100dvh-2rem)] app-surface md:rounded-2xl md:border md:border-[#E7E1E1] dark:md:border-stone-800 flex overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#E5E7EB] dark:bg-[#090A0C] md:p-4 flex justify-center overflow-x-hidden">
+      <div className="relative w-full max-w-7xl h-[100dvh] md:h-[calc(100dvh-2rem)] app-surface md:rounded-2xl md:border md:border-[#E2E5EA] dark:md:border-zinc-800 flex overflow-hidden">
         {/* Desktop Left Navigation Rail */}
-        <aside className="hidden md:flex flex-col w-60 flex-none bg-white dark:bg-[#1C1819] border-r border-[#E7E1E1] dark:border-stone-800 p-3.5 justify-between">
+        <aside className="hidden md:flex flex-col w-60 flex-none bg-white dark:bg-[#1A1C20] border-r border-[#E2E5EA] dark:border-zinc-800 p-3.5 justify-between">
           <div>
-            <div className="flex items-center gap-2.5 px-2 pb-4 mb-3 border-b border-[#E7E1E1] dark:border-stone-800">
+            <div className="flex items-center gap-2.5 px-2 pb-4 mb-3 border-b border-[#E2E5EA] dark:border-zinc-800">
               <img
                 src={LOGO}
                 alt="Lal Anaar"
-                className="w-10 h-10 rounded-xl bg-white border border-[#E7E1E1] p-0.5 object-contain"
+                className="w-10 h-10 rounded-xl bg-white border border-[#E2E5EA] p-0.5 object-contain"
               />
               <div className="min-w-0">
-                <div className="font-bold text-base text-[#800020] dark:text-[#F4728A] leading-tight">
+                <div className="font-bold text-base text-[#9B111E] dark:text-[#FB7185] leading-tight">
                   {t.appName}
                 </div>
-                <div className="text-xs text-[#6F6466] dark:text-stone-400 truncate">
+                <div className="text-xs text-[#5A6270] dark:text-zinc-400 truncate">
                   {shop?.name || "«Baraka» do'koni"} · Termiz
                 </div>
               </div>
@@ -526,14 +526,14 @@ export const AppShell: React.FC = () => {
                     onClick={() => goTab(id)}
                     className={`w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold transition-colors ${
                       active
-                        ? 'bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] font-bold'
-                        : 'text-[#6F6466] dark:text-stone-300 hover:bg-[#F6F4F3] dark:hover:bg-stone-800/70'
+                        ? 'bg-[#FFF1F2] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-bold'
+                        : 'text-[#5A6270] dark:text-zinc-300 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800/70'
                     }`}
                   >
                     <Icon className="w-4.5 h-4.5 flex-none" />
                     <span className="flex-1 text-left truncate">{label}</span>
                     {badge > 0 && (
-                      <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#800020] text-white text-xs font-bold flex items-center justify-center tabular-nums">
+                      <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#9B111E] text-white text-xs font-bold flex items-center justify-center tabular-nums">
                         {badge}
                       </span>
                     )}
@@ -543,13 +543,15 @@ export const AppShell: React.FC = () => {
             </nav>
           </div>
 
-          <div className="rounded-2xl p-3.5 bg-[#800020] text-white">
-            <div className="flex items-center gap-1.5 text-xs font-semibold">
+          <div className="rounded-2xl p-3.5 bg-[#FFF1F2] dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#9B111E] dark:text-[#FB7185]">
               <Droplet className="w-4 h-4" />
               <span>{session?.tierName || 'Kumush'}</span>
             </div>
-            <div className="text-xl font-bold mt-1 tabular-nums">{formatSom(monthTotal)}</div>
-            <div className="text-xs text-white/85">{t.monthPurchaseLabel}</div>
+            <div className="text-xl font-bold mt-1 text-[#111827] dark:text-white tabular-nums">
+              {formatSom(monthTotal)}
+            </div>
+            <div className="text-xs text-[#5A6270] dark:text-zinc-400">{t.monthPurchaseLabel}</div>
           </div>
         </aside>
 
@@ -559,37 +561,37 @@ export const AppShell: React.FC = () => {
           {!isOnline && (
             <div
               role="status"
-              className="bg-[#C0262D] text-white px-3.5 py-2 text-xs font-semibold flex items-center gap-2 flex-none z-30"
+              className="bg-[#DC2626] text-white px-3.5 py-2 text-xs font-semibold flex items-center gap-2 flex-none z-30"
             >
               <WifiOff className="w-4 h-4 flex-none" />
               <span className="leading-snug">{t.offlineBanner}</span>
             </div>
           )}
 
-          {/* Top Flat Solid Burgundy Header */}
-          <header className="h-14 px-3.5 bg-[#800020] text-white flex items-center gap-2 flex-none z-20">
+          {/* Top Lively Crimson Red Header */}
+          <header className="h-14 px-3.5 bg-[#9B111E] text-white flex items-center gap-2 flex-none z-20">
             {renderTopBar()}
           </header>
 
           {/* Compact Sticky Search & Category Filter Bar on Catalog */}
           {showSearchStrip && tab === 'cat' && (
-            <div className="bg-white dark:bg-[#1C1819] border-b border-[#E7E1E1] dark:border-stone-800 px-3.5 py-2.5 flex-none z-10">
-              <div className="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-[#F6F4F3] dark:bg-[#141112] border border-[#E7E1E1] dark:border-stone-700 focus-within:border-[#800020]">
-                <Search className="w-4 h-4 text-[#800020] dark:text-[#F4728A] flex-none" />
+            <div className="bg-white dark:bg-[#1A1C20] border-b border-[#E2E5EA] dark:border-zinc-800 px-3.5 py-2.5 flex-none z-10">
+              <div className="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-[#F4F5F7] dark:bg-[#121316] border border-[#E2E5EA] dark:border-zinc-700 focus-within:border-[#9B111E]">
+                <Search className="w-4 h-4 text-[#9B111E] dark:text-[#FB7185] flex-none" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
-                  className="flex-1 bg-transparent text-sm text-[#221819] dark:text-stone-100 placeholder:text-[#6F6466] outline-none"
+                  className="flex-1 bg-transparent text-sm text-[#111827] dark:text-zinc-100 placeholder:text-[#5A6270] outline-none"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     aria-label={t.clearLabel}
                     onClick={() => setSearchQuery('')}
-                    className="w-11 h-11 -mr-2 flex items-center justify-center text-[#6F6466] hover:text-[#221819]"
+                    className="w-11 h-11 -mr-2 flex items-center justify-center text-[#5A6270] hover:text-[#111827]"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -605,8 +607,8 @@ export const AppShell: React.FC = () => {
                       onClick={() => setCat(c)}
                       className={`flex-none min-h-[44px] px-3.5 rounded-xl text-sm font-semibold whitespace-nowrap border transition-colors ${
                         active
-                          ? 'bg-[#800020] text-white border-[#800020]'
-                          : 'bg-white dark:bg-[#1C1819] text-[#221819] dark:text-stone-300 border-[#E7E1E1] dark:border-stone-700'
+                          ? 'bg-[#9B111E] text-white border-[#9B111E]'
+                          : 'bg-white dark:bg-[#1A1C20] text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
                       }`}
                     >
                       {c === 'Javonim' ? '♥ ' : ''}
@@ -623,7 +625,9 @@ export const AppShell: React.FC = () => {
             ref={scrollRef}
             onScroll={handleScroll}
             className={`flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-3.5 pt-3.5 ${
-              showMobileDock ? 'pb-40 md:pb-24 xl:pb-8' : 'pb-24 md:pb-8'
+              showMobileDock
+                ? 'pb-[calc(168px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-10'
+                : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-10'
             }`}
           >
             {showSearchStrip && tab === 'home' && (
@@ -634,9 +638,9 @@ export const AppShell: React.FC = () => {
                     goTab('cat');
                     window.setTimeout(() => searchInputRef.current?.focus(), 60);
                   }}
-                  className="w-full flex items-center gap-2.5 min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#6F6466] text-sm card-calm text-left"
+                  className="w-full flex items-center gap-2.5 min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-700 text-[#5A6270] text-sm card-calm text-left"
                 >
-                  <Search className="w-4 h-4 text-[#800020] dark:text-[#F4728A] flex-none" />
+                  <Search className="w-4 h-4 text-[#9B111E] dark:text-[#FB7185] flex-none" />
                   <span className="truncate">{t.searchShortPlaceholder}</span>
                 </button>
                 <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3.5 px-3.5">
@@ -648,7 +652,7 @@ export const AppShell: React.FC = () => {
                         setCat(c);
                         goTab('cat');
                       }}
-                      className="flex-none min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-sm font-semibold text-[#221819] dark:text-stone-200 whitespace-nowrap hover:border-[#800020]"
+                      className="flex-none min-h-[44px] px-3.5 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-700 text-sm font-semibold text-[#111827] dark:text-zinc-200 whitespace-nowrap hover:border-[#9B111E]"
                     >
                       {c === 'Javonim' ? '♥ ' : ''}
                       {getCategoryLabel(c, lang)}
@@ -674,8 +678,10 @@ export const AppShell: React.FC = () => {
             aria-label={t.scrollToTop}
             onClick={scrollToTop}
             className={`absolute right-3.5 ${
-              showMobileDock ? 'bottom-36 md:bottom-20 xl:bottom-6' : 'bottom-20 md:bottom-6'
-            } w-11 h-11 rounded-full bg-[#800020] hover:bg-[#630019] text-white flex items-center justify-center z-20 transition-opacity duration-150 ${
+              showMobileDock
+                ? 'bottom-[calc(140px+env(safe-area-inset-bottom))] md:bottom-20 xl:bottom-6'
+                : 'bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-6'
+            } w-11 h-11 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] text-white flex items-center justify-center z-20 transition-opacity duration-150 ${
               showToTop
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none'
@@ -684,19 +690,19 @@ export const AppShell: React.FC = () => {
             <ArrowUp className="w-5 h-5" />
           </button>
 
-          {/* Sticky Bottom Payment Dock (solid burgundy CTA, zero green buttons) */}
+          {/* Sticky Bottom Payment Dock */}
           {showMobileDock && (
             <div
-              className={`absolute left-0 right-0 bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 bg-white dark:bg-[#1C1819] border-t border-[#E7E1E1] dark:border-stone-800 px-3.5 py-2 flex items-center justify-between gap-3 z-20 ${
+              className={`absolute left-0 right-0 bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 bg-white dark:bg-[#1A1C20] border-t border-[#E2E5EA] dark:border-zinc-800 px-3.5 py-2 flex items-center justify-between gap-2.5 z-20 ${
                 tab === 'cart' ? 'md:hidden' : 'xl:hidden'
               }`}
             >
               <div className="min-w-0">
-                <small className="block text-xs font-normal text-[#6F6466] dark:text-stone-400 truncate">
+                <small className="block text-xs font-normal text-[#5A6270] dark:text-zinc-400 truncate">
                   {t.totalToPayShort}
                   {cartCount > 0 ? ` · ${cartCount} ${t.boxUnit}` : ''}
                 </small>
-                <strong className="block text-base font-bold text-[#221819] dark:text-white tabular-nums leading-tight">
+                <strong className="block text-base font-bold text-[#111827] dark:text-white tabular-nums leading-tight whitespace-nowrap">
                   {cartCount > 0 ? formatSom(discountedTotal) : "0 so'm"}
                 </strong>
               </div>
@@ -705,7 +711,7 @@ export const AppShell: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSheet({ type: 'confirmOrder' })}
-                  className="min-h-[44px] px-4 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center gap-1.5 whitespace-nowrap"
+                  className="min-h-[44px] px-3.5 sm:px-4 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-base inline-flex items-center gap-1.5 whitespace-nowrap flex-none"
                 >
                   <Lock className="w-4 h-4" />
                   <span>{t.placeOrderBtn}</span>
@@ -714,7 +720,7 @@ export const AppShell: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => goTab(cartCount > 0 ? 'cart' : 'cat')}
-                  className="min-h-[44px] px-4 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center gap-1.5 whitespace-nowrap"
+                  className="min-h-[44px] px-3.5 sm:px-4 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center gap-1.5 whitespace-nowrap flex-none"
                 >
                   <span>{t.goToCartBtn}</span>
                   <ShoppingCart className="w-4 h-4" />
@@ -723,8 +729,8 @@ export const AppShell: React.FC = () => {
             </div>
           )}
 
-          {/* Mobile 5-Tab Bottom Navigation with safe-area padding */}
-          <nav className="md:hidden absolute left-0 right-0 bottom-0 min-h-[60px] bg-white dark:bg-[#1C1819] border-t border-[#E7E1E1] dark:border-stone-800 grid grid-cols-5 z-30 pb-[env(safe-area-inset-bottom)]">
+          {/* Mobile 5-Tab Bottom Navigation */}
+          <nav className="md:hidden absolute left-0 right-0 bottom-0 min-h-[60px] bg-white dark:bg-[#1A1C20] border-t border-[#E2E5EA] dark:border-zinc-800 grid grid-cols-5 z-30 pb-[env(safe-area-inset-bottom)]">
             {mobileNavItems.map(({ id, label, icon: Icon }) => {
               const active = tab === id;
               const badge = id === 'cart' ? cartCount : 0;
@@ -735,17 +741,17 @@ export const AppShell: React.FC = () => {
                   onClick={() => goTab(id)}
                   className={`relative min-h-[56px] flex flex-col items-center justify-center gap-1 px-0.5 text-xs transition-colors ${
                     active
-                      ? 'text-[#800020] dark:text-[#F4728A] font-bold'
-                      : 'text-[#6F6466] dark:text-stone-400 font-normal'
+                      ? 'text-[#9B111E] dark:text-[#FB7185] font-bold'
+                      : 'text-[#5A6270] dark:text-zinc-400 font-normal'
                   }`}
                 >
                   {active && (
-                    <span className="absolute top-0 w-8 h-[2.5px] rounded-b bg-[#800020] dark:bg-[#F4728A]" />
+                    <span className="absolute top-0 w-8 h-[2.5px] rounded-b bg-[#9B111E] dark:bg-[#FB7185]" />
                   )}
                   <Icon className="w-5 h-5 flex-none" />
                   <span className="truncate max-w-full leading-none">{label}</span>
                   {badge > 0 && (
-                    <span className="absolute top-1 left-[calc(50%+6px)] min-w-[18px] h-[18px] px-1 rounded-full bg-[#800020] text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-[#1C1819] tabular-nums">
+                    <span className="absolute top-1 left-[calc(50%+6px)] min-w-[18px] h-[18px] px-1 rounded-full bg-[#9B111E] text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-[#1A1C20] tabular-nums">
                       {badge}
                     </span>
                   )}
@@ -754,7 +760,7 @@ export const AppShell: React.FC = () => {
             })}
           </nav>
 
-          {/* Toast Notification (<= 200ms, no bouncing) */}
+          {/* Toast Notification */}
           <AnimatePresence>
             {toast && (
               <motion.button
@@ -790,19 +796,19 @@ export const AppShell: React.FC = () => {
 
         {/* Desktop Right Live Cart Summary Rail */}
         {!page && (tab === 'home' || tab === 'cat' || tab === 'promo') && (
-          <aside className="hidden xl:flex flex-col w-80 flex-none bg-white dark:bg-[#1C1819] border-l border-[#E7E1E1] dark:border-stone-800 p-4 justify-between">
+          <aside className="hidden xl:flex flex-col w-80 flex-none bg-white dark:bg-[#1A1C20] border-l border-[#E2E5EA] dark:border-zinc-800 p-4 justify-between">
             <div className="min-h-0 flex-1 flex flex-col">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E7E1E1] dark:border-stone-800">
-                <h2 className="text-base font-bold text-[#221819] dark:text-white">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E2E5EA] dark:border-zinc-800">
+                <h2 className="text-base font-bold text-[#111827] dark:text-white">
                   {t.currentCart}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-md bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] text-xs font-bold tabular-nums">
+                <span className="px-2.5 py-0.5 rounded-md bg-[#FFF1F2] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-bold tabular-nums">
                   {cartCount} {t.boxUnit}
                 </span>
               </div>
 
               {cartIds.length === 0 ? (
-                <div className="my-auto text-center py-8 text-[#6F6466] dark:text-stone-500 text-sm">
+                <div className="my-auto text-center py-8 text-[#5A6270] dark:text-zinc-500 text-sm">
                   {t.addProductsHint}
                 </div>
               ) : (
@@ -814,14 +820,14 @@ export const AppShell: React.FC = () => {
                     return (
                       <div
                         key={id}
-                        className="p-2.5 rounded-xl bg-[#F6F4F3] dark:bg-stone-900/70 border border-[#E7E1E1] dark:border-stone-800 space-y-2"
+                        className="p-2.5 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900/70 border border-[#E2E5EA] dark:border-zinc-800 space-y-2"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="text-sm font-bold text-[#221819] dark:text-stone-100 truncate">
+                            <div className="text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
                               {getProductName(p, lang)} {p.vol}
                             </div>
-                            <div className="text-xs text-[#6F6466] dark:text-stone-400 tabular-nums">
+                            <div className="text-xs text-[#5A6270] dark:text-zinc-400 tabular-nums">
                               {formatSom(p.box)}/{t.boxUnit}
                             </div>
                           </div>
@@ -829,25 +835,25 @@ export const AppShell: React.FC = () => {
                             type="button"
                             aria-label={t.removeFromCart}
                             onClick={() => updateQty(id, -q)}
-                            className="w-11 h-11 -mr-1.5 -mt-1.5 rounded-xl flex items-center justify-center text-[#6F6466] hover:text-[#C0262D] flex-none"
+                            className="w-11 h-11 -mr-1.5 -mt-1.5 rounded-xl flex items-center justify-center text-[#5A6270] hover:text-[#DC2626] flex-none"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                         <div className="flex items-center justify-between gap-2">
-                          <div className="inline-flex items-center h-11 rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700">
+                          <div className="inline-flex items-center h-11 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-700">
                             <button
                               type="button"
                               aria-label={t.removeFromCart}
                               onClick={() => updateQty(id, -1)}
-                              className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#221819] dark:text-stone-300 hover:bg-[#F6F4F3]"
+                              className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#111827] dark:text-zinc-300 hover:bg-[#F4F5F7]"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
                             <button
                               type="button"
                               onClick={() => setSheet({ type: 'quickQty', id })}
-                              className="min-w-[32px] h-11 px-1 text-center text-sm font-bold text-[#800020] dark:text-[#F4728A] tabular-nums"
+                              className="min-w-[32px] h-11 px-1 text-center text-sm font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums"
                             >
                               {q}
                             </button>
@@ -855,12 +861,12 @@ export const AppShell: React.FC = () => {
                               type="button"
                               aria-label={t.addToCart}
                               onClick={() => updateQty(id, 1)}
-                              className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#800020] dark:text-[#F4728A] hover:bg-[#FBECEF]"
+                              className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FFF1F2]"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
-                          <strong className="text-sm font-bold text-[#221819] dark:text-white tabular-nums">
+                          <strong className="text-sm font-bold text-[#111827] dark:text-white tabular-nums">
                             {formatSom(p.box * q)}
                           </strong>
                         </div>
@@ -871,25 +877,25 @@ export const AppShell: React.FC = () => {
               )}
             </div>
 
-            <div className="pt-3 mt-3 border-t border-[#E7E1E1] dark:border-stone-800 space-y-2">
-              <div className="flex justify-between text-xs text-[#6F6466] dark:text-stone-400">
+            <div className="pt-3 mt-3 border-t border-[#E2E5EA] dark:border-zinc-800 space-y-2">
+              <div className="flex justify-between text-xs text-[#5A6270] dark:text-zinc-400">
                 <span>{t.discountLine(discountPct)}</span>
-                <span className="font-bold text-[#1E7A46] dark:text-[#4ADE80] tabular-nums">
+                <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums">
                   −{formatSom(discountAmount)}
                 </span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-sm font-bold text-[#221819] dark:text-stone-200">
+                <span className="text-sm font-bold text-[#111827] dark:text-zinc-200">
                   {t.totalToPayShort}
                 </span>
-                <strong className="text-xl font-bold text-[#221819] dark:text-white tabular-nums">
+                <strong className="text-xl font-bold text-[#111827] dark:text-white tabular-nums">
                   {formatSom(discountedTotal)}
                 </strong>
               </div>
               <button
                 type="button"
                 onClick={() => goTab(cartCount > 0 ? 'cart' : 'cat')}
-                className="w-full min-h-[48px] rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
+                className="w-full min-h-[48px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
                 <span>{cartCount > 0 ? t.goToCartBtn : t.chooseProductsBtn}</span>

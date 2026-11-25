@@ -7,6 +7,7 @@ import {
   confirmHandover as apiConfirmHandover,
   getCheckout as apiGetCheckout,
   getOrders as apiGetOrders,
+  getPayments as apiGetPayments,
   getProducts as apiGetProducts,
   getSession as apiGetSession,
   getShop as apiGetShop,
@@ -22,6 +23,7 @@ import type {
   Lang,
   NotificationItem,
   OrderRecord,
+  PaymentRecord,
   Product,
   SessionInfo,
   SheetState,
@@ -116,6 +118,7 @@ interface StoreContextValue {
   productsLoading: boolean;
   orders: OrderRecord[];
   ordersLoading: boolean;
+  payments: PaymentRecord[];
   shop: ShopInfo | null;
   session: SessionInfo | null;
   monthTotal: number;
@@ -209,6 +212,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [productsLoading, setProductsLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState<boolean>(true);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [monthTotal, setMonthTotal] = useState<number>(820000);
@@ -266,18 +270,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     initTelegramApp();
     let active = true;
 
-    Promise.all([apiGetSession(), apiGetShop(), apiGetProducts(), apiGetOrders()]).then(
-      ([sess, shp, prods, ords]) => {
-        if (!active) return;
-        setSession(sess);
-        setMonthTotal(sess.monthTotal);
-        setShop(shp);
-        setProducts(prods);
-        setProductsLoading(false);
-        setOrders(ords);
-        setOrdersLoading(false);
-      },
-    );
+    Promise.all([
+      apiGetSession(),
+      apiGetShop(),
+      apiGetProducts(),
+      apiGetOrders(),
+      apiGetPayments(),
+    ]).then(([sess, shp, prods, ords, pays]) => {
+      if (!active) return;
+      setSession(sess);
+      setMonthTotal(sess.monthTotal);
+      setShop(shp);
+      setProducts(prods);
+      setProductsLoading(false);
+      setOrders(ords);
+      setOrdersLoading(false);
+      setPayments(pays);
+    });
 
     return () => {
       active = false;
@@ -558,7 +567,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 ? 'Добавлено на полку'
                 : "Javonga qo'shildi",
             text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
-            tone: exists ? 'red' : 'ok',
+            tone: exists ? 'red' : 'blue',
           });
         }, 0);
         if (exists) {
@@ -672,7 +681,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             icon: 'repeat',
             title: lang === 'ru' ? 'Автозаказ включён' : 'Avto-buyurtma yoqildi',
             text: lang === 'ru' ? 'Уведомление придёт в понедельник утром' : 'Dushanba ertalab xabar keladi',
-            tone: 'ok',
+            tone: 'blue',
           });
         }, 0);
       }
@@ -814,7 +823,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         icon: 'check',
         title: t.handoverConfirmedToast,
         text: `#${id}`,
-        tone: 'ok',
+        tone: 'blue',
       });
     },
     [showToast, t.handoverConfirmedToast],
@@ -873,6 +882,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     productsLoading,
     orders,
     ordersLoading,
+    payments,
     shop,
     session,
     monthTotal,

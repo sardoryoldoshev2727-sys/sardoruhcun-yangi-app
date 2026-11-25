@@ -133,3 +133,10 @@ export interface StockInfo {
   sub: string;
 }
 
+export interface PaymentRecord {
+  id: string;
+  title: string;
+  amount: number;
+  method: string;
+}
+

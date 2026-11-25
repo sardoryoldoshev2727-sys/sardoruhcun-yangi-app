@@ -33,12 +33,12 @@ export const CartView: React.FC = () => {
 
   if (ids.length === 0) {
     return (
-      <div className="py-12 px-4 text-center max-w-sm mx-auto bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl">
-        <div className="w-16 h-16 rounded-2xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center mx-auto mb-4">
+      <div className="py-12 px-4 text-center max-w-sm mx-auto bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl">
+        <div className="w-16 h-16 rounded-2xl bg-[#FFF1F2] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center mx-auto mb-4">
           <ShoppingCart className="w-7 h-7" />
         </div>
-        <h2 className="text-xl font-bold text-[#221819] dark:text-white">{t.emptyCartTitle}</h2>
-        <p className="text-sm text-[#6F6466] dark:text-stone-400 mt-1.5 mb-5">
+        <h2 className="text-xl font-bold text-[#111827] dark:text-white">{t.emptyCartTitle}</h2>
+        <p className="text-sm text-[#5A6270] dark:text-zinc-400 mt-1.5 mb-5">
           {t.emptyCartSub}
         </p>
         <div className="space-y-2.5">
@@ -48,7 +48,7 @@ export const CartView: React.FC = () => {
               fillShelfToCart(false);
               goTab('cart');
             }}
-            className="w-full min-h-[44px] px-5 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] px-5 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
           >
             <Repeat className="w-4 h-4" />
             <span>{t.addUsualOrder}</span>
@@ -56,7 +56,7 @@ export const CartView: React.FC = () => {
           <button
             type="button"
             onClick={() => goTab('cat')}
-            className="w-full min-h-[44px] px-5 rounded-xl bg-[#F6F4F3] dark:bg-stone-900 border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm inline-flex items-center justify-center"
+            className="w-full min-h-[44px] px-5 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm inline-flex items-center justify-center"
           >
             {t.goToCatalog}
           </button>
@@ -72,7 +72,7 @@ export const CartView: React.FC = () => {
       {/* Left Column: Single green savings line + Cart Items */}
       <div className="space-y-3">
         {discountPct > 0 && (
-          <div className="rounded-xl px-3.5 py-3 bg-[#EBF6EF] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2.5 text-sm font-semibold text-[#1E7A46] dark:text-[#4ADE80]">
+          <div className="rounded-xl px-3.5 py-3 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2.5 text-sm font-semibold text-[#16A34A] dark:text-[#4ADE80]">
             <Sparkles className="w-4 h-4 flex-none" />
             <span className="tabular-nums">
               {t.discountSavingsLine(discountPct, formatSom(discountAmount))}
@@ -91,15 +91,15 @@ export const CartView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'confirmClear' })}
-            className="flex-1 min-h-[44px] rounded-xl bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-700 text-[#221819] dark:text-stone-200 font-semibold text-sm inline-flex items-center justify-center gap-1.5 card-calm"
+            className="flex-1 min-h-[44px] rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm inline-flex items-center justify-center gap-1.5 card-calm"
           >
-            <Trash2 className="w-4 h-4 text-[#C0262D] dark:text-[#F87171]" />
+            <Trash2 className="w-4 h-4 text-[#DC2626] dark:text-[#F87171]" />
             <span>{t.clearCartBtn}</span>
           </button>
           <button
             type="button"
             onClick={() => goTab('cat')}
-            className="flex-[1.5] min-h-[44px] rounded-xl bg-[#221819] dark:bg-stone-800 text-white font-semibold text-sm inline-flex items-center justify-center gap-1.5"
+            className="flex-[1.5] min-h-[44px] rounded-xl bg-[#111827] dark:bg-zinc-800 text-white font-semibold text-sm inline-flex items-center justify-center gap-1.5"
           >
             <ShoppingCart className="w-4 h-4" />
             <span>{t.continueShopping}</span>
@@ -107,15 +107,15 @@ export const CartView: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Column: Schedule + Receipt summary (No AnorSeeds block here!) */}
+      {/* Right Column: Schedule + Receipt summary */}
       <div className="space-y-3.5 lg:sticky lg:top-0">
-        <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-3">
-          <h2 className="text-base font-bold text-[#221819] dark:text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#800020] dark:text-[#F4728A]" />
+        <section className="bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl p-4 card-calm space-y-3">
+          <h2 className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#9B111E] dark:text-[#FB7185]" />
             <span>{t.whenDeliverTitle}</span>
           </h2>
 
-          <div className="grid grid-cols-3 bg-[#F6F4F3] dark:bg-stone-900 rounded-xl p-1 gap-1">
+          <div className="grid grid-cols-3 bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl p-1 gap-1">
             {DAYS.map((_, i) => (
               <button
                 key={i}
@@ -123,8 +123,8 @@ export const CartView: React.FC = () => {
                 onClick={() => setDay(i)}
                 className={`min-h-[44px] rounded-lg text-sm transition-colors ${
                   i === day
-                    ? 'bg-white dark:bg-[#1C1819] text-[#800020] dark:text-[#F4728A] font-bold border border-[#E7E1E1] dark:border-stone-700'
-                    : 'text-[#6F6466] dark:text-stone-400 font-semibold'
+                    ? 'bg-white dark:bg-[#1A1C20] text-[#9B111E] dark:text-[#FB7185] font-bold border border-[#E2E5EA] dark:border-zinc-700'
+                    : 'text-[#5A6270] dark:text-zinc-400 font-semibold'
                 }`}
               >
                 {getDayLabel(i, lang)}
@@ -140,8 +140,8 @@ export const CartView: React.FC = () => {
                 onClick={() => setSlot(i)}
                 className={`min-h-[44px] px-3 rounded-xl border text-xs flex items-center justify-center gap-1.5 transition-colors ${
                   i === slot
-                    ? 'bg-[#FBECEF] dark:bg-[#361820] border-[#800020] text-[#800020] dark:text-[#F4728A] font-bold'
-                    : 'bg-[#F6F4F3] dark:bg-stone-900 border-[#E7E1E1] dark:border-stone-700 text-[#6F6466] dark:text-stone-300 font-semibold'
+                    ? 'bg-[#FFF1F2] dark:bg-rose-950/50 border-[#9B111E] text-[#9B111E] dark:text-[#FB7185] font-bold'
+                    : 'bg-[#F4F5F7] dark:bg-zinc-900 border-[#E2E5EA] dark:border-zinc-700 text-[#5A6270] dark:text-zinc-300 font-semibold'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5 flex-none" />
@@ -150,45 +150,45 @@ export const CartView: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 min-h-[44px] bg-[#F6F4F3] dark:bg-stone-900 border border-[#E7E1E1] dark:border-stone-700 rounded-xl px-3 focus-within:border-[#800020]">
-            <Pencil className="w-4 h-4 text-[#6F6466] flex-none" />
+          <div className="flex items-center gap-2.5 min-h-[44px] bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 rounded-xl px-3 focus-within:border-[#9B111E]">
+            <Pencil className="w-4 h-4 text-[#5A6270] flex-none" />
             <input
               type="text"
               placeholder={t.commentPlaceholder}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-[#221819] dark:text-stone-100 placeholder:text-[#6F6466] outline-none"
+              className="flex-1 bg-transparent text-sm text-[#111827] dark:text-zinc-100 placeholder:text-[#5A6270] outline-none"
             />
           </div>
         </section>
 
-        <section className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-4 card-calm space-y-2.5 text-sm">
-          <h2 className="text-base font-bold text-[#221819] dark:text-white">
+        <section className="bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl p-4 card-calm space-y-2.5 text-sm">
+          <h2 className="text-base font-bold text-[#111827] dark:text-white">
             {t.orderSummaryTitle}
           </h2>
-          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+          <div className="flex justify-between text-[#5A6270] dark:text-zinc-300">
             <span>{t.productsCountLine(boxCount)}</span>
-            <span className="font-semibold tabular-nums text-[#221819] dark:text-white">
+            <span className="font-semibold tabular-nums text-[#111827] dark:text-white">
               {formatSom(subtotal)}
             </span>
           </div>
-          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+          <div className="flex justify-between text-[#5A6270] dark:text-zinc-300">
             <span>{t.discountLine(discountPct)}</span>
-            <span className="font-bold text-[#1E7A46] dark:text-[#4ADE80] tabular-nums">
+            <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums">
               −{formatSom(discountAmount)}
             </span>
           </div>
-          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+          <div className="flex justify-between text-[#5A6270] dark:text-zinc-300">
             <span>{t.deliveryLabel}</span>
-            <span className="font-semibold text-[#1E7A46] dark:text-[#4ADE80]">{t.freeLabel}</span>
+            <span className="font-semibold text-[#111827] dark:text-zinc-100">{t.freeLabel}</span>
           </div>
-          <div className="flex justify-between text-[#6F6466] dark:text-stone-300">
+          <div className="flex justify-between text-[#5A6270] dark:text-zinc-300">
             <span>{t.paymentTypeLabel}</span>
             <span>{t.paymentMethodsValue}</span>
           </div>
-          <div className="flex justify-between pt-3 mt-1 border-t border-dashed border-[#E7E1E1] dark:border-stone-700 text-base font-bold text-[#221819] dark:text-white">
+          <div className="flex justify-between pt-3 mt-1 border-t border-dashed border-[#E2E5EA] dark:border-zinc-700 text-base font-bold text-[#111827] dark:text-white">
             <span>{t.totalDueLabel}</span>
-            <span className="text-xl tabular-nums text-[#800020] dark:text-[#F4728A]">
+            <span className="text-xl tabular-nums text-[#9B111E] dark:text-[#FB7185]">
               {formatSom(total)}
             </span>
           </div>
@@ -196,7 +196,7 @@ export const CartView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'confirmOrder' })}
-            className="hidden md:inline-flex w-full min-h-[48px] mt-2 rounded-xl bg-[#800020] hover:bg-[#630019] text-white font-semibold text-base items-center justify-center gap-2"
+            className="hidden md:inline-flex w-full min-h-[48px] mt-2 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-base items-center justify-center gap-2"
           >
             <Lock className="w-4 h-4" />
             <span>{t.placeOrderBtn}</span>

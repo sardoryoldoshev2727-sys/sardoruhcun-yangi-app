@@ -98,14 +98,14 @@ export const CatalogView: React.FC = () => {
             onClick={() => setFiltersOpen((o) => !o)}
             className={`flex-none inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
               filtersOpen || activeFilterCount > 0
-                ? 'bg-[#800020] text-white border-[#800020]'
-                : 'bg-white dark:bg-[#1C1819] border-[#E7E1E1] dark:border-stone-800 text-[#221819] dark:text-stone-200'
+                ? 'bg-[#9B111E] text-white border-[#9B111E]'
+                : 'bg-white dark:bg-[#1A1C20] border-[#E2E5EA] dark:border-zinc-800 text-[#111827] dark:text-zinc-200'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
             <span>{t.filtersBtn}</span>
             {activeFilterCount > 0 && (
-              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-white text-[#800020] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {activeFilterCount}
               </span>
             )}
@@ -123,8 +123,8 @@ export const CatalogView: React.FC = () => {
                 onClick={() => setSortMode(id)}
                 className={`flex-none min-h-[44px] px-3.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
                   active
-                    ? 'bg-[#221819] dark:bg-white text-white dark:text-[#221819]'
-                    : 'bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 text-[#6F6466] dark:text-stone-300'
+                    ? 'bg-[#111827] dark:bg-white text-white dark:text-[#111827]'
+                    : 'bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 text-[#5A6270] dark:text-zinc-300'
                 }`}
               >
                 {getSortLabel(id, lang)}
@@ -133,15 +133,15 @@ export const CatalogView: React.FC = () => {
           })}
         </div>
 
-        <div className="inline-flex items-center gap-1 bg-[#EFECEC] dark:bg-stone-800 rounded-xl p-1 flex-none">
+        <div className="inline-flex items-center gap-1 bg-[#EEF0F3] dark:bg-zinc-800 rounded-xl p-1 flex-none">
           <button
             type="button"
             aria-label={t.gridMode}
             onClick={() => setViewMode('grid')}
             className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
               viewMode === 'grid'
-                ? 'bg-white dark:bg-[#1C1819] text-[#800020] dark:text-[#F4728A]'
-                : 'text-[#6F6466] dark:text-stone-400'
+                ? 'bg-white dark:bg-[#1A1C20] text-[#9B111E] dark:text-[#FB7185]'
+                : 'text-[#5A6270] dark:text-zinc-400'
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
@@ -153,8 +153,8 @@ export const CatalogView: React.FC = () => {
             onClick={() => setViewMode('row')}
             className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
               viewMode === 'row'
-                ? 'bg-white dark:bg-[#1C1819] text-[#800020] dark:text-[#F4728A]'
-                : 'text-[#6F6466] dark:text-stone-400'
+                ? 'bg-white dark:bg-[#1A1C20] text-[#9B111E] dark:text-[#FB7185]'
+                : 'text-[#5A6270] dark:text-zinc-400'
             }`}
           >
             <List className="w-4 h-4" />
@@ -173,17 +173,17 @@ export const CatalogView: React.FC = () => {
             transition={{ duration: 0.16, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <div className="bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl p-3.5 space-y-3 card-calm">
+            <div className="bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl p-3.5 space-y-3 card-calm">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wide text-[#6F6466] dark:text-stone-400">
+                  <span className="text-xs font-bold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400">
                     {t.brandLabel}
                   </span>
                   {hasAnyFilter && (
                     <button
                       type="button"
                       onClick={resetCatalogFilters}
-                      className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#800020] dark:text-[#F4728A]"
+                      className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>{t.clearFilters}</span>
@@ -200,8 +200,8 @@ export const CatalogView: React.FC = () => {
                         onClick={() => setBrandFilter(b)}
                         className={`min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
                           active
-                            ? 'bg-[#800020] text-white border-[#800020]'
-                            : 'bg-[#F6F4F3] dark:bg-stone-900 text-[#221819] dark:text-stone-300 border-[#E7E1E1] dark:border-stone-700'
+                            ? 'bg-[#9B111E] text-white border-[#9B111E]'
+                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
                         }`}
                       >
                         {b === 'Barchasi' ? getSortLabel('default', lang) : b}
@@ -212,7 +212,7 @@ export const CatalogView: React.FC = () => {
               </div>
 
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-[#6F6466] dark:text-stone-400 mb-2">
+                <div className="text-xs font-bold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400 mb-2">
                   {t.flavorLabel}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -221,8 +221,8 @@ export const CatalogView: React.FC = () => {
                     onClick={() => setFlavorFilter('Barchasi')}
                     className={`min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
                       flavorFilter === 'Barchasi'
-                        ? 'bg-[#800020] text-white border-[#800020]'
-                        : 'bg-[#F6F4F3] dark:bg-stone-900 text-[#221819] dark:text-stone-300 border-[#E7E1E1] dark:border-stone-700'
+                        ? 'bg-[#9B111E] text-white border-[#9B111E]'
+                        : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
                     }`}
                   >
                     {getSortLabel('default', lang)}
@@ -236,8 +236,8 @@ export const CatalogView: React.FC = () => {
                         onClick={() => setFlavorFilter(active ? 'Barchasi' : name)}
                         className={`inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
                           active
-                            ? 'bg-[#800020] text-white border-[#800020]'
-                            : 'bg-[#F6F4F3] dark:bg-stone-900 text-[#221819] dark:text-stone-300 border-[#E7E1E1] dark:border-stone-700'
+                            ? 'bg-[#9B111E] text-white border-[#9B111E]'
+                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
                         }`}
                       >
                         <span
@@ -255,13 +255,13 @@ export const CatalogView: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between text-xs font-semibold text-[#6F6466] dark:text-stone-400 tabular-nums">
+      <div className="flex items-center justify-between text-xs font-semibold text-[#5A6270] dark:text-zinc-400 tabular-nums">
         <span>{t.shownCount(filtered.length)}</span>
         {hasAnyFilter && !filtersOpen && (
           <button
             type="button"
             onClick={resetCatalogFilters}
-            className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#800020] dark:text-[#F4728A]"
+            className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t.clearFilters}</span>
@@ -272,21 +272,21 @@ export const CatalogView: React.FC = () => {
       {productsLoading ? (
         <CatalogSkeleton viewMode={viewMode} />
       ) : filtered.length === 0 ? (
-        <div className="py-12 px-4 text-center bg-white dark:bg-[#1C1819] border border-[#E7E1E1] dark:border-stone-800 rounded-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-[#FBECEF] dark:bg-[#361820] text-[#800020] dark:text-[#F4728A] flex items-center justify-center mx-auto mb-3">
+        <div className="py-12 px-4 text-center bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-[#FFF1F2] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center mx-auto mb-3">
             <Search className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-[#221819] dark:text-white">
+          <h3 className="text-base font-bold text-[#111827] dark:text-white">
             {t.emptySearchTitle}
           </h3>
-          <p className="text-sm text-[#6F6466] dark:text-stone-400 mt-1">
+          <p className="text-sm text-[#5A6270] dark:text-zinc-400 mt-1">
             {t.emptySearchHint}
           </p>
           {hasAnyFilter && (
             <button
               type="button"
               onClick={resetCatalogFilters}
-              className="mt-4 min-h-[44px] px-5 rounded-xl bg-[#800020] hover:bg-[#630019] text-white text-base font-semibold inline-flex items-center gap-2"
+              className="mt-4 min-h-[44px] px-5 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white text-base font-semibold inline-flex items-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               <span>{t.clearFilters}</span>

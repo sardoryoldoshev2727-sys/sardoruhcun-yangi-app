@@ -52,7 +52,7 @@ export function initTelegramApp(): void {
   try {
     tg.ready?.();
     tg.expand?.();
-    tg.setHeaderColor?.('#800020');
+    tg.setHeaderColor?.('#9B111E');
   } catch {
     // Ignore errors when outside Telegram container
   }

@@ -35,17 +35,17 @@ export const DAYS = ['Ertaga', 'Indinga', 'Payshanba'];
 export const SLOTS = ['Ertalab 9–13', 'Tushdan keyin 13–18'];
 
 export const FLAVOR_LIST: [string, string][] = [
-  ["Olxo'ri", '#5B2245'],
-  ['Olcha', '#800020'],
-  ['Anor', '#800020'],
-  ['Olma', '#386641'],
-  ['Shaftoli', '#D96B27'],
-  ['Ananas', '#C98A14'],
-  ['Mango', '#DE820D'],
-  ['Qovun', '#527928'],
-  ['Nok', '#6A8E26'],
-  ['Apelsin', '#DF6415'],
-  ['Aloe', '#2D6A4F'],
+  ["Olxo'ri", '#6D2856'],
+  ['Olcha', '#B91C1C'],
+  ['Anor', '#9B111E'],
+  ['Olma', '#16A34A'],
+  ['Shaftoli', '#EA580C'],
+  ['Ananas', '#D97706'],
+  ['Mango', '#EA580C'],
+  ['Qovun', '#65A30D'],
+  ['Nok', '#65A30D'],
+  ['Apelsin', '#EA580C'],
+  ['Aloe', '#059669'],
 ];
 
 export const BRAND_FILTERS = ['Barchasi', 'LAL ANAAR', 'LAL ANAAR JUICE', 'ASIA FRUIT'] as const;
@@ -83,7 +83,7 @@ export function getFlavorColor(p: Product): string {
   for (const [key, color] of FLAVOR_LIST) {
     if (p.name.includes(key)) return color;
   }
-  return '#800020';
+  return '#9B111E';
 }
 
 export function getFlavorName(p: Product): string {
@@ -103,7 +103,7 @@ export function getProductBadge(p: Product): ProductBadgeType | null {
   if (p.out) return 'out';
   if (p.promoPct && p.promoPct > 0) return 'promo';
   if (p.isNew) return 'new';
-  if (!/gazli|ichimligi|Juice Drink/i.test(p.name)) return 'natural';
+  if (/sharbati/i.test(p.name) && !/Juice/i.test(p.name)) return 'natural';
   return null;
 }
 
