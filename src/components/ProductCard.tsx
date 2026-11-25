@@ -29,7 +29,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
         type="button"
         disabled
         aria-disabled="true"
-        className={`inline-flex items-center justify-center rounded-xl bg-[#EEF0F3] dark:bg-zinc-800 border border-[#E2E5EA] dark:border-zinc-700 text-[#5A6270] dark:text-zinc-400 font-semibold text-sm cursor-not-allowed ${
+        className={`inline-flex items-center justify-center rounded-xl bg-[#EEF0F3] dark:bg-zinc-800 border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-400 font-semibold text-sm cursor-not-allowed ${
           compact ? 'w-full min-h-[44px] px-2' : 'min-h-[44px] px-4'
         }`}
       >
@@ -46,11 +46,11 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
           e.stopPropagation();
           updateQty(product.id, 1);
         }}
-        className={`inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150 ${
+        className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150 ${
           compact ? 'w-full min-h-[44px] px-3' : 'min-h-[44px] px-4 min-w-[120px]'
         }`}
       >
-        <ShoppingCart className="w-4 h-4 flex-none" />
+        <ShoppingCart className="w-5 h-5 flex-none" />
         <span>{t.addToCart}</span>
       </button>
     );
@@ -69,13 +69,13 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
         onClick={() => updateQty(product.id, -1)}
         className="w-11 h-11 rounded-l-xl flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
       >
-        <Minus className="w-4 h-4 stroke-[2.5]" />
+        <Minus className="w-5 h-5 stroke-[2.2]" />
       </button>
       <button
         type="button"
         aria-label={`${qty} ${t.boxUnit}`}
         onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-        className="min-w-[36px] h-11 px-1.5 text-center font-bold text-base tabular-nums hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
+        className="min-w-[36px] h-11 px-2 text-center font-bold text-base tabular-nums hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
       >
         {qty}
       </button>
@@ -85,7 +85,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }
         onClick={() => updateQty(product.id, 1)}
         className="w-11 h-11 rounded-r-xl flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
       >
-        <Plus className="w-4 h-4 stroke-[2.5]" />
+        <Plus className="w-5 h-5 stroke-[2.2]" />
       </button>
     </div>
   );
@@ -98,25 +98,25 @@ function renderBadge(product: Product, t: ReturnType<typeof useStore>['t']) {
   switch (badgeType) {
     case 'out':
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#EEF0F3] dark:bg-zinc-800 text-[#5A6270] dark:text-zinc-400 text-xs font-semibold">
+        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#EEF0F3] dark:bg-zinc-800 text-[#6B7280] dark:text-zinc-400 text-xs font-semibold">
           {t.badgeOut}
         </span>
       );
     case 'promo':
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#FFF1F2] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-semibold">
+        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-semibold">
           {t.badgePromo(product.promoPct || 5)}
         </span>
       );
     case 'new':
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2563EB] dark:text-[#60A5FA] text-xs font-semibold">
+        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#EFF6FF] dark:bg-blue-950/50 text-[#2563EB] dark:text-[#60A5FA] text-xs font-semibold">
           {t.badgeNew}
         </span>
       );
     case 'natural':
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F4F5F7] dark:bg-zinc-800 text-[#374151] dark:text-zinc-300 border border-[#E2E5EA] dark:border-zinc-700 text-xs font-semibold">
+        <span className="inline-flex items-center px-2 py-1 rounded-full bg-[#F4F5F7] dark:bg-zinc-800 text-[#374151] dark:text-zinc-300 border border-[#E5E7EB] dark:border-zinc-700 text-xs font-semibold">
           {t.badgeNatural}
         </span>
       );
@@ -144,14 +144,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className={`h-full bg-white dark:bg-[#1A1C20] rounded-2xl p-3 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
+        className={`h-full bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
           inCart
             ? 'border-[#9B111E] dark:border-[#F43F5E]'
-            : 'border-[#E2E5EA] dark:border-zinc-800 hover:border-zinc-300'
+            : 'border-[#E5E7EB] dark:border-zinc-800 hover:border-zinc-300'
         }`}
       >
-        {/* Top corner: max 1 badge + 44x44 Heart tap target */}
-        <div className="flex items-center justify-between gap-1 mb-1.5 min-h-[44px] -mt-1.5">
+        {/* Top corner: max 1 pill badge + 44x44 Heart tap target */}
+        <div className="flex items-center justify-between gap-1 mb-2 min-h-[44px] -mt-1">
           <div className="min-w-0 truncate">{renderBadge(product, t)}</div>
           <button
             type="button"
@@ -160,13 +160,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               toggleFavorite(product.id);
             }}
-            className="w-11 h-11 -mr-1.5 flex items-center justify-center rounded-xl hover:bg-[#FFF1F2] dark:hover:bg-rose-950/40 transition-colors flex-none"
+            className="w-11 h-11 -mr-1 flex items-center justify-center rounded-xl hover:bg-[#FCE8EA] dark:hover:bg-rose-950/40 transition-colors flex-none"
           >
             <Heart
               className={`w-5 h-5 ${
                 fav
                   ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                  : 'text-[#5A6270] dark:text-zinc-400'
+                  : 'text-[#6B7280] dark:text-zinc-400'
               }`}
             />
           </button>
@@ -175,39 +175,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <ProductVisual product={product} size="grid" />
 
         {/* Brand line (12px) */}
-        <div className="mt-2.5 text-xs font-semibold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400 truncate">
+        <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400 truncate">
           {brand}
         </div>
 
         {/* Product name + volume (16px, 2-line clamp) */}
-        <div className="mt-0.5 font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.75rem]">
+        <div className="mt-1 font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.75rem] break-words">
           {displayName} {product.vol}
         </div>
 
         {/* Meta spec (12px) */}
-        <div className="mt-1 text-xs font-normal text-[#5A6270] dark:text-zinc-400 tabular-nums truncate">
+        <div className="mt-1 text-xs font-normal text-[#6B7280] dark:text-zinc-400 tabular-nums truncate">
           {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
         </div>
 
         {/* Big box price (single-line) + per piece OR cart qty (12px) */}
-        <div className="mt-2.5 mb-3">
+        <div className="mt-3 mb-3">
           {product.out ? (
-            <div className="text-base font-bold text-[#DC2626] dark:text-[#F87171] whitespace-nowrap">
+            <div className="text-base font-bold text-[#9B111E] dark:text-[#F87171] whitespace-nowrap">
               {t.outOfStock}
             </div>
           ) : (
             <>
-              <div className="text-lg sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
                 {formatNumberThin(product.box)}{' '}
-                <span className="text-sm font-semibold text-[#5A6270] dark:text-zinc-400">
+                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
                   so&apos;m
                 </span>
               </div>
               <div
-                className={`text-xs mt-0.5 tabular-nums truncate ${
+                className={`text-xs mt-1 tabular-nums truncate ${
                   inCart
                     ? 'font-semibold text-[#9B111E] dark:text-[#FB7185]'
-                    : 'font-normal text-[#5A6270] dark:text-zinc-400'
+                    : 'font-normal text-[#6B7280] dark:text-zinc-400'
                 }`}
               >
                 {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
@@ -227,16 +227,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className="bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl p-3 flex items-stretch gap-3 card-calm cursor-pointer"
+        className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3 flex items-stretch gap-3 card-calm cursor-pointer"
       >
         <ProductVisual product={product} size="row" />
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2">
+              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
                 {displayName} {product.vol}
               </div>
-              <div className="text-xs text-[#5A6270] dark:text-zinc-400 mt-0.5 tabular-nums">
+              <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
                 1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.box)}
               </div>
             </div>
@@ -247,14 +247,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 e.stopPropagation();
                 updateQty(product.id, -qty);
               }}
-              className="w-11 h-11 -mr-1.5 -mt-1.5 rounded-xl flex items-center justify-center text-[#DC2626] dark:text-[#F87171] hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex-none"
+              className="w-11 h-11 -mr-1 -mt-1 rounded-xl flex items-center justify-center text-[#9B111E] dark:text-[#F87171] hover:bg-[#FCE8EA] dark:hover:bg-red-950/30 transition-colors flex-none"
             >
-              <Trash2 className="w-4.5 h-4.5" />
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
-          <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+          <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
             <div>
-              <div className="text-lg sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
                 {formatSom(product.box * qty)}
               </div>
               <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
@@ -272,12 +272,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => setSheet({ type: 'prod', id: product.id })}
-      className={`h-full bg-white dark:bg-[#1A1C20] rounded-2xl p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
+      className={`h-full bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
         product.out ? 'opacity-70' : ''
       } ${
         inCart
           ? 'border-[#9B111E] dark:border-[#F43F5E]'
-          : 'border-[#E2E5EA] dark:border-zinc-800 hover:border-zinc-300'
+          : 'border-[#E5E7EB] dark:border-zinc-800 hover:border-zinc-300'
       }`}
     >
       <ProductVisual product={product} size="row" />
@@ -286,12 +286,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex items-start justify-between gap-1">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400">
                   {brand}
                 </span>
                 {renderBadge(product, t)}
               </div>
-              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 mt-0.5">
+              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 mt-1 break-words">
                 {displayName} {product.vol}
               </div>
             </div>
@@ -302,28 +302,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 e.stopPropagation();
                 toggleFavorite(product.id);
               }}
-              className="w-11 h-11 -mr-2 -mt-2 flex items-center justify-center rounded-xl hover:bg-[#FFF1F2] dark:hover:bg-rose-950/40 flex-none"
+              className="w-11 h-11 -mr-1 -mt-1 flex items-center justify-center rounded-xl hover:bg-[#FCE8EA] dark:hover:bg-rose-950/40 flex-none"
             >
               <Heart
                 className={`w-5 h-5 ${
                   fav
                     ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                    : 'text-[#5A6270] dark:text-zinc-400'
+                    : 'text-[#6B7280] dark:text-zinc-400'
                 }`}
               />
             </button>
           </div>
 
-          <div className="mt-0.5 text-xs text-[#5A6270] dark:text-zinc-400 tabular-nums">
+          <div className="mt-1 text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
             {product.vol} · {pack} · {product.blk} {t.pieceUnit}/{t.boxUnit}
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+        <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-lg sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+            <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
-              <span className="text-sm font-semibold text-[#5A6270] dark:text-zinc-400">
+              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
                 so&apos;m
               </span>
             </div>
@@ -331,7 +331,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               className={`text-xs tabular-nums ${
                 inCart
                   ? 'font-semibold text-[#9B111E] dark:text-[#FB7185]'
-                  : 'font-normal text-[#5A6270] dark:text-zinc-400'
+                  : 'font-normal text-[#6B7280] dark:text-zinc-400'
               }`}
             >
               {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
@@ -351,21 +351,21 @@ interface ShelfRowCardProps {
 }
 
 export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editMode }) => {
-  const { cart, shelf, lang, t, setSheet, updateShelfUsual, removeShelfItem } = useStore();
+  const { cart, shelf, refillById, lang, t, setSheet, updateShelfUsual, removeShelfItem } = useStore();
   const [id, usual] = item;
   const inCart = (cart[id] || 0) > 0;
-  const st = getStockInfo(product, shelf, lang);
+  const st = getStockInfo(product, shelf, lang, refillById[id]);
   const displayName = shortName(getProductName(product, lang));
 
   const stockColor =
     st.cls === 'crit'
-      ? 'text-[#DC2626] dark:text-[#F87171]'
+      ? 'text-[#9B111E] dark:text-[#F87171]'
       : st.cls === 'warn'
         ? 'text-[#D97706] dark:text-[#FBBF24]'
         : 'text-[#2563EB] dark:text-[#60A5FA]';
   const stockBarBg =
     st.cls === 'crit'
-      ? 'bg-[#DC2626]'
+      ? 'bg-[#9B111E]'
       : st.cls === 'warn'
         ? 'bg-[#D97706]'
         : 'bg-[#2563EB]';
@@ -375,60 +375,63 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
       onClick={() => {
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`bg-white dark:bg-[#1A1C20] rounded-2xl p-3 flex items-stretch gap-3 card-calm border transition-colors ${
+      className={`bg-white dark:bg-[#1A1C20] rounded-xl p-3 flex items-stretch gap-3 card-calm border transition-colors ${
         editMode ? '' : 'cursor-pointer'
       } ${
         inCart
           ? 'border-[#9B111E] dark:border-[#F43F5E]'
-          : 'border-[#E2E5EA] dark:border-zinc-800'
+          : 'border-[#E5E7EB] dark:border-zinc-800'
       }`}
     >
       <ProductVisual product={product} size="row" />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2">
+            <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
               {displayName} {product.vol}
             </div>
-            <Heart className="w-4.5 h-4.5 fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185] flex-none mt-0.5" />
+            <Heart className="w-5 h-5 fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185] flex-none mt-1" />
           </div>
-          <div className="text-xs text-[#5A6270] dark:text-zinc-400 mt-0.5 tabular-nums">
+          <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
             1 {t.boxUnit} = {product.blk} {t.pieceUnit} · {formatSom(product.one)}
           </div>
           <div className="mt-2">
-            <div className="flex items-center justify-between text-xs font-semibold mb-1">
+            <div className="flex items-center justify-between gap-2 text-xs font-semibold mb-1">
               <span className={stockColor}>{st.txt}</span>
-              {st.sub && <span className="text-[#5A6270] dark:text-zinc-400">{st.sub}</span>}
+              {st.sub && <span className="text-[#6B7280] dark:text-zinc-400 whitespace-nowrap">{st.sub}</span>}
             </div>
-            <div className="h-1.5 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
-              <div className={`h-full rounded-full ${stockBarBg}`} style={{ width: `${st.pct}%` }} />
+            <div className="h-2 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-150 ease-out ${stockBarBg}`}
+                style={{ width: `${st.pct}%` }}
+              />
             </div>
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+        <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-lg sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+            <div className="text-base sm:text-xl font-bold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
-              <span className="text-sm font-semibold text-[#5A6270] dark:text-zinc-400">
+              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
                 so&apos;m
               </span>
             </div>
-            <div className="text-xs font-normal text-[#5A6270] dark:text-zinc-400">
+            <div className="text-xs font-normal text-[#6B7280] dark:text-zinc-400">
               {inCart ? t.inCartQty(cart[id]) : formatSom(product.one) + ' ' + t.perPieceSuffix}
             </div>
           </div>
 
           {editMode ? (
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-              <div className="inline-flex items-center h-11 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900">
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="inline-flex items-center h-11 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900">
                 <button
                   type="button"
                   aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
                   className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#111827] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-5 h-5" />
                 </button>
                 <span className="min-w-[28px] text-center font-bold text-sm tabular-nums">
                   {usual}
@@ -437,18 +440,18 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                   type="button"
                   aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FFF1F2]"
+                  className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA]"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </button>
               </div>
               <button
                 type="button"
                 aria-label={t.removeFromCart}
                 onClick={() => removeShelfItem(id)}
-                className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] dark:text-[#F87171] flex items-center justify-center"
+                className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-red-950/40 text-[#9B111E] dark:text-[#F87171] flex items-center justify-center"
               >
-                <X className="w-4.5 h-4.5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           ) : (

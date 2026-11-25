@@ -60,7 +60,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'mini') {
     return (
-      <div className="flex-none w-12 h-14 bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-1 p-1 overflow-hidden">
+      <div className="flex-none w-12 h-14 bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-1 p-1 overflow-hidden">
         {product.photo ? (
           <img
             src={product.photo}
@@ -72,7 +72,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
           <BottleSvg product={product} color={color} className="w-6 h-10" />
         )}
         <div
-          className="w-2 h-10 rounded-[2px] flex-none"
+          className="w-2 h-10 rounded-full flex-none"
           style={{ backgroundColor: color }}
           aria-hidden="true"
         />
@@ -82,7 +82,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'large') {
     return (
-      <div className="h-56 rounded-2xl bg-[#F8F9FA] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-5 p-4 overflow-hidden">
+      <div className="h-56 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-4 p-4 overflow-hidden">
         {product.photo ? (
           <img
             src={product.photo}
@@ -94,10 +94,10 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
           <BottleSvg product={product} color={color} className="h-[84%] w-auto" />
         )}
         <div
-          className="w-9 h-44 rounded-lg text-white flex items-center justify-center flex-none overflow-hidden py-1.5"
+          className="w-9 h-44 rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-2"
           style={{ backgroundColor: color }}
         >
-          <span className="vertical-flavor text-[10px] font-bold tracking-wider uppercase whitespace-nowrap leading-none">
+          <span className="vertical-flavor text-xs font-bold tracking-wider uppercase whitespace-nowrap leading-none">
             {flavorLabel}
           </span>
         </div>
@@ -108,7 +108,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   if (size === 'grid') {
     return (
       <div
-        className={`w-full h-32 bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-800 flex items-center justify-center gap-2 px-2 py-2 overflow-hidden ${
+        className={`w-full h-32 bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 flex items-center justify-center gap-2 px-2 py-2 overflow-hidden ${
           product.out ? 'opacity-55' : ''
         }`}
       >
@@ -124,10 +124,10 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
           <BottleSvg product={product} color={color} className="w-14 h-24 flex-none" />
         )}
         <div
-          className="w-6 h-24 rounded-[5px] text-white flex items-center justify-center flex-none overflow-hidden py-1"
+          className="w-6 h-24 rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-1"
           style={{ backgroundColor: color }}
         >
-          <span className="vertical-flavor text-[10px] font-bold tracking-wide uppercase whitespace-nowrap leading-none">
+          <span className="vertical-flavor text-xs font-bold tracking-wide uppercase whitespace-nowrap leading-none">
             {flavorLabel}
           </span>
         </div>
@@ -138,7 +138,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   // compact 'row'
   return (
     <div
-      className={`flex-none w-[92px] h-[104px] bg-[#F8F9FA] dark:bg-zinc-900 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 flex items-center justify-center gap-1.5 p-1.5 overflow-hidden ${
+      className={`flex-none w-[92px] h-[104px] bg-[#F4F5F7] dark:bg-zinc-900 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 flex items-center justify-center gap-1 p-2 overflow-hidden ${
         product.out ? 'opacity-55' : ''
       }`}
     >
@@ -151,13 +151,13 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
           className="max-w-[48px] h-full object-contain"
         />
       ) : (
-        <BottleSvg product={product} color={color} className="w-10 h-18 flex-none" />
+        <BottleSvg product={product} color={color} className="w-10 h-16 flex-none" />
       )}
       <div
-        className="w-5.5 h-[84px] rounded-[4px] text-white flex items-center justify-center flex-none overflow-hidden py-1"
+        className="w-6 h-[84px] rounded-xl text-white flex items-center justify-center flex-none overflow-hidden py-1"
         style={{ backgroundColor: color }}
       >
-        <span className="vertical-flavor text-[10px] font-bold tracking-wide uppercase whitespace-nowrap leading-none">
+        <span className="vertical-flavor text-xs font-bold tracking-wide uppercase whitespace-nowrap leading-none">
           {flavorLabel}
         </span>
       </div>

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, Delete, Heart, Lock, Package, Plus, Trash2, X } from 'lucide-react';
+import { Check, Delete, Heart, Lock, Package, Plus, Star, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getProductName, getSlotLabel } from '../i18n';
 import { formatSom, getStockInfo } from '../utils/catalog';
 import { CartStepper } from './ProductCard';
 import { ProductVisual } from './ProductVisual';
+import { ProfitCalculatorCard } from './ProfitCalculatorCard';
 
 const QUICK_PRESETS = [1, 2, 3, 5, 10, 15, 20, 25];
 
@@ -15,6 +16,7 @@ export const SheetsAndModals: React.FC = () => {
     setSheet,
     cart,
     shelf,
+    refillById,
     products,
     productsById,
     checkoutQuote,
@@ -32,6 +34,7 @@ export const SheetsAndModals: React.FC = () => {
     clearCart,
     placeOrder,
     cancelOrder,
+    submitOrderRating,
     showToast,
   } = useStore();
 
@@ -39,6 +42,10 @@ export const SheetsAndModals: React.FC = () => {
   const [customQty, setCustomQty] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [customCancelReason, setCustomCancelReason] = useState('');
+  const [rateStars, setRateStars] = useState<number>(5);
+  const [rateChips, setRateChips] = useState<string[]>([]);
+  const [rateComment, setRateComment] = useState<string>('');
+  const [submittingRate, setSubmittingRate] = useState<boolean>(false);
 
   useEffect(() => {
     if (sheet?.type === 'quickQty') {
@@ -49,11 +56,23 @@ export const SheetsAndModals: React.FC = () => {
       setCancelReason(t.cancelReasons[0] || '');
       setCustomCancelReason('');
     }
+    if (sheet?.type === 'rateOrder') {
+      setRateStars(5);
+      setRateChips([]);
+      setRateComment('');
+      setSubmittingRate(false);
+    }
   }, [sheet, cart, t.cancelReasons]);
 
   const dismiss = () => {
     setPin('');
     setSheet(null);
+  };
+
+  const toggleRateChip = (chip: string) => {
+    setRateChips((prev) =>
+      prev.includes(chip) ? prev.filter((c) => c !== chip) : [...prev, chip],
+    );
   };
 
   return (
@@ -82,7 +101,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
@@ -90,19 +109,19 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: 24, opacity: 0.9 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 24, opacity: 0 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-4 pb-5 border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
 
-              <div className="flex items-center gap-3 pb-3 border-b border-[#E2E5EA] dark:border-zinc-800">
+              <div className="flex items-center gap-3 pb-3 border-b border-[#E5E7EB] dark:border-zinc-800">
                 <ProductVisual product={product} size="mini" />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base font-bold text-[#111827] dark:text-white truncate">
                     {displayName} {product.vol}
                   </h3>
-                  <p className="text-xs text-[#5A6270] dark:text-zinc-400 tabular-nums">
+                  <p className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap">
                     {formatSom(product.box)} / {t.boxUnit} · {product.blk} {t.pieceUnit}
                   </p>
                 </div>
@@ -110,16 +129,16 @@ export const SheetsAndModals: React.FC = () => {
                   type="button"
                   aria-label={t.closeLabel}
                   onClick={dismiss}
-                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#5A6270] dark:text-zinc-400 flex items-center justify-center"
+                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] dark:text-zinc-400 flex items-center justify-center"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div className="mt-3">
-                <div className="flex items-center justify-between text-xs font-semibold text-[#5A6270] dark:text-zinc-400 mb-2">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Package className="w-4 h-4 text-[#9B111E] dark:text-[#FB7185]" />
+                <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280] dark:text-zinc-400 mb-2">
+                  <span className="inline-flex items-center gap-2">
+                    <Package className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185]" />
                     {t.quickQtyTitle}
                   </span>
                   {currentQty > 0 && (
@@ -137,10 +156,10 @@ export const SheetsAndModals: React.FC = () => {
                         key={n}
                         type="button"
                         onClick={() => applyQty(n)}
-                        className={`min-h-[44px] rounded-xl font-bold text-base tabular-nums transition-colors border ${
+                        className={`min-h-[44px] rounded-xl font-bold text-base tabular-nums transition-colors duration-150 border ${
                           isSelected
                             ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-100 border-[#E2E5EA] dark:border-zinc-700 hover:border-[#9B111E]'
+                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-100 border-[#E5E7EB] dark:border-zinc-700 hover:border-[#9B111E]'
                         }`}
                       >
                         {n}
@@ -155,9 +174,9 @@ export const SheetsAndModals: React.FC = () => {
                   e.preventDefault();
                   applyQty(parsedQty);
                 }}
-                className="mt-3.5 flex items-center gap-2"
+                className="mt-4 flex items-center gap-2"
               >
-                <div className="flex-1 flex items-center min-h-[44px] px-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 focus-within:border-[#9B111E]">
+                <div className="flex-1 flex items-center min-h-[44px] px-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-700 focus-within:border-[#9B111E]">
                   <input
                     type="number"
                     min={0}
@@ -168,21 +187,21 @@ export const SheetsAndModals: React.FC = () => {
                     placeholder={t.otherQtyPlaceholder}
                     className="w-full bg-transparent text-base font-bold text-[#111827] dark:text-white outline-none tabular-nums"
                   />
-                  <span className="text-xs font-semibold text-[#5A6270] ml-1">{t.boxUnit}</span>
+                  <span className="text-xs font-semibold text-[#6B7280] ml-1">{t.boxUnit}</span>
                 </div>
                 <button
                   type="submit"
-                  className="min-h-[44px] px-4 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center gap-2 transition-colors duration-150"
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-5 h-5" />
                   <span>{t.saveBtn}</span>
                 </button>
               </form>
 
-              <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-[#E2E5EA] dark:border-zinc-800">
+              <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-[#E5E7EB] dark:border-zinc-800">
                 <div className="text-sm tabular-nums">
-                  <span className="text-[#5A6270] dark:text-zinc-400">{t.totalToPayShort}: </span>
-                  <strong className="text-[#111827] dark:text-white font-bold">
+                  <span className="text-[#6B7280] dark:text-zinc-400">{t.totalToPayShort}: </span>
+                  <strong className="text-[#111827] dark:text-white font-bold whitespace-nowrap">
                     {formatSom(product.box * parsedQty)}
                   </strong>
                 </div>
@@ -190,9 +209,9 @@ export const SheetsAndModals: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => applyQty(0)}
-                    className="min-h-[44px] px-3 rounded-xl text-xs font-semibold text-[#DC2626] dark:text-[#F87171] hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center gap-1"
+                    className="min-h-[44px] px-3 rounded-xl text-xs font-semibold text-[#9B111E] dark:text-[#F87171] hover:bg-[#FCE8EA] dark:hover:bg-red-950/40 inline-flex items-center gap-1"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                     <span>{t.removeFromCart}</span>
                   </button>
                 )}
@@ -208,7 +227,7 @@ export const SheetsAndModals: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.14 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
           onClick={dismiss}
           className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4"
         >
@@ -216,31 +235,31 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.96, opacity: 0 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-2xl p-5 border border-[#E2E5EA] dark:border-zinc-800"
+            className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-xl p-6 border border-[#E5E7EB] dark:border-zinc-800"
           >
-            <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#DC2626] dark:text-[#F87171] flex items-center justify-center mb-3">
+            <div className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-red-950/40 text-[#9B111E] dark:text-[#F87171] flex items-center justify-center mb-3">
               <Trash2 className="w-5 h-5" />
             </div>
             <h3 className="text-xl font-bold text-[#111827] dark:text-white">
               {t.clearCartConfirmTitle}
             </h3>
-            <p className="text-sm text-[#5A6270] dark:text-zinc-400 mt-1">
+            <p className="text-sm text-[#6B7280] dark:text-zinc-400 mt-1">
               {t.clearCartConfirmSub}
             </p>
-            <div className="flex gap-2.5 mt-5">
+            <div className="flex gap-3 mt-6">
               <button
                 type="button"
                 onClick={dismiss}
-                className="flex-1 min-h-[44px] rounded-xl border border-[#E2E5EA] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800"
+                className="flex-1 min-h-[44px] rounded-xl border border-[#E5E7EB] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800"
               >
                 {t.cancelBtn}
               </button>
               <button
                 type="button"
                 onClick={clearCart}
-                className="flex-1 min-h-[44px] rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-semibold text-base"
+                className="flex-1 min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150"
               >
                 {t.yesClearBtn}
               </button>
@@ -262,7 +281,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
@@ -272,16 +291,16 @@ export const SheetsAndModals: React.FC = () => {
               exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-4 pb-6 max-h-[88dvh] overflow-y-auto border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[88dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
 
-              <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#E2E5EA] dark:border-zinc-800">
+              <div className="flex items-start justify-between gap-2 pb-3 border-b border-[#E5E7EB] dark:border-zinc-800">
                 <div>
                   <h3 className="text-xl font-bold text-[#111827] dark:text-white">
                     {t.confirmOrderTitle}
                   </h3>
-                  <p className="text-xs text-[#5A6270] dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1">
                     {t.confirmOrderSub}
                   </p>
                 </div>
@@ -289,25 +308,25 @@ export const SheetsAndModals: React.FC = () => {
                   type="button"
                   aria-label={t.closeLabel}
                   onClick={dismiss}
-                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#5A6270] flex items-center justify-center flex-none"
+                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] flex items-center justify-center flex-none"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Items list */}
-              <div className="mt-3 divide-y divide-[#E2E5EA] dark:divide-zinc-800 max-h-48 overflow-y-auto">
+              <div className="mt-3 divide-y divide-[#E5E7EB] dark:divide-zinc-800 max-h-48 overflow-y-auto">
                 {cartEntries.map(({ product, qty }) => (
                   <div key={product.id} className="py-2 flex items-center justify-between gap-2 text-sm">
                     <div className="min-w-0">
                       <div className="font-semibold text-[#111827] dark:text-zinc-100 truncate">
                         {getProductName(product, lang)} {product.vol}
                       </div>
-                      <div className="text-xs text-[#5A6270] dark:text-zinc-400 tabular-nums">
+                      <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap">
                         {qty} {t.boxUnit} × {formatSom(product.box)}
                       </div>
                     </div>
-                    <strong className="font-bold text-[#111827] dark:text-white tabular-nums flex-none">
+                    <strong className="font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap flex-none">
                       {formatSom(product.box * qty)}
                     </strong>
                   </div>
@@ -315,15 +334,15 @@ export const SheetsAndModals: React.FC = () => {
               </div>
 
               {/* Schedule & Comment */}
-              <div className="mt-3 p-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 space-y-1.5 text-sm">
+              <div className="mt-3 p-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 space-y-2 text-sm">
                 <div className="flex justify-between gap-2">
-                  <span className="text-[#5A6270] dark:text-zinc-400">{t.deliveryScheduleLabel}</span>
+                  <span className="text-[#6B7280] dark:text-zinc-400">{t.deliveryScheduleLabel}</span>
                   <strong className="font-semibold text-[#111827] dark:text-white">
                     {getDayLabel(day, lang)}, {getSlotLabel(slot, lang)}
                   </strong>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="text-[#5A6270] dark:text-zinc-400">{t.commentLabel}</span>
+                  <span className="text-[#6B7280] dark:text-zinc-400">{t.commentLabel}</span>
                   <span className="font-normal text-[#111827] dark:text-zinc-200 text-right truncate max-w-[60%]">
                     {note.trim() || t.noCommentLabel}
                   </span>
@@ -331,41 +350,41 @@ export const SheetsAndModals: React.FC = () => {
               </div>
 
               {/* Totals */}
-              <div className="mt-3 pt-3 border-t border-[#E2E5EA] dark:border-zinc-800 space-y-1.5 text-sm">
-                <div className="flex justify-between text-[#5A6270] dark:text-zinc-400">
+              <div className="mt-3 pt-3 border-t border-[#E5E7EB] dark:border-zinc-800 space-y-2 text-sm">
+                <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
                   <span>{t.productsCountLine(checkoutQuote.boxCount)}</span>
-                  <span className="tabular-nums">{formatSom(checkoutQuote.subtotal)}</span>
+                  <span className="tabular-nums whitespace-nowrap">{formatSom(checkoutQuote.subtotal)}</span>
                 </div>
                 {checkoutQuote.discountPct > 0 && (
                   <div className="flex justify-between text-[#16A34A] dark:text-[#4ADE80] font-semibold">
                     <span>{t.discountLine(checkoutQuote.discountPct)}</span>
-                    <span className="tabular-nums">−{formatSom(checkoutQuote.discountAmount)}</span>
+                    <span className="tabular-nums whitespace-nowrap">−{formatSom(checkoutQuote.discountAmount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-[#E2E5EA] dark:border-zinc-700">
+                <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-[#E5E7EB] dark:border-zinc-700">
                   <span className="text-base font-bold text-[#111827] dark:text-white">
                     {t.totalDueLabel}
                   </span>
-                  <span className="text-xl font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
+                  <span className="text-xl font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
                     {formatSom(checkoutQuote.total)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex gap-2.5 mt-4">
+              <div className="flex gap-3 mt-4">
                 <button
                   type="button"
                   onClick={dismiss}
-                  className="flex-1 min-h-[44px] rounded-xl border border-[#E2E5EA] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200"
+                  className="flex-1 min-h-[44px] rounded-xl border border-[#E5E7EB] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200"
                 >
                   {t.cancelBtn}
                 </button>
                 <button
                   type="button"
                   onClick={() => setSheet({ type: 'pin' })}
-                  className="flex-[1.6] min-h-[44px] rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
+                  className="flex-[1.6] min-h-[44px] rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
                 >
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-5 h-5" />
                   <span>{t.confirmAndEnterPin}</span>
                 </button>
               </div>
@@ -378,18 +397,18 @@ export const SheetsAndModals: React.FC = () => {
         const product = productsById[sheet.id];
         if (!product) return null;
         const fav = inShelf(product.id);
-        const st = getStockInfo(product, shelf, lang);
+        const st = getStockInfo(product, shelf, lang, refillById[product.id]);
         const qty = cart[product.id] || 1;
         const displayName = getProductName(product, lang);
         const stockColor =
           st.cls === 'crit'
-            ? 'text-[#DC2626] dark:text-[#F87171]'
+            ? 'text-[#9B111E] dark:text-[#F87171]'
             : st.cls === 'warn'
               ? 'text-[#D97706] dark:text-[#FBBF24]'
               : 'text-[#2563EB] dark:text-[#60A5FA]';
         const stockBarBg =
           st.cls === 'crit'
-            ? 'bg-[#DC2626]'
+            ? 'bg-[#9B111E]'
             : st.cls === 'warn'
               ? 'bg-[#D97706]'
               : 'bg-[#2563EB]';
@@ -400,7 +419,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
@@ -410,18 +429,18 @@ export const SheetsAndModals: React.FC = () => {
               exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-4 pb-6 max-h-[90dvh] overflow-y-auto border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[90dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
             >
-              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
+              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto md:hidden" />
 
               <ProductVisual product={product} size="large" />
 
-              <div className="flex items-start justify-between gap-3 mt-3.5">
-                <div>
-                  <h3 className="text-xl font-bold text-[#111827] dark:text-white leading-snug">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-bold text-[#111827] dark:text-white leading-snug break-words">
                     {displayName}
                   </h3>
-                  <p className="text-xs font-normal text-[#5A6270] dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs font-normal text-[#6B7280] dark:text-zinc-400 mt-1">
                     {product.vol}
                     {product.out ? ` · ${t.outOfStock}` : ''}
                   </p>
@@ -430,29 +449,32 @@ export const SheetsAndModals: React.FC = () => {
                   type="button"
                   aria-label={t.myShelfTitle}
                   onClick={() => toggleFavorite(product.id)}
-                  className="w-11 h-11 rounded-xl border border-[#E2E5EA] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900 flex items-center justify-center flex-none"
+                  className="w-11 h-11 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900 flex items-center justify-center flex-none"
                 >
                   <Heart
                     className={`w-5 h-5 ${
                       fav
                         ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                        : 'text-[#5A6270]'
+                        : 'text-[#6B7280]'
                     }`}
                   />
                 </button>
               </div>
 
-              <div className="mt-3">
+              <div>
                 <div className="flex items-center justify-between text-xs font-semibold mb-1">
                   <span className={stockColor}>{st.txt}</span>
-                  {st.sub && <span className="text-[#5A6270] dark:text-zinc-400">{st.sub}</span>}
+                  {st.sub && <span className="text-[#6B7280] dark:text-zinc-400">{st.sub}</span>}
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
-                  <div className={`h-full rounded-full ${stockBarBg}`} style={{ width: `${st.pct}%` }} />
+                <div className="h-2 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-150 ease-out ${stockBarBg}`}
+                    style={{ width: `${st.pct}%` }}
+                  />
                 </div>
               </div>
 
-              <div className="mt-3 divide-y divide-[#E2E5EA] dark:divide-zinc-800 text-sm">
+              <div className="divide-y divide-[#E5E7EB] dark:divide-zinc-800 text-sm">
                 {[
                   [`1 ${t.boxUnit}`, `${product.blk} ${t.pieceUnit}`],
                   [lang === 'ru' ? 'Цена за коробку' : 'Quti narxi', formatSom(product.box)],
@@ -460,20 +482,25 @@ export const SheetsAndModals: React.FC = () => {
                   [lang === 'ru' ? 'Хранение' : 'Saqlash', '+2…+25 °C'],
                 ].map(([label, val]) => (
                   <div key={label} className="flex items-center justify-between py-2">
-                    <span className="text-[#5A6270] dark:text-zinc-400">{label}</span>
-                    <strong className="font-bold text-[#111827] dark:text-zinc-100 tabular-nums">{val}</strong>
+                    <span className="text-[#6B7280] dark:text-zinc-400">{label}</span>
+                    <strong className="font-bold text-[#111827] dark:text-zinc-100 tabular-nums whitespace-nowrap">
+                      {val}
+                    </strong>
                   </div>
                 ))}
               </div>
 
+              {/* Embedded Profit Calculator ('Foyda kalkulyatori') */}
+              <ProfitCalculatorCard product={product} compact />
+
               {!product.out && (
-                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   {[2, 5, 10].map((bulk) => (
                     <button
                       key={bulk}
                       type="button"
                       onClick={() => updateQty(product.id, bulk)}
-                      className="min-h-[44px] px-3.5 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 hover:bg-[#FFF1F2] text-sm font-semibold text-[#111827] dark:text-zinc-200 hover:text-[#9B111E] tabular-nums"
+                      className="min-h-[44px] px-4 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 hover:bg-[#FCE8EA] text-sm font-semibold text-[#111827] dark:text-zinc-200 hover:text-[#9B111E] tabular-nums transition-colors duration-150"
                     >
                       +{bulk} {t.boxUnit}
                     </button>
@@ -481,12 +508,12 @@ export const SheetsAndModals: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-[#E2E5EA] dark:border-zinc-800">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-[#E5E7EB] dark:border-zinc-800">
                 <div className="tabular-nums">
-                  <span className="block text-xs text-[#5A6270] dark:text-zinc-400">
+                  <span className="block text-xs text-[#6B7280] dark:text-zinc-400">
                     {qty} {t.boxUnit}
                   </span>
-                  <strong className="text-xl font-bold text-[#111827] dark:text-white">
+                  <strong className="text-xl font-bold text-[#111827] dark:text-white whitespace-nowrap">
                     {formatSom(product.box * qty)}
                   </strong>
                 </div>
@@ -496,7 +523,7 @@ export const SheetsAndModals: React.FC = () => {
               <button
                 type="button"
                 onClick={dismiss}
-                className="w-full min-h-[44px] mt-3.5 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white font-semibold text-base"
+                className="w-full min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150"
               >
                 {t.doneLabel}
               </button>
@@ -513,7 +540,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
@@ -523,7 +550,7 @@ export const SheetsAndModals: React.FC = () => {
               exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-4 pb-6 max-h-[85dvh] overflow-y-auto border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 max-h-[85dvh] overflow-y-auto border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="flex items-center justify-between mb-3">
@@ -542,14 +569,14 @@ export const SheetsAndModals: React.FC = () => {
                 {available.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-2.5 p-2 rounded-xl border border-[#E2E5EA] dark:border-zinc-800 bg-[#F4F5F7] dark:bg-zinc-900/60"
+                    className="flex items-center gap-3 p-2 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 bg-[#F4F5F7] dark:bg-zinc-900/60"
                   >
                     <ProductVisual product={p} size="mini" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-[#111827] dark:text-zinc-100 truncate">
                         {getProductName(p, lang)} {p.vol}
                       </div>
-                      <div className="text-xs text-[#5A6270] dark:text-zinc-400 tabular-nums">
+                      <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap">
                         {formatSom(p.box)}
                       </div>
                     </div>
@@ -557,7 +584,7 @@ export const SheetsAndModals: React.FC = () => {
                       type="button"
                       aria-label={t.addToShelfBtn}
                       onClick={() => addShelfItem(p.id)}
-                      className="w-11 h-11 rounded-xl border border-[#9B111E] text-[#9B111E] dark:text-[#FB7185] dark:border-[#FB7185] flex items-center justify-center hover:bg-[#9B111E] hover:text-white transition-colors"
+                      className="w-11 h-11 rounded-xl border border-[#9B111E] text-[#9B111E] dark:text-[#FB7185] dark:border-[#FB7185] flex items-center justify-center hover:bg-[#9B111E] hover:text-white transition-colors duration-150"
                     >
                       <Plus className="w-5 h-5" />
                     </button>
@@ -577,7 +604,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
           >
@@ -587,7 +614,7 @@ export const SheetsAndModals: React.FC = () => {
               exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-4 pb-6 border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
               <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="flex items-start justify-between gap-2 mb-3">
@@ -595,7 +622,7 @@ export const SheetsAndModals: React.FC = () => {
                   <h3 className="text-xl font-bold text-[#111827] dark:text-white">
                     {t.cancelSheetTitle} #{sheet.orderId}
                   </h3>
-                  <p className="text-xs text-[#5A6270] dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1">
                     {t.cancelSheetSub}
                   </p>
                 </div>
@@ -603,7 +630,7 @@ export const SheetsAndModals: React.FC = () => {
                   type="button"
                   aria-label={t.closeLabel}
                   onClick={dismiss}
-                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#5A6270] flex items-center justify-center flex-none"
+                  className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] flex items-center justify-center flex-none"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -620,10 +647,10 @@ export const SheetsAndModals: React.FC = () => {
                         setCancelReason(reason);
                         setCustomCancelReason('');
                       }}
-                      className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border text-left text-sm font-semibold transition-colors ${
+                      className={`w-full min-h-[44px] px-4 py-2 rounded-xl border text-left text-sm font-semibold transition-colors duration-150 ${
                         selected
-                          ? 'bg-[#FFF1F2] dark:bg-rose-950/50 border-[#9B111E] text-[#9B111E] dark:text-[#FB7185]'
-                          : 'bg-[#F4F5F7] dark:bg-zinc-900 border-[#E2E5EA] dark:border-zinc-700 text-[#111827] dark:text-zinc-200'
+                          ? 'bg-[#FCE8EA] dark:bg-rose-950/50 border-[#9B111E] text-[#9B111E] dark:text-[#FB7185]'
+                          : 'bg-[#F4F5F7] dark:bg-zinc-900 border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200'
                       }`}
                     >
                       {reason}
@@ -635,22 +662,22 @@ export const SheetsAndModals: React.FC = () => {
                   value={customCancelReason}
                   onChange={(e) => setCustomCancelReason(e.target.value)}
                   placeholder={t.cancelCustomPlaceholder}
-                  className="w-full min-h-[44px] px-3.5 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E2E5EA] dark:border-zinc-700 text-sm text-[#111827] dark:text-white outline-none focus:border-[#9B111E]"
+                  className="w-full min-h-[44px] px-4 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-700 text-sm text-[#111827] dark:text-white outline-none focus:border-[#9B111E]"
                 />
               </div>
 
-              <div className="flex gap-2.5 mt-4">
+              <div className="flex gap-3 mt-4">
                 <button
                   type="button"
                   onClick={dismiss}
-                  className="flex-1 min-h-[44px] rounded-xl border border-[#E2E5EA] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200"
+                  className="flex-1 min-h-[44px] rounded-xl border border-[#E5E7EB] dark:border-zinc-700 font-semibold text-base text-[#111827] dark:text-zinc-200"
                 >
                   {t.cancelBtn}
                 </button>
                 <button
                   type="button"
                   onClick={() => void cancelOrder(sheet.orderId, finalReason)}
-                  className="flex-[1.5] min-h-[44px] rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white font-semibold text-base"
+                  className="flex-[1.5] min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150"
                 >
                   {t.confirmCancelBtn}
                 </button>
@@ -659,6 +686,115 @@ export const SheetsAndModals: React.FC = () => {
           </motion.div>
         );
       })()}
+
+      {sheet?.type === 'rateOrder' && (
+        <motion.div
+          key="rateOrderSheet"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+          onClick={dismiss}
+          className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
+        >
+          <motion.div
+            initial={{ y: 24, opacity: 0.9 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-4 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
+          >
+            <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto md:hidden" />
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-xl font-bold text-[#111827] dark:text-white">
+                  {t.rateSheetTitle}
+                </h3>
+                <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
+                  {t.rateSheetSub(sheet.orderId)}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label={t.closeLabel}
+                onClick={dismiss}
+                className="w-11 h-11 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] flex items-center justify-center flex-none"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 1-5 Interactive Star Picker */}
+            <div className="flex items-center justify-center gap-2 py-2">
+              {[1, 2, 3, 4, 5].map((starVal) => {
+                const active = starVal <= rateStars;
+                return (
+                  <button
+                    key={starVal}
+                    type="button"
+                    aria-label={`${starVal} / 5`}
+                    onClick={() => setRateStars(starVal)}
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors duration-150 ${
+                      active
+                        ? 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#D97706]'
+                        : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#6B7280]'
+                    }`}
+                  >
+                    <Star
+                      className={`w-6 h-6 ${active ? 'fill-[#D97706] text-[#D97706]' : 'text-[#6B7280]'}`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Feedback Chips */}
+            <div className="flex flex-wrap gap-2">
+              {t.rateChips.map((chip) => {
+                const selected = rateChips.includes(chip);
+                return (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => toggleRateChip(chip)}
+                    className={`min-h-[44px] px-4 rounded-full text-xs font-semibold border transition-colors duration-150 ${
+                      selected
+                        ? 'bg-[#FCE8EA] dark:bg-rose-950/50 border-[#9B111E] text-[#9B111E] dark:text-[#FB7185]'
+                        : 'bg-[#F4F5F7] dark:bg-zinc-900 border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200'
+                    }`}
+                  >
+                    {chip}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Optional Comment */}
+            <textarea
+              rows={2}
+              value={rateComment}
+              onChange={(e) => setRateComment(e.target.value)}
+              placeholder={t.rateCommentPlaceholder}
+              className="w-full p-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-700 text-sm text-[#111827] dark:text-white outline-none focus:border-[#9B111E] resize-none"
+            />
+
+            <button
+              type="button"
+              disabled={submittingRate}
+              onClick={() => {
+                setSubmittingRate(true);
+                void submitOrderRating(sheet.orderId, rateStars, rateChips, rateComment).finally(() =>
+                  setSubmittingRate(false),
+                );
+              }}
+              className="w-full min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base transition-colors duration-150 disabled:opacity-60"
+            >
+              {t.rateSubmitBtn}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
 
       {sheet?.type === 'pin' && (() => {
         const handleKey = (val: string) => {
@@ -684,7 +820,7 @@ export const SheetsAndModals: React.FC = () => {
               } else {
                 void placeOrder(nextPin);
               }
-            }, 200);
+            }, 180);
           }
         };
 
@@ -696,7 +832,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             onClick={dismiss}
             className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center"
           >
@@ -706,22 +842,22 @@ export const SheetsAndModals: React.FC = () => {
               exit={{ y: 24, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-2xl md:rounded-2xl p-5 pb-6 border-t md:border border-[#E2E5EA] dark:border-zinc-800"
+              className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-xl md:rounded-xl p-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800"
             >
-              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3.5 md:hidden" />
+              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mb-3 md:hidden" />
               <div className="text-center">
-                <span className="w-12 h-12 rounded-2xl bg-[#FFF1F2] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] inline-flex items-center justify-center">
+                <span className="w-12 h-12 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] inline-flex items-center justify-center">
                   <Lock className="w-5 h-5" />
                 </span>
                 <h3 className="text-xl font-bold text-[#111827] dark:text-white mt-2">
                   {sheet.changeMode ? t.pinTitleChange : t.pinTitleOrder}
                 </h3>
-                <p className="text-xs text-[#5A6270] dark:text-zinc-400 mt-0.5">
+                <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1">
                   {sheet.changeMode ? t.pinSubChange : t.pinSubOrder}
                 </p>
               </div>
 
-              <div className="flex justify-center gap-4 my-5">
+              <div className="flex justify-center gap-4 my-6">
                 {[0, 1, 2, 3].map((i) => (
                   <span
                     key={i}
@@ -745,14 +881,14 @@ export const SheetsAndModals: React.FC = () => {
                       disabled={submittingOrder}
                       aria-label={k === 'del' ? t.clearLabel : k}
                       onClick={() => handleKey(k)}
-                      className="h-14 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 hover:bg-[#E2E5EA] dark:hover:bg-zinc-700 active:bg-[#FFF1F2] text-xl font-bold text-[#111827] dark:text-white flex items-center justify-center transition-colors"
+                      className="h-14 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 hover:bg-[#E5E7EB] dark:hover:bg-zinc-700 active:bg-[#FCE8EA] text-xl font-bold text-[#111827] dark:text-white flex items-center justify-center transition-colors duration-150"
                     >
                       {k === 'del' ? <Delete className="w-5 h-5" /> : k}
                     </button>
                   ),
                 )}
               </div>
-              <p className="text-center text-xs text-[#5A6270] dark:text-zinc-500 mt-3">
+              <p className="text-center text-xs text-[#6B7280] dark:text-zinc-500 mt-3">
                 {t.pinDemoHint}
               </p>
             </motion.div>

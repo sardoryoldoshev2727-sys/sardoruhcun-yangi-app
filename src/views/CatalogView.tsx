@@ -3,6 +3,7 @@ import { ChevronDown, LayoutGrid, List, RotateCcw, Search, SlidersHorizontal } f
 import { AnimatePresence, motion } from 'motion/react';
 import { ProductCard } from '../components/ProductCard';
 import { CatalogSkeleton } from '../components/Skeletons';
+import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getProductName, getSortLabel } from '../i18n';
 import type { CatalogSortMode } from '../types';
@@ -32,6 +33,8 @@ export const CatalogView: React.FC = () => {
     setViewMode,
     products,
     productsLoading,
+    loadError,
+    retryLoad,
     lang,
     t,
     inShelf,
@@ -88,29 +91,39 @@ export const CatalogView: React.FC = () => {
       return 0;
     });
 
+  if (loadError) {
+    return (
+      <ErrorState
+        title={t.loadErrorTitle}
+        retryLabel={t.retryBtn}
+        onRetry={() => void retryLoad()}
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Filter & Sort Strip + View Toggle (all >=44px tap targets) */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           <button
             type="button"
             onClick={() => setFiltersOpen((o) => !o)}
-            className={`flex-none inline-flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
+            className={`flex-none inline-flex items-center gap-2 min-h-[44px] px-4 rounded-full text-sm font-semibold border transition-colors duration-150 ${
               filtersOpen || activeFilterCount > 0
                 ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                : 'bg-white dark:bg-[#1A1C20] border-[#E2E5EA] dark:border-zinc-800 text-[#111827] dark:text-zinc-200'
+                : 'bg-white dark:bg-[#1A1C20] border-[#E5E7EB] dark:border-zinc-800 text-[#111827] dark:text-zinc-200'
             }`}
           >
-            <SlidersHorizontal className="w-4 h-4" />
+            <SlidersHorizontal className="w-5 h-5" />
             <span>{t.filtersBtn}</span>
             {activeFilterCount > 0 && (
-              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="min-w-[20px] h-5 px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
                 {activeFilterCount}
               </span>
             )}
             <ChevronDown
-              className={`w-4 h-4 transition-transform duration-150 ${filtersOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 transition-transform duration-150 ${filtersOpen ? 'rotate-180' : ''}`}
             />
           </button>
 
@@ -121,10 +134,10 @@ export const CatalogView: React.FC = () => {
                 key={id}
                 type="button"
                 onClick={() => setSortMode(id)}
-                className={`flex-none min-h-[44px] px-3.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
+                className={`flex-none min-h-[44px] px-4 rounded-full text-sm font-semibold transition-colors duration-150 whitespace-nowrap ${
                   active
                     ? 'bg-[#111827] dark:bg-white text-white dark:text-[#111827]'
-                    : 'bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 text-[#5A6270] dark:text-zinc-300'
+                    : 'bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 text-[#6B7280] dark:text-zinc-300'
                 }`}
               >
                 {getSortLabel(id, lang)}
@@ -138,26 +151,26 @@ export const CatalogView: React.FC = () => {
             type="button"
             aria-label={t.gridMode}
             onClick={() => setViewMode('grid')}
-            className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2 rounded-xl text-xs font-semibold transition-colors duration-150 ${
               viewMode === 'grid'
                 ? 'bg-white dark:bg-[#1A1C20] text-[#9B111E] dark:text-[#FB7185]'
-                : 'text-[#5A6270] dark:text-zinc-400'
+                : 'text-[#6B7280] dark:text-zinc-400'
             }`}
           >
-            <LayoutGrid className="w-4 h-4" />
+            <LayoutGrid className="w-5 h-5" />
             <span className="hidden sm:inline">{t.gridMode}</span>
           </button>
           <button
             type="button"
             aria-label={t.listMode}
             onClick={() => setViewMode('row')}
-            className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`inline-flex items-center justify-center gap-1 min-w-[44px] min-h-[36px] px-2 rounded-xl text-xs font-semibold transition-colors duration-150 ${
               viewMode === 'row'
                 ? 'bg-white dark:bg-[#1A1C20] text-[#9B111E] dark:text-[#FB7185]'
-                : 'text-[#5A6270] dark:text-zinc-400'
+                : 'text-[#6B7280] dark:text-zinc-400'
             }`}
           >
-            <List className="w-4 h-4" />
+            <List className="w-5 h-5" />
             <span className="hidden sm:inline">{t.listMode}</span>
           </button>
         </div>
@@ -173,10 +186,10 @@ export const CatalogView: React.FC = () => {
             transition={{ duration: 0.16, ease: 'easeOut' }}
             className="overflow-hidden"
           >
-            <div className="bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl p-3.5 space-y-3 card-calm">
+            <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 space-y-3 card-calm">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400">
+                  <span className="text-xs font-bold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400">
                     {t.brandLabel}
                   </span>
                   {hasAnyFilter && (
@@ -185,12 +198,12 @@ export const CatalogView: React.FC = () => {
                       onClick={resetCatalogFilters}
                       className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
+                      <RotateCcw className="w-5 h-5" />
                       <span>{t.clearFilters}</span>
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {BRAND_FILTERS.map((b) => {
                     const active = brandFilter === b;
                     return (
@@ -198,10 +211,10 @@ export const CatalogView: React.FC = () => {
                         key={b}
                         type="button"
                         onClick={() => setBrandFilter(b)}
-                        className={`min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
+                        className={`min-h-[44px] px-4 rounded-full text-sm font-semibold border transition-colors duration-150 ${
                           active
                             ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
+                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E5E7EB] dark:border-zinc-700'
                         }`}
                       >
                         {b === 'Barchasi' ? getSortLabel('default', lang) : b}
@@ -212,17 +225,17 @@ export const CatalogView: React.FC = () => {
               </div>
 
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-[#5A6270] dark:text-zinc-400 mb-2">
+                <div className="text-xs font-bold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400 mb-2">
                   {t.flavorLabel}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => setFlavorFilter('Barchasi')}
-                    className={`min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
+                    className={`min-h-[44px] px-4 rounded-full text-sm font-semibold border transition-colors duration-150 ${
                       flavorFilter === 'Barchasi'
                         ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                        : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
+                        : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E5E7EB] dark:border-zinc-700'
                     }`}
                   >
                     {getSortLabel('default', lang)}
@@ -234,10 +247,10 @@ export const CatalogView: React.FC = () => {
                         key={name}
                         type="button"
                         onClick={() => setFlavorFilter(active ? 'Barchasi' : name)}
-                        className={`inline-flex items-center gap-2 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-colors ${
+                        className={`inline-flex items-center gap-2 min-h-[44px] px-4 rounded-full text-sm font-semibold border transition-colors duration-150 ${
                           active
                             ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E2E5EA] dark:border-zinc-700'
+                            : 'bg-[#F4F5F7] dark:bg-zinc-900 text-[#111827] dark:text-zinc-300 border-[#E5E7EB] dark:border-zinc-700'
                         }`}
                       >
                         <span
@@ -255,7 +268,7 @@ export const CatalogView: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between text-xs font-semibold text-[#5A6270] dark:text-zinc-400 tabular-nums">
+      <div className="flex items-center justify-between text-xs font-semibold text-[#6B7280] dark:text-zinc-400 tabular-nums">
         <span>{t.shownCount(filtered.length)}</span>
         {hasAnyFilter && !filtersOpen && (
           <button
@@ -263,7 +276,7 @@ export const CatalogView: React.FC = () => {
             onClick={resetCatalogFilters}
             className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-5 h-5" />
             <span>{t.clearFilters}</span>
           </button>
         )}
@@ -272,29 +285,14 @@ export const CatalogView: React.FC = () => {
       {productsLoading ? (
         <CatalogSkeleton viewMode={viewMode} />
       ) : filtered.length === 0 ? (
-        <div className="py-12 px-4 text-center bg-white dark:bg-[#1A1C20] border border-[#E2E5EA] dark:border-zinc-800 rounded-2xl">
-          <div className="w-14 h-14 rounded-2xl bg-[#FFF1F2] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center mx-auto mb-3">
-            <Search className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-bold text-[#111827] dark:text-white">
-            {t.emptySearchTitle}
-          </h3>
-          <p className="text-sm text-[#5A6270] dark:text-zinc-400 mt-1">
-            {t.emptySearchHint}
-          </p>
-          {hasAnyFilter && (
-            <button
-              type="button"
-              onClick={resetCatalogFilters}
-              className="mt-4 min-h-[44px] px-5 rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] text-white text-base font-semibold inline-flex items-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>{t.clearFilters}</span>
-            </button>
-          )}
-        </div>
+        <EmptyState
+          icon={<Search className="w-5 h-5" />}
+          title={`${t.emptySearchTitle} · ${t.emptySearchHint}`}
+          actionLabel={hasAnyFilter ? t.clearFilters : undefined}
+          onAction={hasAnyFilter ? resetCatalogFilters : undefined}
+        />
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 items-stretch">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-stretch">
           {filtered.map((p) => (
             <ProductCard
               key={p.id}
@@ -305,7 +303,7 @@ export const CatalogView: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
           {filtered.map((p) => (
             <ProductCard
               key={p.id}

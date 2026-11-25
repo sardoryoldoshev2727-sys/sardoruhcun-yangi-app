@@ -5,26 +5,40 @@ import {
   DEFAULT_SHELF_SEED,
   cancelOrder as apiCancelOrder,
   confirmHandover as apiConfirmHandover,
+  getAvailableReportMonths as apiGetAvailableReportMonths,
+  getBoxDiscountTiers as apiGetBoxDiscountTiers,
   getCheckout as apiGetCheckout,
+  getMonthlyAvgQuantities as apiGetMonthlyAvgQuantities,
+  getMonthlyReport as apiGetMonthlyReport,
   getOrders as apiGetOrders,
   getPayments as apiGetPayments,
   getProducts as apiGetProducts,
+  getRatings as apiGetRatings,
+  getRefillPredictions as apiGetRefillPredictions,
+  getSavedShelfPrices as apiGetSavedShelfPrices,
   getSession as apiGetSession,
   getShop as apiGetShop,
   placeOrder as apiPlaceOrder,
+  saveShelfPrice as apiSaveShelfPrice,
+  submitRating as apiSubmitRating,
   type PlaceOrderPayload,
 } from '../api';
 import { TRANSLATIONS, type Translations } from '../i18n';
 import { getTelegramColorScheme, initTelegramApp, triggerHaptic } from '../telegram';
 import type {
+  BoxDiscountNudge,
+  BoxDiscountTier,
   CatalogSortMode,
   ChatMessage,
   CheckoutQuote,
   Lang,
+  MonthlyReportData,
   NotificationItem,
+  OrderRating,
   OrderRecord,
   PaymentRecord,
   Product,
+  RefillPrediction,
   SessionInfo,
   SheetState,
   ShelfItem,
@@ -33,7 +47,7 @@ import type {
   TabId,
   ToastItem,
 } from '../types';
-import { getTier, shortName } from '../utils/catalog';
+import { computeBoxDiscountNudge, formatSom, shortName } from '../utils/catalog';
 
 const STORAGE_KEY = 'lal-v3';
 const OFFLINE_QUEUE_KEY = 'lal-offline-queue-v1';
@@ -113,6 +127,8 @@ interface StoreContextValue {
   largeText: boolean;
   darkMode: boolean;
   isOnline: boolean;
+  loadError: boolean;
+  retryLoad: () => Promise<void>;
   products: Product[];
   productsById: Record<number, Product>;
   productsLoading: boolean;
@@ -128,8 +144,16 @@ interface StoreContextValue {
   cart: Record<number, number>;
   checkoutQuote: CheckoutQuote;
   checkoutLoading: boolean;
+  boxDiscountTiers: BoxDiscountTier[];
+  discountNudge: BoxDiscountNudge;
   submittingOrder: boolean;
   shelf: ShelfItem[];
+  refillPredictions: RefillPrediction[];
+  refillById: Record<number, RefillPrediction>;
+  refillDueItems: RefillPrediction[];
+  monthlyAvgQty: Record<number, number>;
+  savedShelfPrices: Record<number, number>;
+  ratings: Record<number, OrderRating>;
   autoOrder: boolean;
   chat: ChatMessage[];
   notifs: NotificationItem[];
@@ -165,6 +189,11 @@ interface StoreContextValue {
   removeShelfItem: (id: number) => void;
   addShelfItem: (id: number) => void;
   fillShelfToCart: (onlyLow: boolean) => void;
+  addRefillDueToCart: () => void;
+  updateShelfPrice: (productId: number, shelfPrice: number) => void;
+  submitOrderRating: (orderId: number, stars: number, chips: string[], comment: string) => Promise<void>;
+  fetchReportMonths: () => Promise<{ key: string; label: string }[]>;
+  fetchMonthlyReport: (monthKey: string) => Promise<MonthlyReportData>;
   repeatOrderToCart: (items: { productId: number; qty: number }[]) => void;
   repeatLastOrder: () => void;
   clearCart: () => void;
@@ -208,6 +237,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
 
+  const [loadError, setLoadError] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -224,10 +254,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [shelf, setShelf] = useState<ShelfItem[]>(initial.shelf);
   const [autoOrder, setAutoOrder] = useState<boolean>(initial.auto);
 
+  const [boxDiscountTiers, setBoxDiscountTiers] = useState<BoxDiscountTier[]>([
+    { minBoxes: 10, pct: 3 },
+    { minBoxes: 20, pct: 5 },
+    { minBoxes: 30, pct: 7 },
+  ]);
+  const [refillPredictions, setRefillPredictions] = useState<RefillPrediction[]>([]);
+  const [monthlyAvgQty, setMonthlyAvgQty] = useState<Record<number, number>>({});
+  const [savedShelfPrices, setSavedShelfPrices] = useState<Record<number, number>>({});
+  const [ratings, setRatings] = useState<Record<number, OrderRating>>({});
+
   const [checkoutQuote, setCheckoutQuote] = useState<CheckoutQuote>({
     boxCount: 0,
     subtotal: 0,
-    discountPct: 5,
+    discountPct: 0,
     discountAmount: 0,
     total: 0,
   });
@@ -244,6 +284,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addToastCooldownRef = useRef<number>(0);
   const pageRef = useRef<SubPageId>(page);
   pageRef.current = page;
+  const prevDiscountPctRef = useRef<number | null>(null);
+  const userMutatedCartRef = useRef<boolean>(false);
+  const promptedRatingIdsRef = useRef<Set<number>>(new Set());
   const t = TRANSLATIONS[lang];
 
   const dismissToast = useCallback(() => {
@@ -265,33 +308,69 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 3200);
   }, []);
 
-  // Initialize Telegram Mini App + load initial data from src/api.ts
-  useEffect(() => {
-    initTelegramApp();
-    let active = true;
+  const loadAllData = useCallback(async () => {
+    setLoadError(false);
+    setProductsLoading(true);
+    setOrdersLoading(true);
+    try {
+      const [sess, shp, prods, ords, pays, tiers, refills, avgQtys, shelfPrices, rts] =
+        await Promise.all([
+          apiGetSession(),
+          apiGetShop(),
+          apiGetProducts(),
+          apiGetOrders(),
+          apiGetPayments(),
+          apiGetBoxDiscountTiers(),
+          apiGetRefillPredictions(initial.shelf),
+          apiGetMonthlyAvgQuantities(),
+          apiGetSavedShelfPrices(),
+          apiGetRatings(),
+        ]);
 
-    Promise.all([
-      apiGetSession(),
-      apiGetShop(),
-      apiGetProducts(),
-      apiGetOrders(),
-      apiGetPayments(),
-    ]).then(([sess, shp, prods, ords, pays]) => {
-      if (!active) return;
       setSession(sess);
       setMonthTotal(sess.monthTotal);
       setShop(shp);
       setProducts(prods);
-      setProductsLoading(false);
       setOrders(ords);
-      setOrdersLoading(false);
       setPayments(pays);
-    });
+      setBoxDiscountTiers(tiers);
+      setRefillPredictions(refills);
+      setMonthlyAvgQty(avgQtys);
+      setSavedShelfPrices(shelfPrices);
+      setRatings(rts);
+      setProductsLoading(false);
+      setOrdersLoading(false);
+    } catch {
+      setLoadError(true);
+      setProductsLoading(false);
+      setOrdersLoading(false);
+    }
+  }, [initial.shelf]);
 
+  const retryLoad = useCallback(async () => {
+    await loadAllData();
+  }, [loadAllData]);
+
+  // Initialize Telegram Mini App + load initial data from src/api.ts
+  useEffect(() => {
+    initTelegramApp();
+    void loadAllData();
+  }, [loadAllData]);
+
+  // Recompute refill predictions via src/api.ts when shelf or orders change
+  useEffect(() => {
+    let active = true;
+    apiGetRefillPredictions(shelf)
+      .then((preds) => {
+        if (active) setRefillPredictions(preds);
+      })
+      .catch(() => {
+        // keep prior predictions on transient failure
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [shelf, orders.length]);
 
   // Online/offline listeners + auto-sync queued offline orders
   useEffect(() => {
@@ -374,15 +453,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [cart, darkMode, themeExplicit, shelf, autoOrder, lang, largeText]);
 
-  // Refresh checkout quote via api.ts whenever cart or monthTotal changes
+  // Refresh checkout quote via api.ts whenever cart changes & show tier-reached toast
   useEffect(() => {
     let active = true;
     const keys = Object.keys(cart);
     if (keys.length === 0) {
+      prevDiscountPctRef.current = 0;
       setCheckoutQuote({
         boxCount: 0,
         subtotal: 0,
-        discountPct: getTier(monthTotal).cur,
+        discountPct: 0,
         discountAmount: 0,
         total: 0,
       });
@@ -390,9 +470,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     setCheckoutLoading(true);
-    apiGetCheckout(cart, monthTotal)
+    apiGetCheckout(cart)
       .then((quote) => {
         if (!active) return;
+        const prevPct = prevDiscountPctRef.current;
+        if (
+          userMutatedCartRef.current &&
+          prevPct !== null &&
+          quote.discountPct > prevPct &&
+          quote.discountPct > 0
+        ) {
+          userMutatedCartRef.current = false;
+          triggerHaptic('success');
+          showToast({
+            icon: 'check',
+            title: TRANSLATIONS[lang].discountTierReachedTitle(quote.discountPct),
+            text: TRANSLATIONS[lang].discountTierReachedText(formatSom(quote.discountAmount)),
+            tone: 'ok',
+          });
+        }
+        prevDiscountPctRef.current = quote.discountPct;
         setCheckoutQuote(quote);
         setCheckoutLoading(false);
       })
@@ -402,7 +499,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       active = false;
     };
-  }, [cart, monthTotal]);
+  }, [cart, lang, showToast]);
 
   // Scheduled operator message preview (7s after open)
   useEffect(() => {
@@ -437,6 +534,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return map;
   }, [products]);
 
+  const refillById = useMemo(() => {
+    const map: Record<number, RefillPrediction> = {};
+    for (const r of refillPredictions) {
+      map[r.productId] = r;
+    }
+    return map;
+  }, [refillPredictions]);
+
+  const refillDueItems = useMemo(
+    () =>
+      refillPredictions.filter((r) => {
+        const prod = productsById[r.productId];
+        return r.isDueSoon && Boolean(prod && !prod.out);
+      }),
+    [productsById, refillPredictions],
+  );
+
   const cartCount = useMemo(
     () => Object.values(cart).reduce((acc, q) => acc + q, 0),
     [cart],
@@ -449,6 +563,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return prod ? acc + prod.box * q : acc;
       }, 0),
     [cart, productsById],
+  );
+
+  const discountNudge = useMemo(
+    () => computeBoxDiscountNudge(checkoutQuote.boxCount || cartCount, checkoutQuote.subtotal || cartSubtotal, boxDiscountTiers),
+    [boxDiscountTiers, cartCount, cartSubtotal, checkoutQuote.boxCount, checkoutQuote.subtotal],
   );
 
   const unreadNotifCount = useMemo(
@@ -495,6 +614,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateQty = useCallback(
     (id: number, delta: number) => {
       triggerHaptic(delta > 0 ? 'add' : 'remove');
+      if (delta > 0) userMutatedCartRef.current = true;
       setCart((prev) => {
         const current = prev[id] || 0;
         if (delta < 0 && current === 0) return prev;
@@ -529,6 +649,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setExactQty = useCallback((id: number, qty: number) => {
     const clean = Math.max(0, Math.min(999, Math.round(qty)));
     triggerHaptic(clean > 0 ? 'add' : 'remove');
+    if (clean > 0) userMutatedCartRef.current = true;
     setCart((prev) => {
       const next = { ...prev };
       if (clean === 0) {
@@ -599,15 +720,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const fillShelfToCart = useCallback(
     (onlyLow: boolean) => {
+      userMutatedCartRef.current = true;
       let added = 0;
       setCart((prev) => {
         const next = { ...prev };
         shelf.forEach((s) => {
           const prod = productsById[s[0]];
           if (prod?.out) return;
-          if (!onlyLow || s[2] - s[3] <= 2) {
+          const pred = refillById[s[0]];
+          const left = pred ? pred.daysRemaining : s[2] - s[3];
+          if (!onlyLow || left <= 3) {
             if (!next[s[0]]) {
-              next[s[0]] = s[1];
+              next[s[0]] = pred ? pred.usualBoxes : s[1];
               added++;
             }
           }
@@ -631,11 +755,71 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }, 0);
     },
-    [lang, productsById, shelf, showToast],
+    [lang, productsById, refillById, shelf, showToast],
   );
+
+  const addRefillDueToCart = useCallback(() => {
+    if (refillDueItems.length === 0) return;
+    userMutatedCartRef.current = true;
+    let added = 0;
+    setCart((prev) => {
+      const next = { ...prev };
+      for (const item of refillDueItems) {
+        const prod = productsById[item.productId];
+        if (!prod || prod.out) continue;
+        if (!next[item.productId]) {
+          next[item.productId] = item.usualBoxes;
+          added++;
+        } else {
+          next[item.productId] += item.usualBoxes;
+          added++;
+        }
+      }
+      return next;
+    });
+    triggerHaptic('add');
+    setBumpKey((k) => k + 1);
+    window.setTimeout(() => {
+      showToast({
+        icon: 'check',
+        title:
+          lang === 'ru'
+            ? `${added} поз. добавлено в корзину`
+            : `${added} ta mahsulot savatga qo'shildi`,
+        text: lang === 'ru' ? 'В обычном количестве' : 'Odatdagi miqdorda',
+        tone: 'ok',
+      });
+    }, 0);
+  }, [lang, productsById, refillDueItems, showToast]);
+
+  const updateShelfPrice = useCallback((productId: number, shelfPrice: number) => {
+    const clean = Math.max(500, Math.round(shelfPrice));
+    setSavedShelfPrices((prev) => ({ ...prev, [productId]: clean }));
+    void apiSaveShelfPrice(productId, clean);
+  }, []);
+
+  const submitOrderRating = useCallback(
+    async (orderId: number, stars: number, chips: string[], comment: string) => {
+      const saved = await apiSubmitRating({ orderId, stars, chips, comment });
+      setRatings((prev) => ({ ...prev, [orderId]: saved }));
+      setSheet(null);
+      triggerHaptic('success');
+      showToast({
+        icon: 'star',
+        title: TRANSLATIONS[lang].rateSavedToastTitle,
+        text: TRANSLATIONS[lang].rateSavedToastText(saved.stars),
+        tone: 'ok',
+      });
+    },
+    [lang, showToast],
+  );
+
+  const fetchReportMonths = useCallback(() => apiGetAvailableReportMonths(), []);
+  const fetchMonthlyReport = useCallback((monthKey: string) => apiGetMonthlyReport(monthKey), []);
 
   const repeatOrderToCart = useCallback(
     (items: { productId: number; qty: number }[]) => {
+      userMutatedCartRef.current = true;
       setCart((prev) => {
         const next = { ...prev };
         items.forEach((item) => {
@@ -668,6 +852,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const clearCart = useCallback(() => {
     triggerHaptic('remove');
+    prevDiscountPctRef.current = 0;
+    userMutatedCartRef.current = false;
     setCart({});
     setSheet(null);
   }, []);
@@ -717,6 +903,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLastOrderId(created.id);
         setSelectedOrderId(created.id);
         setMonthTotal((m) => m + created.subtotal);
+        prevDiscountPctRef.current = 0;
+        userMutatedCartRef.current = false;
         setCart({});
         setNote('');
         setSheet(null);
@@ -744,6 +932,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const offlineOrder: OrderRecord = {
             id: offlineId,
             dateLabel: 'Oflayn',
+            orderedAt: '2026-11-25',
             status: 'Yuborildi',
             subtotal: checkoutQuote.subtotal,
             discountPct: checkoutQuote.discountPct,
@@ -764,6 +953,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setOrders((prev) => [offlineOrder, ...prev]);
           setLastOrderId(offlineId);
           setSelectedOrderId(offlineId);
+          prevDiscountPctRef.current = 0;
+          userMutatedCartRef.current = false;
           setCart({});
           setSheet(null);
           setTab('ord');
@@ -823,10 +1014,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         icon: 'check',
         title: t.handoverConfirmedToast,
         text: `#${id}`,
-        tone: 'blue',
+        tone: 'ok',
       });
+      if (!ratings[id] && !promptedRatingIdsRef.current.has(id)) {
+        promptedRatingIdsRef.current.add(id);
+        window.setTimeout(() => {
+          setSheet({ type: 'rateOrder', orderId: id });
+        }, 350);
+      }
     },
-    [showToast, t.handoverConfirmedToast],
+    [ratings, showToast, t.handoverConfirmedToast],
   );
 
   const sendChatMessage = useCallback(
@@ -877,6 +1074,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     largeText,
     darkMode,
     isOnline,
+    loadError,
+    retryLoad,
     products,
     productsById,
     productsLoading,
@@ -892,8 +1091,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     cart,
     checkoutQuote,
     checkoutLoading,
+    boxDiscountTiers,
+    discountNudge,
     submittingOrder,
     shelf,
+    refillPredictions,
+    refillById,
+    refillDueItems,
+    monthlyAvgQty,
+    savedShelfPrices,
+    ratings,
     autoOrder,
     chat,
     notifs,
@@ -929,6 +1136,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     removeShelfItem,
     addShelfItem,
     fillShelfToCart,
+    addRefillDueToCart,
+    updateShelfPrice,
+    submitOrderRating,
+    fetchReportMonths,
+    fetchMonthlyReport,
     repeatOrderToCart,
     repeatLastOrder,
     clearCart,

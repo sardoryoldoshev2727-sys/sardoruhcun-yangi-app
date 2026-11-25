@@ -23,6 +23,8 @@ export interface Translations {
   clearLabel: string;
   closeLabel: string;
   profileLabel: string;
+  retryBtn: string;
+  loadErrorTitle: string;
   // Home
   activeDelivery: string;
   queuePos: string;
@@ -47,6 +49,12 @@ export interface Translations {
   topInTermiz: string;
   topInTermizSub: string;
   viewAll: string;
+  // Smart Refill ('Aqlli to'ldirish')
+  smartRefillTitle: string;
+  smartRefillSub: string;
+  smartRefillEmpty: string;
+  smartRefillAddAllBtn: string;
+  daysLeftEstimate: (days: number) => string;
   // Catalog
   filtersBtn: string;
   brandLabel: string;
@@ -85,7 +93,7 @@ export interface Translations {
   anorSeedsUnit: string;
   nextStepLabel: string;
   maxLevelActive: string;
-  // Cart
+  // Cart & Discount nudge
   cartTitle: string;
   currentCart: string;
   addProductsHint: string;
@@ -94,6 +102,10 @@ export interface Translations {
   addUsualOrder: string;
   goToCatalog: string;
   discountSavingsLine: (pct: number, saved: string) => string;
+  discountNudgeLine: (boxesNeeded: number, pct: number, saved: string) => string;
+  discountNudgeMax: (pct: number) => string;
+  discountTierReachedTitle: (pct: number) => string;
+  discountTierReachedText: (saved: string) => string;
   clearCartBtn: string;
   continueShopping: string;
   whenDeliverTitle: string;
@@ -110,7 +122,7 @@ export interface Translations {
   placeOrderBtn: string;
   goToCartBtn: string;
   chooseProductsBtn: string;
-  // Orders & Track & Detail
+  // Orders & Track & Detail & Rating
   ordersTitle: string;
   autoOrderTitle: string;
   autoOrderOnSub: string;
@@ -124,6 +136,15 @@ export interface Translations {
   trackOrderBtn: string;
   detailsBtn: string;
   repeatOrderBtn: string;
+  rateOrderBtn: string;
+  ratedBadgeLabel: (stars: number) => string;
+  rateSheetTitle: string;
+  rateSheetSub: (orderId: number) => string;
+  rateChips: string[];
+  rateCommentPlaceholder: string;
+  rateSubmitBtn: string;
+  rateSavedToastTitle: string;
+  rateSavedToastText: (stars: number) => string;
   pendingSyncBadge: string;
   orderDetailTitle: string;
   timelineTitle: string;
@@ -169,6 +190,10 @@ export interface Translations {
   yesClearBtn: string;
   // Profile & Subpages
   profileTitle: string;
+  profitCalcTitle: string;
+  profitCalcSub: string;
+  monthlyReportTitle: string;
+  monthlyReportSub: string;
   osonChat: string;
   operatorOnline: (name: string) => string;
   callOperator: string;
@@ -188,6 +213,28 @@ export interface Translations {
   monthPurchaseLabel: string;
   ordersCountLabel: string;
   savedLabel: string;
+  // Profit calculator
+  buyPerBottleLabel: string;
+  buyPerBoxLabel: string;
+  shelfPriceLabel: string;
+  marginPerBottleLabel: string;
+  marginPerBoxLabel: string;
+  markupPctLabel: string;
+  markupSliderHint: string;
+  suggestedRoundedHint: (price: string) => string;
+  monthlyProfitEstLabel: (boxes: number) => string;
+  selectProductLabel: string;
+  // Monthly report
+  reportSpentLabel: string;
+  reportBoxesLabel: string;
+  reportSavedLabel: string;
+  reportProfitLabel: string;
+  reportWeeklyTitle: string;
+  reportTopProductsTitle: string;
+  reportShareBtn: string;
+  reportShareToastTitle: string;
+  reportShareToastText: string;
+  reportComparePrev: string;
   // Chat
   chatPlaceholder: string;
   sendBtn: string;
@@ -217,6 +264,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     clearLabel: 'Tozalash',
     closeLabel: 'Yopish',
     profileLabel: 'Profil',
+    retryBtn: 'Qayta urinish',
+    loadErrorTitle: "Ma'lumot yuklanmadi",
     activeDelivery: 'Faol yetkazish',
     queuePos: '3-navbat',
     orderNumberPrefix: 'Buyurtma #',
@@ -240,6 +289,12 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     topInTermiz: "Termizda ko'p olinmoqda",
     topInTermizSub: 'Ulgurji mijozlar orasida eng talabgir ichimliklar',
     viewAll: 'Hammasi',
+    smartRefillTitle: 'Tugayotganlar',
+    smartRefillSub: "Buyurtma tarixi asosida 3 kun ichida tugaydi",
+    smartRefillEmpty: "Hozircha 3 kun ichida tugaydigan tovar yo'q",
+    smartRefillAddAllBtn: 'Hammasini savatga',
+    daysLeftEstimate: (days) =>
+      days <= 0 ? '≈ Bugun tugaydi' : `≈ ${days} kunda tugaydi`,
     filtersBtn: 'Filtrlar',
     brandLabel: 'Brend',
     flavorLabel: "Ta'm",
@@ -282,6 +337,11 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     addUsualOrder: "Odatdagi buyurtmani qo'shish",
     goToCatalog: "Katalogga o'tish",
     discountSavingsLine: (pct, saved) => `${pct}% chegirma — ${saved} tejaysiz`,
+    discountNudgeLine: (boxesNeeded, pct, saved) =>
+      `Yana ${boxesNeeded} quti — ${pct}% chegirma (≈ ${saved} tejaysiz)`,
+    discountNudgeMax: (pct) => `Maksimal ${pct}% quti chegirmasi faol`,
+    discountTierReachedTitle: (pct) => `${pct}% chegirma faollashdi!`,
+    discountTierReachedText: (saved) => `Ushbu buyurtmada ${saved} tejaysiz`,
     clearCartBtn: 'Tozalash',
     continueShopping: "Xaridni davom ettirish",
     whenDeliverTitle: 'Qachon yetkazamiz?',
@@ -311,6 +371,21 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     trackOrderBtn: 'Buyurtmani kuzatish',
     detailsBtn: 'Batafsil',
     repeatOrderBtn: 'Takrorlash',
+    rateOrderBtn: 'Baholash',
+    ratedBadgeLabel: (stars) => `${stars} / 5`,
+    rateSheetTitle: 'Yetkazishni baholang',
+    rateSheetSub: (orderId) => `Buyurtma #${orderId} · fikringiz muhim`,
+    rateChips: [
+      'Tez yetkazdi',
+      'Haydovchi xushmuomala',
+      'Mahsulot sifatli',
+      'Kech qoldi',
+      'Shikastlangan quti',
+    ],
+    rateCommentPlaceholder: 'Ixtiyoriy izoh…',
+    rateSubmitBtn: 'Yuborish',
+    rateSavedToastTitle: 'Baho yuborildi',
+    rateSavedToastText: (stars) => `${stars} yulduz uchun rahmat!`,
     pendingSyncBadge: 'Internet kutilmoqda',
     orderDetailTitle: 'Buyurtma tafsilotlari',
     timelineTitle: 'Holat bosqichlari',
@@ -356,6 +431,10 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     cancelBtn: 'Bekor qilish',
     yesClearBtn: 'Ha, tozalash',
     profileTitle: 'Profil',
+    profitCalcTitle: 'Foyda kalkulyatori',
+    profitCalcSub: 'Dona, quti va oylik foydani hisoblash',
+    monthlyReportTitle: 'Oylik hisobot',
+    monthlyReportSub: 'Xarid, chegirma va taxminiy foyda',
     osonChat: 'OsonChat',
     operatorOnline: (name) => `Operator ${name} · onlayn`,
     callOperator: "Operatorga qo'ng'iroq",
@@ -375,6 +454,26 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     monthPurchaseLabel: 'bu oy xarid',
     ordersCountLabel: 'buyurtma',
     savedLabel: 'tejadingiz',
+    buyPerBottleLabel: 'Olish (1 dona)',
+    buyPerBoxLabel: 'Olish (1 quti)',
+    shelfPriceLabel: 'Javon narxi (1 dona)',
+    marginPerBottleLabel: 'Donadan foyda',
+    marginPerBoxLabel: 'Qutidan foyda',
+    markupPctLabel: 'Ustama',
+    markupSliderHint: 'Tavsiya: 20-25%',
+    suggestedRoundedHint: (price) => `Tavsiya etilgan narx: ${price}`,
+    monthlyProfitEstLabel: (boxes) => `Oylik taxminiy foyda (~${boxes} quti/oy)`,
+    selectProductLabel: 'Mahsulotni tanlang',
+    reportSpentLabel: 'Jami xarid',
+    reportBoxesLabel: 'Qutilar soni',
+    reportSavedLabel: 'Chegirmadan tejaldi',
+    reportProfitLabel: 'Taxminiy foyda',
+    reportWeeklyTitle: "Haftalik xaridlar",
+    reportTopProductsTitle: 'Top 5 mahsulot',
+    reportShareBtn: 'Ulashish',
+    reportShareToastTitle: 'Hisobot matni tayyor',
+    reportShareToastText: 'Telegram orqali ulashish uchun nusxalandi',
+    reportComparePrev: "o'tgan oyga nisbatan",
     chatPlaceholder: 'Xabar yozing…',
     sendBtn: 'Yuborish',
   },
@@ -401,6 +500,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     clearLabel: 'Очистить',
     closeLabel: 'Закрыть',
     profileLabel: 'Профиль',
+    retryBtn: 'Повторить',
+    loadErrorTitle: 'Не удалось загрузить данные',
     activeDelivery: 'Активная доставка',
     queuePos: '3-й в очереди',
     orderNumberPrefix: 'Заказ #',
@@ -424,6 +525,12 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     topInTermiz: 'Хит продаж в Термезе',
     topInTermizSub: 'Самые востребованные позиции у оптовиков',
     viewAll: 'Все',
+    smartRefillTitle: 'Заканчиваются',
+    smartRefillSub: 'По истории заказов хватит до 3 дней',
+    smartRefillEmpty: 'Нет позиций с запасом менее 3 дней',
+    smartRefillAddAllBtn: 'Всё в корзину',
+    daysLeftEstimate: (days) =>
+      days <= 0 ? '≈ Закончится сегодня' : `≈ Закончится через ${days} дн.`,
     filtersBtn: 'Фильтры',
     brandLabel: 'Бренд',
     flavorLabel: 'Вкус',
@@ -466,6 +573,11 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     addUsualOrder: 'Добавить обычный заказ',
     goToCatalog: 'Перейти в каталог',
     discountSavingsLine: (pct, saved) => `Скидка ${pct}% — вы экономите ${saved}`,
+    discountNudgeLine: (boxesNeeded, pct, saved) =>
+      `Ещё ${boxesNeeded} кор. — скидка ${pct}% (≈ ${saved} экономии)`,
+    discountNudgeMax: (pct) => `Активна максимальная скидка ${pct}%`,
+    discountTierReachedTitle: (pct) => `Скидка ${pct}% активирована!`,
+    discountTierReachedText: (saved) => `Экономия на заказе: ${saved}`,
     clearCartBtn: 'Очистить',
     continueShopping: 'Продолжить покупки',
     whenDeliverTitle: 'Когда доставить?',
@@ -495,6 +607,21 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     trackOrderBtn: 'Отследить заказ',
     detailsBtn: 'Подробнее',
     repeatOrderBtn: 'Повторить',
+    rateOrderBtn: 'Оценить',
+    ratedBadgeLabel: (stars) => `${stars} / 5`,
+    rateSheetTitle: 'Оцените доставку',
+    rateSheetSub: (orderId) => `Заказ #${orderId} · ваше мнение важно`,
+    rateChips: [
+      'Быстрая доставка',
+      'Вежливый водитель',
+      'Качественный товар',
+      'Опоздал',
+      'Повреждённая коробка',
+    ],
+    rateCommentPlaceholder: 'Необязательный комментарий…',
+    rateSubmitBtn: 'Отправить',
+    rateSavedToastTitle: 'Оценка отправлена',
+    rateSavedToastText: (stars) => `Спасибо за ${stars} звёзд!`,
     pendingSyncBadge: 'Ожидает сеть',
     orderDetailTitle: 'Детали заказа',
     timelineTitle: 'Этапы статуса',
@@ -540,6 +667,10 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     cancelBtn: 'Отмена',
     yesClearBtn: 'Да, очистить',
     profileTitle: 'Профиль',
+    profitCalcTitle: 'Калькулятор прибыли',
+    profitCalcSub: 'Расчёт маржи с бутылки, коробки и месяца',
+    monthlyReportTitle: 'Месячный отчёт',
+    monthlyReportSub: 'Закупки, скидки и расчётная прибыль',
     osonChat: 'OsonChat',
     operatorOnline: (name) => `Оператор ${name} · онлайн`,
     callOperator: 'Позвонить оператору',
@@ -559,6 +690,26 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     monthPurchaseLabel: 'за этот месяц',
     ordersCountLabel: 'заказов',
     savedLabel: 'сэкономлено',
+    buyPerBottleLabel: 'Закуп (1 шт.)',
+    buyPerBoxLabel: 'Закуп (1 кор.)',
+    shelfPriceLabel: 'Цена на полке (1 шт.)',
+    marginPerBottleLabel: 'Прибыль с шт.',
+    marginPerBoxLabel: 'Прибыль с кор.',
+    markupPctLabel: 'Наценка',
+    markupSliderHint: 'Рекомендация: 20-25%',
+    suggestedRoundedHint: (price) => `Рекомендуемая цена: ${price}`,
+    monthlyProfitEstLabel: (boxes) => `Прибыль за месяц (~${boxes} кор./мес.)`,
+    selectProductLabel: 'Выберите товар',
+    reportSpentLabel: 'Всего закуплено',
+    reportBoxesLabel: 'Коробок',
+    reportSavedLabel: 'Сэкономлено скидками',
+    reportProfitLabel: 'Расчётная прибыль',
+    reportWeeklyTitle: 'Закупки по неделям',
+    reportTopProductsTitle: 'Топ-5 товаров',
+    reportShareBtn: 'Поделиться',
+    reportShareToastTitle: 'Текст отчёта готов',
+    reportShareToastText: 'Скопировано для отправки в Telegram',
+    reportComparePrev: 'к прошлому месяцу',
     chatPlaceholder: 'Напишите сообщение…',
     sendBtn: 'Отправить',
   },

@@ -1,22 +1,26 @@
 import { LOGO, PHOTOS } from './data/assets';
 import { generateIdempotencyKey, getTelegramInitData } from './telegram';
 import type {
+  BoxDiscountTier,
   ChatMessage,
   CheckoutQuote,
+  MonthlyReportData,
   NotificationItem,
   OrderLineItem,
+  OrderRating,
   OrderRecord,
   PaymentRecord,
   Product,
+  RefillPrediction,
   SessionInfo,
   ShelfItem,
   ShopInfo,
 } from './types';
-import { getTier } from './utils/catalog';
+import { computeBoxDiscountNudge, computeRefillPredictions } from './utils/catalog';
 
 export { LOGO };
 
-const API_DELAY_MS = 300;
+const API_DELAY_MS = 220;
 
 function delay(ms = API_DELAY_MS): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -95,15 +99,22 @@ let mockSession: SessionInfo = {
   debtAmount: 0,
 };
 
+export const BOX_DISCOUNT_TIERS: BoxDiscountTier[] = [
+  { minBoxes: 10, pct: 3 },
+  { minBoxes: 20, pct: 5 },
+  { minBoxes: 30, pct: 7 },
+];
+
 let mockOrders: OrderRecord[] = [
   {
     id: 2481,
     dateLabel: 'Bugun',
+    orderedAt: '2026-11-25',
     status: "Yo'lda",
     subtotal: 1468000,
-    discountPct: 5,
-    discountAmount: 73400,
-    totalSum: 1394600,
+    discountPct: 3,
+    discountAmount: 44040,
+    totalSum: 1423960,
     boxCount: 12,
     deliveryDay: 0,
     deliverySlot: 1,
@@ -115,64 +126,88 @@ let mockOrders: OrderRecord[] = [
     ],
   },
   {
-    id: 2399,
-    dateLabel: '18-noyabr',
+    id: 2412,
+    dateLabel: '22-noyabr',
+    orderedAt: '2026-11-22',
     status: 'Yetkazildi',
-    subtotal: 1505520,
-    discountPct: 5,
-    discountAmount: 75276,
-    totalSum: 1430244,
-    boxCount: 12,
+    subtotal: 752760,
+    discountPct: 0,
+    discountAmount: 0,
+    totalSum: 752760,
+    boxCount: 7,
+    deliveryDay: 0,
+    deliverySlot: 0,
+    comment: '',
+    items: [
+      { productId: 17, qty: 3, boxPrice: 45000 },
+      { productId: 7, qty: 4, boxPrice: 125460 },
+    ],
+    handoverConfirmed: true,
+  },
+  {
+    id: 2399,
+    dateLabel: '19-noyabr',
+    orderedAt: '2026-11-19',
+    status: 'Yetkazildi',
+    subtotal: 1378860,
+    discountPct: 3,
+    discountAmount: 41366,
+    totalSum: 1337494,
+    boxCount: 11,
     deliveryDay: 0,
     deliverySlot: 0,
     comment: '',
     items: [
       { productId: 1, qty: 6, boxPrice: 125460 },
-      { productId: 2, qty: 3, boxPrice: 125460 },
+      { productId: 2, qty: 2, boxPrice: 125460 },
       { productId: 7, qty: 3, boxPrice: 125460 },
     ],
     handoverConfirmed: true,
   },
   {
     id: 2310,
-    dateLabel: '11-noyabr',
+    dateLabel: '12-noyabr',
+    orderedAt: '2026-11-12',
     status: 'Yetkazildi',
-    subtotal: 1129140,
-    discountPct: 5,
-    discountAmount: 56457,
-    totalSum: 1072683,
-    boxCount: 9,
+    subtotal: 1231680,
+    discountPct: 3,
+    discountAmount: 36950,
+    totalSum: 1194730,
+    boxCount: 11,
     deliveryDay: 1,
     deliverySlot: 0,
     comment: '',
     items: [
       { productId: 1, qty: 6, boxPrice: 125460 },
-      { productId: 21, qty: 3, boxPrice: 75996 },
+      { productId: 21, qty: 2, boxPrice: 75996 },
+      { productId: 17, qty: 3, boxPrice: 45000 },
     ],
     handoverConfirmed: true,
   },
   {
     id: 2244,
-    dateLabel: '4-noyabr',
+    dateLabel: '5-noyabr',
+    orderedAt: '2026-11-05',
     status: 'Yetkazildi',
-    subtotal: 1008780,
-    discountPct: 5,
-    discountAmount: 50439,
-    totalSum: 958341,
-    boxCount: 8,
+    subtotal: 1384908,
+    discountPct: 3,
+    discountAmount: 41547,
+    totalSum: 1343361,
+    boxCount: 11,
     deliveryDay: 0,
     deliverySlot: 1,
     comment: '',
     items: [
+      { productId: 1, qty: 5, boxPrice: 125460 },
       { productId: 7, qty: 4, boxPrice: 125460 },
       { productId: 0, qty: 2, boxPrice: 127566 },
-      { productId: 2, qty: 2, boxPrice: 125460 },
     ],
     handoverConfirmed: true,
   },
   {
     id: 2201,
     dateLabel: '1-noyabr',
+    orderedAt: '2026-11-01',
     status: 'Bekor qilindi',
     subtotal: 501840,
     discountPct: 0,
@@ -187,11 +222,75 @@ let mockOrders: OrderRecord[] = [
   },
 ];
 
+// Historical delivered orders used for cycle-time Smart Refill calculations
+const ARCHIVED_ORDER_HISTORY: OrderRecord[] = [
+  {
+    id: 2180,
+    dateLabel: '30-oktabr',
+    orderedAt: '2026-10-30',
+    status: 'Yetkazildi',
+    subtotal: 1126764,
+    discountPct: 3,
+    discountAmount: 33803,
+    totalSum: 1092961,
+    boxCount: 10,
+    deliveryDay: 0,
+    deliverySlot: 0,
+    comment: '',
+    items: [
+      { productId: 1, qty: 4, boxPrice: 125460 },
+      { productId: 2, qty: 2, boxPrice: 125460 },
+      { productId: 21, qty: 2, boxPrice: 75996 },
+      { productId: 7, qty: 2, boxPrice: 125460 },
+    ],
+    handoverConfirmed: true,
+  },
+  {
+    id: 2145,
+    dateLabel: '20-oktabr',
+    orderedAt: '2026-10-20',
+    status: 'Yetkazildi',
+    subtotal: 1129140,
+    discountPct: 0,
+    discountAmount: 0,
+    totalSum: 1129140,
+    boxCount: 9,
+    deliveryDay: 0,
+    deliverySlot: 1,
+    comment: '',
+    items: [
+      { productId: 1, qty: 4, boxPrice: 125460 },
+      { productId: 2, qty: 2, boxPrice: 125460 },
+      { productId: 17, qty: 3, boxPrice: 45000 },
+    ],
+    handoverConfirmed: true,
+  },
+  {
+    id: 2110,
+    dateLabel: '16-oktabr',
+    orderedAt: '2026-10-16',
+    status: 'Yetkazildi',
+    subtotal: 653832,
+    discountPct: 0,
+    discountAmount: 0,
+    totalSum: 653832,
+    boxCount: 6,
+    deliveryDay: 1,
+    deliverySlot: 0,
+    comment: '',
+    items: [
+      { productId: 21, qty: 2, boxPrice: 75996 },
+      { productId: 7, qty: 4, boxPrice: 125460 },
+    ],
+    handoverConfirmed: true,
+  },
+];
+
 export const DEFAULT_SHELF_SEED: ShelfItem[] = [
   [1, 4, 7, 6],
-  [21, 2, 14, 13],
-  [7, 2, 7, 3],
-  [17, 3, 10, 2],
+  [21, 2, 14, 12],
+  [7, 3, 7, 4],
+  [17, 3, 10, 3],
   [2, 2, 10, 4],
 ];
 
@@ -209,7 +308,148 @@ export const DEFAULT_CHAT_SEED: ChatMessage[] = [
   ['in', "Buyurtmangiz #2481 yo'lda, 14:00–17:00 orasida yetadi.", '13:06'],
 ];
 
-function computeCheckoutSync(items: Record<number, number>, monthTotal: number): CheckoutQuote {
+let mockMonthlyAvgQuantities: Record<number, number> = {
+  0: 8,
+  1: 20,
+  2: 10,
+  3: 6,
+  4: 8,
+  5: 6,
+  6: 7,
+  7: 14,
+  8: 5,
+  9: 6,
+  11: 9,
+  12: 8,
+  13: 12,
+  14: 10,
+  15: 7,
+  16: 6,
+  17: 12,
+  18: 8,
+  19: 6,
+  20: 5,
+  21: 10,
+  22: 8,
+  23: 9,
+  24: 6,
+};
+
+let mockSavedShelfPrices: Record<number, number> = {
+  1: 17000,
+  7: 17000,
+  13: 17000,
+  21: 8000,
+};
+
+let mockRatings: Record<number, OrderRating> = {
+  2310: {
+    orderId: 2310,
+    stars: 5,
+    chips: ['Tez yetkazdi', 'Mahsulot sifatli'],
+    comment: 'Hammasi butun va vaqtida yetib keldi.',
+    submittedAt: '2026-11-12T15:10:00Z',
+  },
+  2244: {
+    orderId: 2244,
+    stars: 4,
+    chips: ['Haydovchi xushmuomala'],
+    comment: '',
+    submittedAt: '2026-11-05T16:30:00Z',
+  },
+};
+
+const MOCK_MONTHLY_REPORTS: Record<string, MonthlyReportData> = {
+  '2026-11': {
+    monthKey: '2026-11',
+    monthLabel: 'Noyabr 2026',
+    totalSpent: 6052289,
+    prevSpent: 5290400,
+    spentDeltaPct: 14,
+    totalBoxes: 52,
+    prevBoxes: 46,
+    boxesDeltaPct: 13,
+    savedByDiscounts: 214342,
+    prevSaved: 158700,
+    savedDeltaPct: 35,
+    estimatedProfit: 1384500,
+    prevProfit: 1190200,
+    profitDeltaPct: 16,
+    weeklyBars: [
+      { label: '1-hafta', amount: 1343361, boxes: 11 },
+      { label: '2-hafta', amount: 1194730, boxes: 11 },
+      { label: '3-hafta', amount: 2090254, boxes: 18 },
+      { label: '4-hafta', amount: 1423944, boxes: 12 },
+    ],
+    topProducts: [
+      { productId: 1, boxes: 22, spent: 2760120, estimatedProfit: 605880 },
+      { productId: 7, boxes: 11, spent: 1380060, estimatedProfit: 302940 },
+      { productId: 17, boxes: 6, spent: 270000, estimatedProfit: 60000 },
+      { productId: 13, boxes: 3, spent: 375759, estimatedProfit: 83241 },
+      { productId: 21, boxes: 2, spent: 151992, estimatedProfit: 40008 },
+    ],
+  },
+  '2026-10': {
+    monthKey: '2026-10',
+    monthLabel: 'Oktabr 2026',
+    totalSpent: 5290400,
+    prevSpent: 5510000,
+    spentDeltaPct: -4,
+    totalBoxes: 46,
+    prevBoxes: 48,
+    boxesDeltaPct: -4,
+    savedByDiscounts: 158700,
+    prevSaved: 165300,
+    savedDeltaPct: -4,
+    estimatedProfit: 1190200,
+    prevProfit: 1235000,
+    profitDeltaPct: -4,
+    weeklyBars: [
+      { label: '1-hafta', amount: 1120000, boxes: 10 },
+      { label: '2-hafta', amount: 1280000, boxes: 11 },
+      { label: '3-hafta', amount: 1782972, boxes: 15 },
+      { label: '4-hafta', amount: 1107428, boxes: 10 },
+    ],
+    topProducts: [
+      { productId: 1, boxes: 18, spent: 2258280, estimatedProfit: 495720 },
+      { productId: 7, boxes: 10, spent: 1254600, estimatedProfit: 275400 },
+      { productId: 2, boxes: 6, spent: 752760, estimatedProfit: 165240 },
+      { productId: 21, boxes: 6, spent: 455976, estimatedProfit: 120024 },
+      { productId: 17, boxes: 6, spent: 270000, estimatedProfit: 60000 },
+    ],
+  },
+  '2026-09': {
+    monthKey: '2026-09',
+    monthLabel: 'Sentabr 2026',
+    totalSpent: 5510000,
+    prevSpent: 4890000,
+    spentDeltaPct: 13,
+    totalBoxes: 48,
+    prevBoxes: 42,
+    boxesDeltaPct: 14,
+    savedByDiscounts: 165300,
+    prevSaved: 122000,
+    savedDeltaPct: 35,
+    estimatedProfit: 1235000,
+    prevProfit: 1080000,
+    profitDeltaPct: 14,
+    weeklyBars: [
+      { label: '1-hafta', amount: 1350000, boxes: 12 },
+      { label: '2-hafta', amount: 1410000, boxes: 12 },
+      { label: '3-hafta', amount: 1220000, boxes: 11 },
+      { label: '4-hafta', amount: 1530000, boxes: 13 },
+    ],
+    topProducts: [
+      { productId: 1, boxes: 19, spent: 2383740, estimatedProfit: 523260 },
+      { productId: 13, boxes: 9, spent: 1127277, estimatedProfit: 249723 },
+      { productId: 7, boxes: 8, spent: 1003680, estimatedProfit: 220320 },
+      { productId: 0, boxes: 6, spent: 765396, estimatedProfit: 153204 },
+      { productId: 21, boxes: 6, spent: 455976, estimatedProfit: 120024 },
+    ],
+  },
+};
+
+function computeCheckoutSync(items: Record<number, number>): CheckoutQuote {
   let boxCount = 0;
   let subtotal = 0;
   for (const [idStr, qty] of Object.entries(items)) {
@@ -218,7 +458,8 @@ function computeCheckoutSync(items: Record<number, number>, monthTotal: number):
     boxCount += qty;
     subtotal += prod.box * qty;
   }
-  const { cur: discountPct } = getTier(monthTotal + subtotal);
+  const nudge = computeBoxDiscountNudge(boxCount, subtotal, BOX_DISCOUNT_TIERS);
+  const discountPct = nudge.currentPct;
   const discountAmount = Math.round((subtotal * discountPct) / 100);
   const total = Math.max(0, subtotal - discountAmount);
   return { boxCount, subtotal, discountPct, discountAmount, total };
@@ -239,12 +480,14 @@ export async function getProducts(): Promise<Product[]> {
   return MOCK_PRODUCTS.map((p) => ({ ...p }));
 }
 
-export async function getCheckout(
-  items: Record<number, number>,
-  monthTotal = mockSession.monthTotal,
-): Promise<CheckoutQuote> {
-  await delay();
-  return computeCheckoutSync(items, monthTotal);
+export async function getBoxDiscountTiers(): Promise<BoxDiscountTier[]> {
+  await delay(120);
+  return BOX_DISCOUNT_TIERS.map((t) => ({ ...t }));
+}
+
+export async function getCheckout(items: Record<number, number>): Promise<CheckoutQuote> {
+  await delay(120);
+  return computeCheckoutSync(items);
 }
 
 export interface PlaceOrderPayload {
@@ -270,8 +513,7 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
     throw new Error('OFFLINE');
   }
 
-  const baseMonthTotal = payload.monthTotal ?? mockSession.monthTotal;
-  const quote = computeCheckoutSync(payload.items, baseMonthTotal);
+  const quote = computeCheckoutSync(payload.items);
   const lineItems: OrderLineItem[] = Object.entries(payload.items)
     .map(([idStr, qty]) => {
       const prod = MOCK_PRODUCTS[Number(idStr)];
@@ -290,6 +532,7 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
   const created: OrderRecord = {
     id: nextId,
     dateLabel: 'Hozir',
+    orderedAt: '2026-11-25',
     status: 'Yuborildi',
     subtotal: quote.subtotal,
     discountPct: quote.discountPct,
@@ -315,6 +558,20 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
 export async function getOrders(): Promise<OrderRecord[]> {
   await delay();
   return mockOrders.map((o) => ({ ...o, items: [...o.items] }));
+}
+
+export async function getOrderHistory(): Promise<OrderRecord[]> {
+  await delay(140);
+  return [...mockOrders, ...ARCHIVED_ORDER_HISTORY].map((o) => ({
+    ...o,
+    items: [...o.items],
+  }));
+}
+
+export async function getRefillPredictions(shelf: ShelfItem[]): Promise<RefillPrediction[]> {
+  await delay(140);
+  const combined = [...mockOrders, ...ARCHIVED_ORDER_HISTORY];
+  return computeRefillPredictions(combined, shelf);
 }
 
 export async function getOrder(id: number): Promise<OrderRecord | null> {
@@ -356,14 +613,77 @@ export async function confirmHandover(id: number): Promise<OrderRecord> {
   return updated;
 }
 
+export async function getMonthlyAvgQuantities(): Promise<Record<number, number>> {
+  await delay(120);
+  return { ...mockMonthlyAvgQuantities };
+}
+
+export async function getSavedShelfPrices(): Promise<Record<number, number>> {
+  await delay(120);
+  return { ...mockSavedShelfPrices };
+}
+
+export async function saveShelfPrice(
+  productId: number,
+  shelfPrice: number,
+): Promise<Record<number, number>> {
+  await delay(100);
+  mockSavedShelfPrices = {
+    ...mockSavedShelfPrices,
+    [productId]: Math.max(500, Math.round(shelfPrice)),
+  };
+  return { ...mockSavedShelfPrices };
+}
+
+export async function getRatings(): Promise<Record<number, OrderRating>> {
+  await delay(120);
+  return { ...mockRatings };
+}
+
+export async function submitRating(payload: {
+  orderId: number;
+  stars: number;
+  chips: string[];
+  comment: string;
+}): Promise<OrderRating> {
+  await delay();
+  const rating: OrderRating = {
+    orderId: payload.orderId,
+    stars: Math.max(1, Math.min(5, Math.round(payload.stars))),
+    chips: [...payload.chips],
+    comment: payload.comment.trim(),
+    submittedAt: new Date().toISOString(),
+  };
+  mockRatings = { ...mockRatings, [payload.orderId]: rating };
+  return rating;
+}
+
+export async function getAvailableReportMonths(): Promise<{ key: string; label: string }[]> {
+  await delay(100);
+  return [
+    { key: '2026-11', label: 'Noyabr 2026' },
+    { key: '2026-10', label: 'Oktabr 2026' },
+    { key: '2026-09', label: 'Sentabr 2026' },
+  ];
+}
+
+export async function getMonthlyReport(monthKey: string): Promise<MonthlyReportData> {
+  await delay(180);
+  const found = MOCK_MONTHLY_REPORTS[monthKey] || MOCK_MONTHLY_REPORTS['2026-11'];
+  return {
+    ...found,
+    weeklyBars: found.weeklyBars.map((w) => ({ ...w })),
+    topProducts: found.topProducts.map((p) => ({ ...p })),
+  };
+}
+
 const MOCK_PAYMENTS: PaymentRecord[] = [
-  { id: '2399', title: '18-noyabr · #2399', amount: 1430244, method: 'naqd' },
-  { id: '2310', title: '11-noyabr · #2310', amount: 1072683, method: "o'tkazma" },
-  { id: '2244', title: '4-noyabr · #2244', amount: 958341, method: 'naqd' },
+  { id: '2399', title: '19-noyabr · #2399', amount: 1337494, method: 'naqd' },
+  { id: '2310', title: '12-noyabr · #2310', amount: 1194730, method: "o'tkazma" },
+  { id: '2244', title: '5-noyabr · #2244', amount: 1343361, method: 'naqd' },
 ];
 
 export async function getPayments(): Promise<PaymentRecord[]> {
   await delay();
   return MOCK_PAYMENTS.map((p) => ({ ...p }));
 }
-

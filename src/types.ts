@@ -13,7 +13,9 @@ export type SubPageId =
   | 'chat'
   | 'shop'
   | 'fin'
-  | 'about';
+  | 'about'
+  | 'profit'
+  | 'report';
 
 export type OrderStatus =
   | 'Yuborildi'
@@ -52,6 +54,7 @@ export interface OrderLineItem {
 export interface OrderRecord {
   id: number;
   dateLabel: string;
+  orderedAt?: string;
   status: OrderStatus;
   subtotal: number;
   discountPct: number;
@@ -94,6 +97,69 @@ export interface CheckoutQuote {
   total: number;
 }
 
+export interface BoxDiscountTier {
+  minBoxes: number;
+  pct: number;
+}
+
+export interface BoxDiscountNudge {
+  currentBoxes: number;
+  currentPct: number;
+  nextTier: BoxDiscountTier | null;
+  boxesNeeded: number;
+  estimatedNextSavings: number;
+  progressPct: number;
+}
+
+export interface RefillPrediction {
+  productId: number;
+  avgDaysBetween: number;
+  daysSinceLast: number;
+  daysRemaining: number;
+  usualBoxes: number;
+  isDueSoon: boolean;
+}
+
+export interface OrderRating {
+  orderId: number;
+  stars: number;
+  chips: string[];
+  comment: string;
+  submittedAt: string;
+}
+
+export interface WeeklyReportBar {
+  label: string;
+  amount: number;
+  boxes: number;
+}
+
+export interface TopProductStat {
+  productId: number;
+  boxes: number;
+  spent: number;
+  estimatedProfit: number;
+}
+
+export interface MonthlyReportData {
+  monthKey: string;
+  monthLabel: string;
+  totalSpent: number;
+  prevSpent: number;
+  spentDeltaPct: number;
+  totalBoxes: number;
+  prevBoxes: number;
+  boxesDeltaPct: number;
+  savedByDiscounts: number;
+  prevSaved: number;
+  savedDeltaPct: number;
+  estimatedProfit: number;
+  prevProfit: number;
+  profitDeltaPct: number;
+  weeklyBars: WeeklyReportBar[];
+  topProducts: TopProductStat[];
+}
+
 /** [type, title, subtitle, timeLabel, unreadFlag] */
 export type NotificationItem = [
   'road' | 'chat' | 'seed' | 'low' | 'new',
@@ -114,11 +180,23 @@ export type SheetState =
   | { type: 'confirmOrder' }
   | { type: 'pin'; changeMode?: boolean }
   | { type: 'cancelOrder'; orderId: number }
-  | { type: 'confirmClear' };
+  | { type: 'confirmClear' }
+  | { type: 'rateOrder'; orderId: number };
 
 export interface ToastItem {
   id: number;
-  icon: 'check' | 'cart' | 'bell' | 'chat' | 'heart' | 'lock' | 'phone' | 'globe' | 'info' | 'repeat';
+  icon:
+    | 'check'
+    | 'cart'
+    | 'bell'
+    | 'chat'
+    | 'heart'
+    | 'lock'
+    | 'phone'
+    | 'globe'
+    | 'info'
+    | 'repeat'
+    | 'star';
   title: string;
   text: string;
   tone?: 'ok' | 'warn' | 'red' | 'blue';
@@ -139,4 +217,3 @@ export interface PaymentRecord {
   amount: number;
   method: string;
 }
-
