@@ -159,50 +159,50 @@ export function calcProfitMetrics(
 export function computeBoxDiscountNudge(
   boxCount: number,
   subtotal: number,
-  tiers: BoxDiscountTier[],
+  _tiers?: BoxDiscountTier[],
 ): BoxDiscountNudge {
-  const sorted = [...tiers].sort((a, b) => a.minBoxes - b.minBoxes);
+  // Yagona qoida (panel bilan bir xil): chegirma buyurtma SUMMASIGA qarab — TIERS.
+  // Quti soni faqat taxminiy ko'rsatish uchun (o'rtacha quti narxi bo'yicha).
   let currentPct = 0;
   let prevMin = 0;
-  let nextTier: BoxDiscountTier | null = null;
-
-  for (const tier of sorted) {
-    if (boxCount >= tier.minBoxes) {
-      currentPct = tier.pct;
-      prevMin = tier.minBoxes;
+  let next: [number, number] | null = null;
+  for (const t of TIERS) {
+    if (subtotal >= t[0]) {
+      currentPct = t[1];
+      prevMin = t[0];
     } else {
-      nextTier = tier;
+      next = t;
       break;
     }
   }
 
-  if (!nextTier) {
+  const avgBoxPrice = boxCount > 0 && subtotal > 0 ? Math.round(subtotal / boxCount) : 125460;
+
+  if (!next) {
     return {
       currentBoxes: boxCount,
       currentPct,
       nextTier: null,
       boxesNeeded: 0,
+      amountNeeded: 0,
       estimatedNextSavings: Math.round((subtotal * currentPct) / 100),
       progressPct: 100,
     };
   }
 
-  const boxesNeeded = Math.max(0, nextTier.minBoxes - boxCount);
-  const avgBoxPrice = boxCount > 0 && subtotal > 0 ? Math.round(subtotal / boxCount) : 125460;
-  const projectedSubtotal = subtotal + boxesNeeded * avgBoxPrice;
-  const rawSavings = Math.round((projectedSubtotal * nextTier.pct) / 100);
+  const amountNeeded = Math.max(0, next[0] - subtotal);
+  const boxesNeeded = Math.max(1, Math.ceil(amountNeeded / avgBoxPrice));
+  const rawSavings = Math.round((next[0] * next[1]) / 100);
   const estimatedNextSavings = Math.max(1000, Math.round(rawSavings / 1000) * 1000);
-  const span = Math.max(1, nextTier.minBoxes - prevMin);
-  const progressPct = Math.max(
-    0,
-    Math.min(100, Math.round(((boxCount - prevMin) / span) * 100)),
-  );
+  const span = Math.max(1, next[0] - prevMin);
+  const progressPct = Math.max(0, Math.min(100, Math.round(((subtotal - prevMin) / span) * 100)));
 
   return {
     currentBoxes: boxCount,
     currentPct,
-    nextTier,
+    nextTier: { minBoxes: boxCount + boxesNeeded, pct: next[1] },
     boxesNeeded,
+    amountNeeded,
     estimatedNextSavings,
     progressPct,
   };

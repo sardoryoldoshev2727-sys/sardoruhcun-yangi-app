@@ -18,7 +18,7 @@ import { CatalogSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
-import { HOT_IDS, formatSom, getTier } from '../utils/catalog';
+import { HOT_IDS, formatSom } from '../utils/catalog';
 
 export const HomeView: React.FC = () => {
   const {
@@ -35,6 +35,7 @@ export const HomeView: React.FC = () => {
     loadError,
     retryLoad,
     monthTotal,
+    discountNudge,
     unreadChat,
     orders,
     lang,
@@ -45,7 +46,8 @@ export const HomeView: React.FC = () => {
 
   const sortedShelf = [...shelf].sort((a, b) => a[2] - a[3] - (b[2] - b[3]));
   const lowCount = refillDueItems.length || shelf.filter((s) => s[2] - s[3] <= 3).length;
-  const { next } = getTier(monthTotal);
+  // Bosh sahifa ham savatdagi joriy buyurtmaga qaraydi (panel qoidasi bilan bir xil)
+  const next = discountNudge.nextTier;
   const activeOrder = orders.find(
     (o) => o.status === "Yo'lda" || o.status === 'Tasdiqlandi' || o.status === 'Yuborildi',
   );
@@ -181,10 +183,10 @@ export const HomeView: React.FC = () => {
             </span>
             <div className="min-w-0 flex-1">
               <strong className="block text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
-                {next ? t.nextTierBanner(next[1]) : t.maxTierBanner}
+                {next ? t.nextTierBanner(next.pct) : t.maxTierBanner}
               </strong>
               <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate tabular-nums">
-                {next ? t.remainingAmount(formatSom(next[0] - monthTotal)) : t.activePartnerLevel}
+                {next ? t.remainingAmount(formatSom(discountNudge.amountNeeded)) : t.activePartnerLevel}
               </span>
             </div>
             <ChevronRight className="w-5 h-5 text-[#6B7280] sm:hidden" />

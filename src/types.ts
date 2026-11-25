@@ -107,6 +107,7 @@ export interface BoxDiscountNudge {
   currentPct: number;
   nextTier: BoxDiscountTier | null;
   boxesNeeded: number;
+  amountNeeded: number;
   estimatedNextSavings: number;
   progressPct: number;
 }

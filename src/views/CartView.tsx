@@ -76,6 +76,7 @@ export const CartView: React.FC = () => {
         discountNudge.boxesNeeded,
         discountNudge.nextTier.pct,
         formatSom(discountNudge.estimatedNextSavings),
+        formatSom(discountNudge.amountNeeded),
       )
     : t.discountNudgeMax(discountNudge.currentPct);
 

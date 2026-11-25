@@ -102,7 +102,7 @@ export interface Translations {
   addUsualOrder: string;
   goToCatalog: string;
   discountSavingsLine: (pct: number, saved: string) => string;
-  discountNudgeLine: (boxesNeeded: number, pct: number, saved: string) => string;
+  discountNudgeLine: (boxesNeeded: number, pct: number, saved: string, amount: string) => string;
   discountNudgeMax: (pct: number) => string;
   discountTierReachedTitle: (pct: number) => string;
   discountTierReachedText: (saved: string) => string;
@@ -337,9 +337,9 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     addUsualOrder: "Odatdagi buyurtmani qo'shish",
     goToCatalog: "Katalogga o'tish",
     discountSavingsLine: (pct, saved) => `${pct}% chegirma — ${saved} tejaysiz`,
-    discountNudgeLine: (boxesNeeded, pct, saved) =>
-      `Yana ${boxesNeeded} quti — ${pct}% chegirma (≈ ${saved} tejaysiz)`,
-    discountNudgeMax: (pct) => `Maksimal ${pct}% quti chegirmasi faol`,
+    discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
+      `Yana ${amount} (≈ ${boxesNeeded} quti) — ${pct}% chegirma, ≈ ${saved} tejaysiz`,
+    discountNudgeMax: (pct) => `Maksimal ${pct}% chegirma faol`,
     discountTierReachedTitle: (pct) => `${pct}% chegirma faollashdi!`,
     discountTierReachedText: (saved) => `Ushbu buyurtmada ${saved} tejaysiz`,
     clearCartBtn: 'Tozalash',
@@ -573,8 +573,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     addUsualOrder: 'Добавить обычный заказ',
     goToCatalog: 'Перейти в каталог',
     discountSavingsLine: (pct, saved) => `Скидка ${pct}% — вы экономите ${saved}`,
-    discountNudgeLine: (boxesNeeded, pct, saved) =>
-      `Ещё ${boxesNeeded} кор. — скидка ${pct}% (≈ ${saved} экономии)`,
+    discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
+      `Ещё ${amount} (≈ ${boxesNeeded} кор.) — скидка ${pct}%, ≈ ${saved} экономии`,
     discountNudgeMax: (pct) => `Активна максимальная скидка ${pct}%`,
     discountTierReachedTitle: (pct) => `Скидка ${pct}% активирована!`,
     discountTierReachedText: (saved) => `Экономия на заказе: ${saved}`,

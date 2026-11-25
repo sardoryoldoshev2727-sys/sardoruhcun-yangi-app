@@ -33,26 +33,29 @@ import { getCategoryLabel, getProductName } from '../i18n';
 import { syncTelegramBackButton } from '../telegram';
 import type { TabId, ToastItem } from '../types';
 import { CATEGORIES, QUICK_HOME_CATEGORIES, formatSom } from '../utils/catalog';
-import { CartView } from '../views/CartView';
-import { CatalogView } from '../views/CatalogView';
 import { HomeView } from '../views/HomeView';
-import {
-  OrderDetailView,
-  OrdersView,
-  SuccessView,
-  TrackView,
-} from '../views/OrdersAndTrackView';
-import {
-  AboutView,
-  ChatView,
-  FinanceView,
-  MonthlyReportView,
-  NotifView,
-  ProfileView,
-  ProfitCalculatorView,
-  ShopView,
-} from '../views/ProfileAndSubViews';
-import { PromoView } from '../views/PromoView';
+import { ListRowsSkeleton } from './Skeletons';
+
+// Sahifalar kerak bo'lganda yuklanadi (ilova tezroq ochiladi)
+const lazyNamed = <T extends Record<string, any>>(load: () => Promise<T>, name: keyof T) =>
+  React.lazy(() => load().then((m) => ({ default: m[name] as React.ComponentType<any> })));
+const CartView = lazyNamed(() => import('../views/CartView'), 'CartView');
+const CatalogView = lazyNamed(() => import('../views/CatalogView'), 'CatalogView');
+const PromoView = lazyNamed(() => import('../views/PromoView'), 'PromoView');
+const loadOrders = () => import('../views/OrdersAndTrackView');
+const OrderDetailView = lazyNamed(loadOrders, 'OrderDetailView');
+const OrdersView = lazyNamed(loadOrders, 'OrdersView');
+const SuccessView = lazyNamed(loadOrders, 'SuccessView');
+const TrackView = lazyNamed(loadOrders, 'TrackView');
+const loadProfile = () => import('../views/ProfileAndSubViews');
+const AboutView = lazyNamed(loadProfile, 'AboutView');
+const ChatView = lazyNamed(loadProfile, 'ChatView');
+const FinanceView = lazyNamed(loadProfile, 'FinanceView');
+const MonthlyReportView = lazyNamed(loadProfile, 'MonthlyReportView');
+const NotifView = lazyNamed(loadProfile, 'NotifView');
+const ProfileView = lazyNamed(loadProfile, 'ProfileView');
+const ProfitCalculatorView = lazyNamed(loadProfile, 'ProfitCalculatorView');
+const ShopView = lazyNamed(loadProfile, 'ShopView');
 import { SheetsAndModals } from './SheetsAndModals';
 
 function ToastIcon({ icon }: { icon: ToastItem['icon'] }) {
@@ -180,6 +183,7 @@ export const AppShell: React.FC = () => {
         discountNudge.boxesNeeded,
         discountNudge.nextTier.pct,
         formatSom(discountNudge.estimatedNextSavings),
+        formatSom(discountNudge.amountNeeded),
       )
     : t.discountNudgeMax(discountNudge.currentPct);
 
@@ -690,7 +694,7 @@ export const AppShell: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
               >
-                {renderPageContent()}
+                <React.Suspense fallback={<div className="p-4"><ListRowsSkeleton count={4} /></div>}>{renderPageContent()}</React.Suspense>
               </motion.div>
             </main>
 
