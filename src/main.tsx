@@ -10,8 +10,8 @@ if (launchEl) {
   window.setTimeout(
     () => {
       launchEl.classList.add('is-done');
-      window.setTimeout(() => launchEl.remove(), reduced ? 20 : 260);
+      window.setTimeout(() => launchEl.remove(), reduced ? 20 : 250);
     },
-    reduced ? 20 : 480,
+    reduced ? 20 : 860,
   );
 }

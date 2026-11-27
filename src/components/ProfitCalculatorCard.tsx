@@ -13,21 +13,22 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
   product,
   compact = false,
 }) => {
-  const { monthlyAvgQty, savedShelfPrices, updateShelfPrice, t } = useStore();
-  const defaultSuggested = roundTo500(product.one * 1.22);
+  const { monthlyAvgQty, savedShelfPrices, markupPct, updateShelfPrice, t } = useStore();
+  const globalRatio = 1 + markupPct / 100;
+  const defaultSuggested = roundTo500(product.one * globalRatio);
   const storedPrice = savedShelfPrices[product.id] ?? defaultSuggested;
 
   const [inputVal, setInputVal] = useState<string>(String(storedPrice));
 
   useEffect(() => {
-    setInputVal(String(savedShelfPrices[product.id] ?? roundTo500(product.one * 1.22)));
-  }, [product.id, product.one, savedShelfPrices]);
+    setInputVal(String(savedShelfPrices[product.id] ?? roundTo500(product.one * (1 + markupPct / 100))));
+  }, [markupPct, product.id, product.one, savedShelfPrices]);
 
   const numericShelfPrice = Math.max(0, parseInt(inputVal || '0', 10) || 0);
   const avgBoxes = monthlyAvgQty[product.id] ?? 6;
   const metrics = calcProfitMetrics(product, numericShelfPrice, avgBoxes);
 
-  const clampedSliderMarkup = Math.min(40, Math.max(10, metrics.markupPct || 22));
+  const clampedSliderMarkup = Math.min(40, Math.max(10, metrics.markupPct || markupPct));
   const recommendedPrice = roundTo500(product.one * (1 + clampedSliderMarkup / 100));
 
   const handlePriceInput = (raw: string) => {
@@ -46,7 +47,7 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
   };
 
   const applySuggested = () => {
-    const suggested = roundTo500(product.one * 1.22);
+    const suggested = roundTo500(product.one * globalRatio);
     setInputVal(String(suggested));
     updateShelfPrice(product.id, suggested);
   };

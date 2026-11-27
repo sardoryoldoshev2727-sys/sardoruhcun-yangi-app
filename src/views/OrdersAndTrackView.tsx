@@ -29,6 +29,7 @@ import { useStore } from '../context/StoreContext';
 import { getDayLabel, getProductName, getSlotLabel, getStatusLabel } from '../i18n';
 import type { Lang, OrderStatus } from '../types';
 import {
+  computeCartEstimatedProfit,
   formatNumberThin,
   formatSom,
   getLastDeliveredBuyAgainItems,
@@ -913,6 +914,8 @@ export const SuccessView: React.FC = () => {
   const {
     lastOrderId,
     lastPlacedOrder,
+    productsById,
+    markupPct,
     day,
     slot,
     shop,
@@ -923,6 +926,20 @@ export const SuccessView: React.FC = () => {
   } = useStore();
 
   const orderId = lastPlacedOrder?.id ?? lastOrderId;
+  const orderCartMap: Record<number, number> = {};
+  if (lastPlacedOrder?.items) {
+    for (const it of lastPlacedOrder.items) {
+      orderCartMap[it.productId] = (orderCartMap[it.productId] || 0) + it.qty;
+    }
+  }
+  const estimatedProfit = lastPlacedOrder
+    ? computeCartEstimatedProfit(
+        orderCartMap,
+        productsById,
+        markupPct,
+        lastPlacedOrder.discountAmount || 0,
+      )
+    : 0;
 
   return (
     <div className="max-w-md mx-auto pt-4">
@@ -963,6 +980,11 @@ export const SuccessView: React.FC = () => {
                   <TweenSom value={lastPlacedOrder.totalSum} />
                 </strong>
               </div>
+              {estimatedProfit > 0 && (
+                <div className="text-right text-xs font-medium text-[var(--success)] tabular-nums">
+                  {t.estimatedCartProfit(formatSom(estimatedProfit))}
+                </div>
+              )}
             </>
           )}
           <div className="flex justify-between gap-2">

@@ -340,6 +340,66 @@ export interface Translations {
   // Chat
   chatPlaceholder: string;
   sendBtn: string;
+  // Round 7: Unified Javonim, Daily Count, Cutoff & 3 Order Ways
+  shelfNormLabel: string;
+  shelfStockLabel: string;
+  shelfNeedLabel: string;
+  shelfLowBadge: string;
+  shelfCountBtn: string;
+  shelfCheckTitle: string;
+  shelfCheckSub: string;
+  shelfPrevCountLabel: (val: string) => string;
+  shelfTrendDown: string;
+  shelfTrendUp: string;
+  shelfTrendSame: string;
+  shelfCustomNormLabel: string;
+  shelfSaveCountBtn: string;
+  shelfCountSavedSnack: string;
+  shelfReminderTitle: string;
+  shelfStreakLabel: (days: number) => string;
+  shelfCountDoneToday: string;
+  cutoffLinePrefix: string;
+  cutoffTomorrowPrefix: string;
+  orderWaysTitle: string;
+  orderWayFillShelf: string;
+  orderWayFillShelfSub: (boxes: number, lowCount: number) => string;
+  orderWayOnlyLowToggle: string;
+  orderWayRepeatUsual: string;
+  orderWayRepeatUsualSub: (boxes: number) => string;
+  orderWayPickCatalog: string;
+  orderWayPickCatalogSub: string;
+  quickLastOrderPill: (id: number) => string;
+  // Round 7: Profit & Trust
+  markupSettingTitle: string;
+  markupSettingSub: (pct: number) => string;
+  cardBoxProfit: (amt: string) => string;
+  productSheetProfitCallout: (shelfPrice: string, perBottle: string) => string;
+  estimatedCartProfit: (amt: string) => string;
+  trustFreeDelivery: string;
+  trustBoxPriceMeta: (pieces: number) => string;
+  // Round 7: Coach Marks & Replay
+  coachTips: Record<'home' | 'cat' | 'cart' | 'shelf', { title: string; desc: string }>;
+  coachDoneBtn: string;
+  howItWorksReplayTitle: string;
+  howItWorksReplaySub: string;
+  // Round 7: Aksiyalar Redesign
+  promoFilterAll: string;
+  promoFilterDiscount: string;
+  promoFilterGift: string;
+  promoFilterNew: string;
+  promoDaysLeft: (days: number) => string;
+  promoGiftRuleProgress: (buy: number, free: number, cur: number) => string;
+  promoGiftUnlocked: (free: number) => string;
+  promoSavePerBox: (amt: string) => string;
+  promoOrderProgress: (amt: string, pct: number) => string;
+  promoEmptyFiltered: string;
+  // Round 7: Speed Improvements (G)
+  voiceSearchLabel: string;
+  voiceListeningLabel: string;
+  voiceUnsupportedSnack: string;
+  swipeStockHint: string;
+  quickNormChip: (qty: number) => string;
+  quickNeedChip: (qty: number) => string;
 }
 
 export const TRANSLATIONS: Record<Lang, Translations> = {
@@ -434,16 +494,20 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     guideStartBtn: 'Boshlash',
     guideSteps: [
       {
-        title: 'Tanlang',
-        desc: 'Mahsulot yonidagi + tugmasini bosib kerakli qutilar sonini belgilang',
+        title: "Javoningizni to'ldiring",
+        desc: "Do'konda doimiy turadigan ichimliklarni kiriting — qolgani 1 daqiqada sanaladi",
       },
       {
-        title: 'Tasdiqlang',
-        desc: 'Savatga o‘ting, yetkazish vaqtini tanlang va 4 xonali PIN bilan tasdiqlang',
+        title: 'Har qutidan foyda ko‘ring',
+        desc: 'O‘z ustamangizni belgilang va donasidan hamda qutisidan qancha qolishini darhol biling',
       },
       {
-        title: 'Kuzating',
-        desc: "Haydovchini kuzatib boring va savollar bo'lsa OsonChat'da yozing",
+        title: 'Summa bo‘yicha chegirma',
+        desc: '500 mingdan 5%, 1 mlndan 7%, 2 mlndan 10% chegirma har buyurtmada avtomatik ishlaydi',
+      },
+      {
+        title: 'Ertaga 9–13 da yetkazamiz',
+        desc: '20:00 gacha tasdiqlangan buyurtma ertaga bepul yetkaziladi, haydovchini xaritada kuzatasiz',
       },
     ],
     heroSlides: [
@@ -729,6 +793,85 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     loyaltyInfoNote: "Faol do'kon hisobi · oylik xaridlar ko'rsatkichi",
     chatPlaceholder: 'Xabar yozing…',
     sendBtn: 'Yuborish',
+    shelfNormLabel: 'Norma',
+    shelfStockLabel: 'Qoldi',
+    shelfNeedLabel: 'Kerak',
+    shelfLowBadge: 'Tugayapti',
+    shelfCountBtn: 'Sanash',
+    shelfCheckTitle: 'Javonni sanash',
+    shelfCheckSub: 'Har bir ichimlikdan hozir javonda nechta quti borligini belgilang',
+    shelfPrevCountLabel: (val) => `Oldin: ${val} quti`,
+    shelfTrendDown: 'kamaydi',
+    shelfTrendUp: "ko'paydi",
+    shelfTrendSame: "o'zgarmadi",
+    shelfCustomNormLabel: "O'zim belgilayman",
+    shelfSaveCountBtn: 'Saqlash va yakunlash',
+    shelfCountSavedSnack: 'Javon hisobi saqlandi',
+    shelfReminderTitle: 'Bugun javonni sanadingizmi? 1 daqiqa',
+    shelfStreakLabel: (days) => `${days} kun ketma-ket`,
+    shelfCountDoneToday: 'Bugungi sanoq bajarildi',
+    cutoffLinePrefix: '20:00 gacha buyurtma bersangiz — ertaga 9–13 da keladi',
+    cutoffTomorrowPrefix: 'Ertaga 20:00 gacha buyurtma — indinga yetkaziladi',
+    orderWaysTitle: 'Buyurtma berish usuli',
+    orderWayFillShelf: "Javonni to'ldirish",
+    orderWayFillShelfSub: (boxes, lowCount) =>
+      boxes > 0
+        ? lowCount > 0
+          ? `${boxes} quti kerak · ${lowCount} tasi tugayapti`
+          : `Normagacha ${boxes} quti qo'shish`
+        : "Hamma javon normada, kamomad yo'q",
+    orderWayOnlyLowToggle: 'Faqat tugayotganlar',
+    orderWayRepeatUsual: 'Odatdagini takrorlash',
+    orderWayRepeatUsualSub: (boxes) => `Oxirgi odatiy to'plam · ${boxes} quti`,
+    orderWayPickCatalog: 'Katalogdan tanlash',
+    orderWayPickCatalogSub: 'Barcha ichimliklar va yangi ta’mlar',
+    quickLastOrderPill: (id) => `Oxirgi #${id}`,
+    markupSettingTitle: 'Do‘kon ustamasi',
+    markupSettingSub: (pct) => `Foyda hisobi uchun · hozir +${pct}%`,
+    cardBoxProfit: (amt) => `+${amt} foyda / quti`,
+    productSheetProfitCallout: (shelfPrice, perBottle) =>
+      `Do‘konda ${shelfPrice} dan soting — donasiga +${perBottle}`,
+    estimatedCartProfit: (amt) => `Taxminiy foydangiz +${amt}`,
+    trustFreeDelivery: 'Yetkazish bepul',
+    trustBoxPriceMeta: (pieces) => `Narx qutida, 1 quti = ${pieces} dona`,
+    coachTips: {
+      home: {
+        title: "1 daqiqada javonni to'ldiring",
+        desc: "Normadan kam qolgan ichimliklarni bir bosishda savatga soladi",
+      },
+      cat: {
+        title: 'Yashil + bilan qo‘shing',
+        desc: 'Bosish bilan 1 quti savatga tushadi, yonidan sonini o‘zgartirasiz',
+      },
+      cart: {
+        title: 'Buyurtmani tasdiqlang',
+        desc: 'Vaqt oralig‘ini tanlab 4 xonali PIN bilan yuboring — yetkazish bepul',
+      },
+      shelf: {
+        title: 'Yarim qutigacha sanang',
+        desc: 'Minus va plyus orqali javonda qancha qolganini belgilang',
+      },
+    },
+    coachDoneBtn: 'Tushunarli',
+    howItWorksReplayTitle: 'Qanday ishlaydi',
+    howItWorksReplaySub: "Qo'llanma va qisqa maslahatlarni ko'rish",
+    promoFilterAll: 'Hammasi',
+    promoFilterDiscount: 'Chegirma',
+    promoFilterGift: "Sovg'a",
+    promoFilterNew: 'Yangi',
+    promoDaysLeft: (days) => `${days} kun qoldi`,
+    promoGiftRuleProgress: (buy, free, cur) =>
+      `${buy} quti oling — ${free} quti sovg'a: ${Math.min(cur, buy)}/${buy}`,
+    promoGiftUnlocked: (free) => `${free} quti sovg'a ochildi`,
+    promoSavePerBox: (amt) => `Qutida ${amt} tejaysiz`,
+    promoOrderProgress: (amt, pct) => `${pct}% chegirmagacha ${amt}`,
+    promoEmptyFiltered: "Bu bo'limda hozircha aksiya yo'q",
+    voiceSearchLabel: 'Ovozli qidiruv',
+    voiceListeningLabel: 'Gapiring…',
+    voiceUnsupportedSnack: 'Ovozli qidiruv mavjud emas — klaviaturadan yozing',
+    swipeStockHint: 'Surib 0,5 qutiga o‘zgartiring',
+    quickNormChip: (qty) => `Norma (${qty})`,
+    quickNeedChip: (qty) => `Kerak (${qty})`,
   },
   ru: {
     appName: 'LAL ANAAR',
@@ -821,16 +964,20 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     guideStartBtn: 'Начать',
     guideSteps: [
       {
-        title: 'Выбирайте',
-        desc: 'Нажмите + на карточке товара, чтобы выбрать нужное количество коробок',
+        title: 'Пополняйте полку за минуту',
+        desc: 'Добавьте постоянные напитки магазина и быстро отмечайте остаток каждый день',
       },
       {
-        title: 'Подтверждайте',
-        desc: 'Выберите время доставки в корзине и подтвердите заказ 4-значным PIN',
+        title: 'Видьте прибыль с каждой коробки',
+        desc: 'Укажите свою наценку и сразу видьте рекомендуемую цену и маржу с бутылки',
       },
       {
-        title: 'Отслеживайте',
-        desc: 'Следите за водителем в пути и пишите оператору в OsonChat',
+        title: 'Скидки от суммы заказа',
+        desc: 'От 500 тыс — 5%, от 1 млн — 7%, от 2 млн — 10% применяются автоматически',
+      },
+      {
+        title: 'Бесплатная доставка завтра 9–13',
+        desc: 'Заказы до 20:00 доставляем бесплатно на следующий день, маршрут виден онлайн',
       },
     ],
     heroSlides: [
@@ -1116,6 +1263,85 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     loyaltyInfoNote: 'Активный профиль магазина · статистика за месяц',
     chatPlaceholder: 'Напишите сообщение…',
     sendBtn: 'Отправить',
+    shelfNormLabel: 'Норма',
+    shelfStockLabel: 'Остаток',
+    shelfNeedLabel: 'Нужно',
+    shelfLowBadge: 'Заканчивается',
+    shelfCountBtn: 'Считать',
+    shelfCheckTitle: 'Пересчёт полки',
+    shelfCheckSub: 'Отметьте, сколько коробок каждого напитка сейчас стоит на полке',
+    shelfPrevCountLabel: (val) => `Было: ${val} кор.`,
+    shelfTrendDown: 'меньше',
+    shelfTrendUp: 'больше',
+    shelfTrendSame: 'без изменений',
+    shelfCustomNormLabel: 'Задать норму',
+    shelfSaveCountBtn: 'Сохранить подсчёт',
+    shelfCountSavedSnack: 'Остатки на полке сохранены',
+    shelfReminderTitle: 'Считали полку сегодня? Займёт 1 минуту',
+    shelfStreakLabel: (days) => `${days} дн. подряд`,
+    shelfCountDoneToday: 'Сегодняшний подсчёт выполнен',
+    cutoffLinePrefix: 'Закажите до 20:00 — привезём завтра с 9 до 13',
+    cutoffTomorrowPrefix: 'До завтрашнего отсечения 20:00',
+    orderWaysTitle: 'Как заказать',
+    orderWayFillShelf: 'Пополнить полку',
+    orderWayFillShelfSub: (boxes, lowCount) =>
+      boxes > 0
+        ? lowCount > 0
+          ? `Нужно ${boxes} кор. · ${lowCount} заканчиваются`
+          : `Добавить ${boxes} кор. до нормы`
+        : 'Вся полка в норме, нехватки нет',
+    orderWayOnlyLowToggle: 'Только заканчивающиеся',
+    orderWayRepeatUsual: 'Повторить обычный заказ',
+    orderWayRepeatUsualSub: (boxes) => `Привычный набор · ${boxes} кор.`,
+    orderWayPickCatalog: 'Выбрать из каталога',
+    orderWayPickCatalogSub: 'Все напитки и новые вкусы',
+    quickLastOrderPill: (id) => `Последний #${id}`,
+    markupSettingTitle: 'Наценка магазина',
+    markupSettingSub: (pct) => `Для расчёта прибыли · сейчас +${pct}%`,
+    cardBoxProfit: (amt) => `+${amt} прибыль / кор.`,
+    productSheetProfitCallout: (shelfPrice, perBottle) =>
+      `Продавайте по ${shelfPrice} — +${perBottle} с бутылки`,
+    estimatedCartProfit: (amt) => `Расчётная прибыль +${amt}`,
+    trustFreeDelivery: 'Доставка бесплатно',
+    trustBoxPriceMeta: (pieces) => `Цена за коробку, 1 кор. = ${pieces} шт.`,
+    coachTips: {
+      home: {
+        title: 'Пополните полку за минуту',
+        desc: 'Добавляет в корзину всё, что ниже вашей нормы',
+      },
+      cat: {
+        title: 'Добавляйте зелёной +',
+        desc: 'Одно нажатие кладёт 1 коробку, рядом меняется количество',
+      },
+      cart: {
+        title: 'Оформите заказ',
+        desc: 'Выберите окно доставки и подтвердите 4-значным PIN — доставка бесплатная',
+      },
+      shelf: {
+        title: 'Считайте до полкоробки',
+        desc: 'Отмечайте текущий остаток крупными кнопками минус и плюс',
+      },
+    },
+    coachDoneBtn: 'Понятно',
+    howItWorksReplayTitle: 'Как это работает',
+    howItWorksReplaySub: 'Повторить обзор и подсказки по экранам',
+    promoFilterAll: 'Все',
+    promoFilterDiscount: 'Скидки',
+    promoFilterGift: 'Подарки',
+    promoFilterNew: 'Новинки',
+    promoDaysLeft: (days) => `Осталось ${days} дн.`,
+    promoGiftRuleProgress: (buy, free, cur) =>
+      `Возьмите ${buy} кор. — ${free} в подарок: ${Math.min(cur, buy)}/${buy}`,
+    promoGiftUnlocked: (free) => `Подарок ${free} кор. открыт`,
+    promoSavePerBox: (amt) => `Экономия ${amt} с кор.`,
+    promoOrderProgress: (amt, pct) => `До скидки ${pct}% — ${amt}`,
+    promoEmptyFiltered: 'В этом разделе пока нет акций',
+    voiceSearchLabel: 'Голосовой поиск',
+    voiceListeningLabel: 'Говорите…',
+    voiceUnsupportedSnack: 'Голосовой поиск недоступен — используйте клавиатуру',
+    swipeStockHint: 'Свайп влево/вправо на ±0,5 кор.',
+    quickNormChip: (qty) => `Норма (${qty})`,
+    quickNeedChip: (qty) => `Нужно (${qty})`,
   },
 };
 

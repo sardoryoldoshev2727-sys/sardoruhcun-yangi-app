@@ -6,7 +6,7 @@ import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { AnorThreeSeeds, PillButton, TweenSom } from '../components/V4Primitives';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getSlotLabel } from '../i18n';
-import { DAYS, SLOTS, computeCartPromoBreakdown, formatSom } from '../utils/catalog';
+import { DAYS, SLOTS, computeCartEstimatedProfit, computeCartPromoBreakdown, formatSom } from '../utils/catalog';
 
 export const CartView: React.FC = () => {
   const {
@@ -18,6 +18,7 @@ export const CartView: React.FC = () => {
     retryLoad,
     checkoutQuote,
     discountNudge,
+    markupPct,
     day,
     slot,
     note,
@@ -70,6 +71,7 @@ export const CartView: React.FC = () => {
   const { grossSubtotal, promoSavings } = computeCartPromoBreakdown(cart, productsById);
   const totalSavings = promoSavings + discountAmount;
   const currentSum = checkoutQuote.subtotal || cartSubtotal;
+  const estimatedProfit = computeCartEstimatedProfit(cart, productsById, markupPct, discountAmount);
 
   const nudgeLineText = discountNudge.nextTier
     ? t.discountNudgeLine(
@@ -250,11 +252,22 @@ export const CartView: React.FC = () => {
               <span>{t.paymentTypeLabel}</span>
               <span>{t.paymentMethodsValue}</span>
             </div>
+
+            {estimatedProfit > 0 && (
+              <div className="pt-2.5 border-t border-dashed border-[var(--border-hairline)] flex items-center justify-between gap-2">
+                <span className="font-medium text-[var(--success)]">
+                  {t.estimatedCartProfit(formatSom(estimatedProfit))}
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  +{markupPct}%
+                </span>
+              </div>
+            )}
           </section>
         </div>
       </div>
 
-      {/* Always-visible Sticky Bottom Checkout Bar (never blocks checkout, Anor primary CTA) */}
+      {/* Always-visible Sticky Bottom Checkout Bar (never blocks checkout, Green purchase CTA) */}
       <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 -mx-3 md:-mx-6 px-3.5 md:px-6 py-3 bg-[var(--bg-card)] border-t border-[var(--border-hairline)] z-20">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -264,16 +277,23 @@ export const CartView: React.FC = () => {
             <div className="text-[20px] sm:text-[22px] font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               <TweenSom value={total} />
             </div>
+            {estimatedProfit > 0 && (
+              <span className="block text-[11px] font-medium text-[var(--success)] truncate tabular-nums">
+                {t.estimatedCartProfit(formatSom(estimatedProfit))}
+              </span>
+            )}
           </div>
 
-          <PillButton
-            level="primary"
-            size="lg"
-            onClick={() => setSheet({ type: 'confirmOrder' })}
-          >
-            <Lock className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
-            <span>{t.placeOrderBtn}</span>
-          </PillButton>
+          <div data-coach="cart" className="flex-none">
+            <PillButton
+              level="buy"
+              size="lg"
+              onClick={() => setSheet({ type: 'confirmOrder' })}
+            >
+              <Lock className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
+              <span>{t.placeOrderBtn}</span>
+            </PillButton>
+          </div>
         </div>
       </div>
     </div>

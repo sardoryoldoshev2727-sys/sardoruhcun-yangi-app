@@ -37,12 +37,16 @@ const RAW_PRODUCTS: {
   ph: string;
   promoPct?: number;
   isNew?: boolean;
+  promoKind?: 'discount' | 'gift';
+  giftBuyBoxes?: number;
+  giftFreeBoxes?: number;
+  promoEndsDays?: number;
 }[] = [
   { name: "Olxo'ri sharbati", nameRu: 'Сливовый сок', vol: '1 L', blk: 9, one: 14174, cat: '1 L', ph: 'p01', isNew: true },
-  { name: 'Anor sharbati', nameRu: 'Гранатовый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p05', promoPct: 5 },
+  { name: 'Anor sharbati', nameRu: 'Гранатовый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p05', promoPct: 5, promoKind: 'discount', giftBuyBoxes: 10, giftFreeBoxes: 1, promoEndsDays: 3 },
   { name: 'Olma sharbati', nameRu: 'Яблочный сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p06' },
   { name: 'Shaftoli sharbati', nameRu: 'Персиковый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p07' },
-  { name: 'Olcha sharbati', nameRu: 'Вишнёвый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p08', promoPct: 5 },
+  { name: 'Olcha sharbati', nameRu: 'Вишнёвый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p08', promoPct: 5, promoKind: 'discount', promoEndsDays: 4 },
   { name: 'Ananas sharbati', nameRu: 'Ананасовый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p03' },
   { name: 'Mango sharbati', nameRu: 'Манговый сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p04' },
   { name: 'Qovun sharbati', nameRu: 'Дынный сок', vol: '1 L', blk: 9, one: 13940, cat: '1 L', ph: 'p09' },
@@ -51,13 +55,13 @@ const RAW_PRODUCTS: {
   { name: 'Aloe vera', nameRu: 'Алоэ вера', vol: '1 L', blk: 9, one: 17436, cat: 'Aloe vera', ph: 'p11' },
   { name: 'Shaftoli sharbati Juice', nameRu: 'Персиковый нектар Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p12' },
   { name: 'Olma-uzum sharbati Juice', nameRu: 'Яблоко-виноград Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p13' },
-  { name: 'Anor sharbati Juice', nameRu: 'Гранатовый нектар Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p14' },
+  { name: 'Anor sharbati Juice', nameRu: 'Гранатовый нектар Juice', vol: '0,9 L', blk: 9, one: 13917, cat: '0,9 L', ph: 'p14', promoKind: 'gift', giftBuyBoxes: 8, giftFreeBoxes: 1, promoEndsDays: 5 },
   { name: 'Anor sharbati', nameRu: 'Гранатовый сок', vol: '0,5 L', blk: 12, one: 7838, cat: '0,5 L', ph: '' },
   { name: 'Qovun sharbati', nameRu: 'Дынный сок', vol: '0,5 L', blk: 12, one: 7838, cat: '0,5 L', ph: '' },
   { name: "Olxo'ri sharbati", nameRu: 'Сливовый сок', vol: '0,5 L', blk: 12, one: 7839, cat: '0,5 L', ph: '' },
   { name: 'Asia Fruit Anor bombacha', nameRu: 'Asia Fruit Гранат детский', vol: '0,25 L', blk: 10, one: 4500, cat: 'Bolalar uchun', ph: 'p23' },
   { name: 'Asia Fruit Mango bombacha', nameRu: 'Asia Fruit Манго детский', vol: '0,25 L', blk: 10, one: 4500, cat: 'Bolalar uchun', ph: 'p22' },
-  { name: 'Basil seed Anor', nameRu: 'Семена базилика Гранат', vol: '300 ml', blk: 12, one: 6962, cat: "Urug'li", ph: 'p30' },
+  { name: 'Basil seed Anor', nameRu: 'Семена базилика Гранат', vol: '300 ml', blk: 12, one: 6962, cat: "Urug'li", ph: 'p30', isNew: true },
   { name: 'Basil seed Olma', nameRu: 'Семена базилика Яблоко', vol: '300 ml', blk: 12, one: 6962, cat: "Urug'li", ph: 'p31' },
   { name: 'Anor ichimligi gazli', nameRu: 'Гранатовый напиток газ.', vol: '0,5 L', blk: 12, one: 6333, cat: 'Gazli', ph: 'p34' },
   { name: 'Anor ichimligi gazli', nameRu: 'Гранатовый напиток газ.', vol: '1,5 L', blk: 6, one: 12833, cat: 'Gazli', ph: 'p36' },
@@ -79,6 +83,10 @@ const MOCK_PRODUCTS: Product[] = RAW_PRODUCTS.map((p, i) => ({
   out: i === 10,
   promoPct: p.promoPct,
   isNew: p.isNew,
+  promoKind: p.promoKind,
+  giftBuyBoxes: p.giftBuyBoxes,
+  giftFreeBoxes: p.giftFreeBoxes,
+  promoEndsDays: p.promoEndsDays,
 }));
 
 const MOCK_SHOP: ShopInfo = {

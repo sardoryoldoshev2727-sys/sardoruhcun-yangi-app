@@ -1,9 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BookmarkCheck, Check, Delete, Heart, Lock, Package, Plus, Star, Trash2, X } from 'lucide-react';
+import {
+  BookmarkCheck,
+  Check,
+  Delete,
+  Heart,
+  Lock,
+  Minus,
+  Package,
+  Plus,
+  Star,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getProductName, getSlotLabel } from '../i18n';
-import { formatSom, getStockInfo } from '../utils/catalog';
+import {
+  computeBottleProfit,
+  computeRecommendedShelfPrice,
+  computeShelfNeed,
+  formatHalfBoxes,
+  formatSom,
+  getStockInfo,
+  isShelfItemLow,
+  shortName,
+} from '../utils/catalog';
 import { CartStepper } from './ProductCard';
 import { ProductVisual } from './ProductVisual';
 import { ProfitCalculatorCard } from './ProfitCalculatorCard';
@@ -49,6 +72,18 @@ function GuideStepIllustration({ step }: { step: number }) {
       </svg>
     );
   }
+  if (step === 2) {
+    return (
+      <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">
+        <rect x="24" y="12" width="172" height="100" rx="18" fill="var(--bg-raised)" />
+        <rect x="42" y="66" width="38" height="32" rx="10" fill="var(--bg-card)" stroke="var(--border-hairline)" />
+        <rect x="91" y="48" width="38" height="50" rx="10" fill="var(--anor-soft)" stroke="var(--anor)" strokeWidth="1.5" />
+        <rect x="140" y="28" width="38" height="70" rx="10" fill="#15803D" />
+        <path d="M52 54 L106 34 L156 18" stroke="var(--anor)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+        <circle cx="156" cy="18" r="4.5" fill="#15803D" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">
       <rect x="24" y="12" width="172" height="100" rx="18" fill="var(--bg-raised)" />
@@ -78,6 +113,8 @@ export const SheetsAndModals: React.FC = () => {
     setSheet,
     cart,
     shelf,
+    shelfPrevStocks,
+    markupPct,
     refillById,
     products,
     productsById,
@@ -90,6 +127,10 @@ export const SheetsAndModals: React.FC = () => {
     submittingOrder,
     inShelf,
     isFavorite,
+    getShelfNorm,
+    getShelfStock,
+    getShelfNeed,
+    saveShelfCheck,
     guideOpen,
     closeGuide,
     toggleFavorite,
@@ -115,6 +156,9 @@ export const SheetsAndModals: React.FC = () => {
   const [rateDone, setRateDone] = useState<boolean>(false);
   const [guideStep, setGuideStep] = useState<number>(0);
   const guideTouchStartX = useRef<number | null>(null);
+  const [draftStocks, setDraftStocks] = useState<Record<number, number>>({});
+  const [draftNorms, setDraftNorms] = useState<Record<number, number>>({});
+  const [editingNormId, setEditingNormId] = useState<number | null>(null);
 
   useEffect(() => {
     if (guideOpen) {
@@ -142,7 +186,18 @@ export const SheetsAndModals: React.FC = () => {
       setPin('');
       setPinSavedDone(false);
     }
-  }, [sheet, cart, t.cancelReasons]);
+    if (sheet?.type === 'shelfCheck') {
+      const stocksInit: Record<number, number> = {};
+      const normsInit: Record<number, number> = {};
+      for (const s of shelf) {
+        stocksInit[s[0]] = getShelfStock(s[0]);
+        normsInit[s[0]] = getShelfNorm(s[0]);
+      }
+      setDraftStocks(stocksInit);
+      setDraftNorms(normsInit);
+      setEditingNormId(null);
+    }
+  }, [sheet, cart, t.cancelReasons, shelf, getShelfNorm, getShelfStock]);
 
   const dismiss = () => {
     setPin('');
@@ -242,6 +297,28 @@ export const SheetsAndModals: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {/* Speed Improvement G-3: One-tap Norma & Kerak chips for shelf items */}
+                {inShelf(product.id) && (
+                  <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => applyQty(getShelfNorm(product.id))}
+                      className="min-h-[40px] px-3.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-medium tabular-nums"
+                    >
+                      {t.quickNormChip(getShelfNorm(product.id))}
+                    </button>
+                    {getShelfNeed(product.id) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => applyQty(getShelfNeed(product.id))}
+                        className="min-h-[40px] px-3.5 rounded-full bg-[var(--success-soft)] text-[var(--success)] text-xs font-medium tabular-nums"
+                      >
+                        {t.quickNeedChip(getShelfNeed(product.id))}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <form
@@ -561,6 +638,21 @@ export const SheetsAndModals: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Green Profit Callout & Honest Trust Lines */}
+              {!product.out && (
+                <div className="rounded-[12px] bg-[var(--success-soft)] px-3.5 py-2.5 space-y-1">
+                  <div className="text-xs sm:text-sm font-medium text-[var(--success)] tabular-nums">
+                    {t.productSheetProfitCallout(
+                      formatSom(computeRecommendedShelfPrice(product, markupPct)),
+                      formatSom(computeBottleProfit(product, markupPct)),
+                    )}
+                  </div>
+                  <div className="text-[11px] text-[var(--text-secondary)]">
+                    {t.trustFreeDelivery} · {t.trustBoxPriceMeta(product.blk)}
+                  </div>
+                </div>
+              )}
 
               <div className="divide-y divide-[var(--border-hairline)] text-sm">
                 {[
@@ -1051,6 +1143,200 @@ export const SheetsAndModals: React.FC = () => {
                   }}
                 >
                   {t.yesRemoveBtn}
+                </PillButton>
+              </div>
+            </motion.div>
+          </motion.div>
+        );
+      })()}
+
+      {sheet?.type === 'shelfCheck' && (() => {
+        const adjustDraftStock = (id: number, delta: number) => {
+          setDraftStocks((prev) => {
+            const cur = typeof prev[id] === 'number' ? prev[id] : getShelfStock(id);
+            const next = Math.max(0, Math.min(99, Math.round((cur + delta) * 2) / 2));
+            return { ...prev, [id]: next };
+          });
+        };
+        const adjustDraftNorm = (id: number, delta: number) => {
+          setDraftNorms((prev) => {
+            const cur = typeof prev[id] === 'number' ? prev[id] : getShelfNorm(id);
+            return { ...prev, [id]: Math.max(1, Math.min(99, cur + delta)) };
+          });
+        };
+
+        return (
+          <motion.div
+            key="shelfCheckSheet"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            onClick={dismiss}
+            className="fixed inset-0 z-50 bg-black/45 flex items-end md:items-center justify-center md:p-4"
+          >
+            <motion.div
+              initial={{ y: '100%', opacity: 0.92 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.85 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 max-h-[88dvh] flex flex-col border-t md:border border-[var(--border-hairline)]"
+            >
+              <div className="w-10 h-1 rounded-full bg-[var(--border-strong)] mx-auto mb-3 md:hidden" />
+
+              <div className="flex items-start justify-between gap-2 pb-3 border-b border-[var(--border-hairline)]">
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                    {t.shelfCheckTitle}
+                  </h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">
+                    {t.shelfCheckSub}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={t.closeLabel}
+                  onClick={dismiss}
+                  className="w-11 h-11 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none"
+                >
+                  <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar py-3 space-y-2.5">
+                {shelf.map((s, idx) => {
+                  const id = s[0];
+                  const product = productsById[id];
+                  if (!product) return null;
+                  const curStock = typeof draftStocks[id] === 'number' ? draftStocks[id] : getShelfStock(id);
+                  const curNorm = typeof draftNorms[id] === 'number' ? draftNorms[id] : getShelfNorm(id);
+                  const prevStock =
+                    typeof shelfPrevStocks[id] === 'number' ? shelfPrevStocks[id] : null;
+                  const need = computeShelfNeed(curNorm, curStock);
+                  const low = isShelfItemLow(curNorm, curStock);
+                  const normEditing = editingNormId === id;
+
+                  return (
+                    <div
+                      key={id}
+                      className="rounded-[14px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] p-3 space-y-2.5"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <ProductVisual product={product} size="mini" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                              {shortName(getProductName(product, lang))} {product.vol}
+                            </div>
+                            {low && (
+                              <span className="px-2 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[10px] font-medium flex-none">
+                                {t.shelfLowBadge}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5 tabular-nums flex-wrap">
+                            <span>
+                              {t.shelfNormLabel}: <strong className="text-[var(--text-primary)]">{curNorm}</strong>
+                            </span>
+                            <span>·</span>
+                            <span>
+                              {t.shelfNeedLabel}: <strong className="text-[var(--success)]">{need}</strong>
+                            </span>
+                            {prevStock !== null && (
+                              <>
+                                <span>·</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <span>{t.shelfPrevCountLabel(formatHalfBoxes(prevStock))}</span>
+                                  {curStock < prevStock ? (
+                                    <TrendingDown className="w-3 h-3 text-[var(--anor-text)]" strokeWidth={1.75} />
+                                  ) : curStock > prevStock ? (
+                                    <TrendingUp className="w-3 h-3 text-[var(--success)]" strokeWidth={1.75} />
+                                  ) : null}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setEditingNormId(normEditing ? null : id)}
+                          className="min-h-[36px] px-2.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[11px] font-medium text-[var(--text-secondary)]"
+                        >
+                          {t.shelfCustomNormLabel}: {curNorm}
+                        </button>
+
+                        <div
+                          data-coach={idx === 0 ? 'shelf' : undefined}
+                          className="inline-flex items-center h-11 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)] px-1"
+                        >
+                          <button
+                            type="button"
+                            aria-label="Kamaytirish"
+                            onClick={() => adjustDraftStock(id, -0.5)}
+                            className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
+                          >
+                            <Minus className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                          </button>
+                          <span className="min-w-[54px] text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums">
+                            {formatHalfBoxes(curStock)} {t.boxUnit}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Ko'paytirish"
+                            onClick={() => adjustDraftStock(id, 0.5)}
+                            className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
+                          >
+                            <Plus className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {normEditing && (
+                        <div className="pt-2 border-t border-[var(--border-hairline)] flex items-center justify-between gap-2">
+                          <span className="text-xs text-[var(--text-secondary)]">
+                            {t.shelfCustomNormLabel} ({t.shelfNormLabel})
+                          </span>
+                          <div className="inline-flex items-center h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] px-1">
+                            <button
+                              type="button"
+                              aria-label="Normani kamaytirish"
+                              onClick={() => adjustDraftNorm(id, -1)}
+                              className="w-9 h-10 rounded-l-full flex items-center justify-center text-[var(--text-primary)]"
+                            >
+                              <Minus className="w-4 h-4" strokeWidth={1.75} />
+                            </button>
+                            <span className="min-w-[28px] text-center text-sm font-semibold tabular-nums">
+                              {curNorm}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="Normani ko'paytirish"
+                              onClick={() => adjustDraftNorm(id, 1)}
+                              className="w-9 h-10 rounded-r-full flex items-center justify-center text-[var(--anor-text)]"
+                            >
+                              <Plus className="w-4 h-4" strokeWidth={1.75} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-[var(--border-hairline)]">
+                <PillButton
+                  level="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={() => saveShelfCheck(draftStocks, draftNorms)}
+                >
+                  <Check className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                  <span>{t.shelfSaveCountBtn}</span>
                 </PillButton>
               </div>
             </motion.div>

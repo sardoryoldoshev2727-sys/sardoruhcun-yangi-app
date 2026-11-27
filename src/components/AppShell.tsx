@@ -18,6 +18,7 @@ import {
   List,
   Lock,
   MessageCircle,
+  Mic,
   Minus,
   Moon,
   Phone,
@@ -45,7 +46,7 @@ import {
 } from '../utils/catalog';
 import { HomeView } from '../views/HomeView';
 import { ListRowsSkeleton } from './Skeletons';
-import { PillButton, TweenSom } from './V4Primitives';
+import { CoachMarkSpotlight, PillButton, TweenSom } from './V4Primitives';
 import { SheetsAndModals } from './SheetsAndModals';
 
 // Sahifalar kerak bo'lganda yuklanadi (ilova tezroq ochiladi)
@@ -129,6 +130,8 @@ export const AppShell: React.FC = () => {
     dismissUndoSnackbar,
     operatorBanner,
     dismissOperatorBanner,
+    activeCoach,
+    dismissCoach,
     goTab,
     openPage,
     setCat,
@@ -137,6 +140,7 @@ export const AppShell: React.FC = () => {
     setSheet,
     toggleTheme,
     updateQty,
+    showToast,
     dismissToast,
   } = useStore();
 
@@ -145,6 +149,58 @@ export const AppShell: React.FC = () => {
   const prevCartCountRef = useRef(cartCount);
   const [showToTop, setShowToTop] = useState(false);
   const [pillBumpKey, setPillBumpKey] = useState(0);
+  const [listeningVoice, setListeningVoice] = useState(false);
+
+  const handleVoiceSearch = () => {
+    const w = window as unknown as {
+      SpeechRecognition?: new () => {
+        lang: string;
+        interimResults: boolean;
+        maxAlternatives: number;
+        onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+        onerror: (() => void) | null;
+        onend: (() => void) | null;
+        start: () => void;
+      };
+      webkitSpeechRecognition?: new () => {
+        lang: string;
+        interimResults: boolean;
+        maxAlternatives: number;
+        onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+        onerror: (() => void) | null;
+        onend: (() => void) | null;
+        start: () => void;
+      };
+    };
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) {
+      searchInputRef.current?.focus();
+      showToast({
+        icon: 'info',
+        title: t.voiceSearchLabel,
+        text: t.voiceUnsupportedSnack,
+        tone: 'warn',
+      });
+      return;
+    }
+    try {
+      const rec = new SR();
+      rec.lang = lang === 'ru' ? 'ru-RU' : 'uz-UZ';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      setListeningVoice(true);
+      rec.onresult = (ev) => {
+        const text = ev.results?.[0]?.[0]?.transcript?.trim();
+        if (text) setSearchQuery(text);
+      };
+      rec.onerror = () => setListeningVoice(false);
+      rec.onend = () => setListeningVoice(false);
+      rec.start();
+    } catch {
+      setListeningVoice(false);
+      searchInputRef.current?.focus();
+    }
+  };
 
   useEffect(() => {
     if (cartCount > prevCartCountRef.current) {
@@ -660,11 +716,23 @@ export const AppShell: React.FC = () => {
                         type="button"
                         aria-label={t.clearLabel}
                         onClick={() => setSearchQuery('')}
-                        className="w-11 h-11 -mr-2 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                        className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                       >
                         <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
                       </button>
                     )}
+                    <button
+                      type="button"
+                      aria-label={listeningVoice ? t.voiceListeningLabel : t.voiceSearchLabel}
+                      onClick={handleVoiceSearch}
+                      className={`w-10 h-10 -mr-2 rounded-full flex items-center justify-center transition-colors ${
+                        listeningVoice
+                          ? 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <Mic className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                    </button>
                   </div>
                   <button
                     type="button"
@@ -756,7 +824,7 @@ export const AppShell: React.FC = () => {
               </button>
             )}
 
-            {/* Floating Anor Cart Bar (mobile/tablet on Home/Catalog/Promo) */}
+            {/* Floating Green Purchase Path Cart Bar (mobile/tablet on Home/Catalog/Promo) */}
             <AnimatePresence>
               {showFloatingCartPill && (
                 <motion.div
@@ -771,25 +839,32 @@ export const AppShell: React.FC = () => {
                     key={pillBumpKey}
                     type="button"
                     initial={pillBumpKey > 0 ? { scale: 1 } : false}
-                    animate={pillBumpKey > 0 ? { scale: [1, 1.03, 1] } : { scale: 1 }}
-                    transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
+                    animate={pillBumpKey > 0 ? { scale: [1, 1.04, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.24, ease: [0.2, 0, 0, 1] }}
                     onClick={() => goTab('cart')}
-                    className="pointer-events-auto w-full max-w-md h-14 px-3.5 rounded-full bg-[var(--anor)] hover:bg-[var(--anor-pressed)] active:bg-[var(--anor-pressed)] text-white flex items-center gap-3 transition-colors duration-150"
+                    className="relative overflow-hidden pointer-events-auto w-full max-w-md h-14 px-3.5 rounded-full buy-green-btn text-white flex items-center gap-3 transition-transform duration-150 active:scale-[0.98]"
                   >
-                    <span className="min-w-[28px] h-7 px-2 rounded-full bg-white text-[#9B111E] text-xs font-semibold flex items-center justify-center tabular-nums flex-none">
+                    {pillBumpKey > 0 && (
+                      <span
+                        key={`bar-shine-${pillBumpKey}`}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-y-0 left-0 w-16 animate-green-shine"
+                      />
+                    )}
+                    <span className="relative z-10 min-w-[28px] h-7 px-2 rounded-full bg-white text-[#15803D] text-xs font-semibold flex items-center justify-center tabular-nums flex-none">
                       {cartCount}
                     </span>
 
-                    <div className="flex-1 min-w-0 text-left">
+                    <div className="relative z-10 flex-1 min-w-0 text-left">
                       <div className="text-sm sm:text-base font-semibold text-white leading-tight whitespace-nowrap truncate">
                         <TweenSom value={discountedTotal} />
                       </div>
-                      <div className="text-[11px] text-white/85 leading-tight truncate tabular-nums">
+                      <div className="text-[11px] text-white/90 leading-tight truncate tabular-nums">
                         {floatingCartTierText}
                       </div>
                     </div>
 
-                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white whitespace-nowrap flex-none pl-1">
+                    <span className="relative z-10 inline-flex items-center gap-1.5 text-sm font-medium text-white whitespace-nowrap flex-none pl-1">
                       <span>{t.cartLabel}</span>
                       <ArrowRight className="w-[18px] h-[18px]" strokeWidth={1.5} />
                     </span>
@@ -1064,7 +1139,7 @@ export const AppShell: React.FC = () => {
                   </strong>
                 </div>
                 <PillButton
-                  level="primary"
+                  level={cartCount > 0 ? 'buy' : 'primary'}
                   size="lg"
                   fullWidth
                   onClick={() => goTab(cartCount > 0 ? 'cart' : 'cat')}
@@ -1077,8 +1152,15 @@ export const AppShell: React.FC = () => {
           )}
         </div>
 
-        {/* Bottom Sheets & Confirmation Modals */}
+        {/* Bottom Sheets, Modals & 1-Time Screen Coach Marks */}
         <SheetsAndModals />
+        <CoachMarkSpotlight
+          coachKey={activeCoach}
+          title={activeCoach ? t.coachTips[activeCoach].title : ''}
+          desc={activeCoach ? t.coachTips[activeCoach].desc : ''}
+          doneLabel={t.coachDoneBtn}
+          onDismiss={() => dismissCoach()}
+        />
       </div>
     </MotionConfig>
   );

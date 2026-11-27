@@ -471,3 +471,100 @@ export function getLastDeliveredBuyAgainItems(
   return list;
 }
 
+export function computeRecommendedShelfPrice(product: Product, markupPct: number): number {
+  const effectiveOne =
+    product.promoPct && product.promoPct > 0
+      ? Math.round(product.one * (1 - product.promoPct / 100))
+      : product.one;
+  return roundTo500(effectiveOne * (1 + markupPct / 100));
+}
+
+export function computeBottleProfit(product: Product, markupPct: number): number {
+  const effectiveOne =
+    product.promoPct && product.promoPct > 0
+      ? Math.round(product.one * (1 - product.promoPct / 100))
+      : product.one;
+  return Math.max(0, computeRecommendedShelfPrice(product, markupPct) - effectiveOne);
+}
+
+export function computeBoxProfit(product: Product, markupPct: number): number {
+  return computeBottleProfit(product, markupPct) * product.blk;
+}
+
+export function computeCartEstimatedProfit(
+  cart: Record<number, number>,
+  productsById: Record<number, Product>,
+  markupPct: number,
+  extraOrderDiscountAmount = 0,
+): number {
+  let profit = 0;
+  for (const [idStr, qty] of Object.entries(cart)) {
+    const prod = productsById[Number(idStr)];
+    if (!prod || qty <= 0) continue;
+    profit += computeBoxProfit(prod, markupPct) * qty;
+  }
+  return Math.max(0, profit + extraOrderDiscountAmount);
+}
+
+export function computeSuggestedNorm(productId: number, orders: OrderRecord[], fallback = 2): number {
+  const recentQtys: number[] = [];
+  for (const o of orders) {
+    if (o.status === 'Bekor qilindi') continue;
+    const item = o.items.find((it) => it.productId === productId);
+    if (item && item.qty > 0) {
+      recentQtys.push(item.qty);
+      if (recentQtys.length >= 3) break;
+    }
+  }
+  if (recentQtys.length === 0) return fallback;
+  const avg = recentQtys.reduce((s, q) => s + q, 0) / recentQtys.length;
+  return Math.max(1, Math.round(avg));
+}
+
+export function computeShelfNeed(norm: number, stock: number): number {
+  return Math.max(0, Math.ceil(norm - stock));
+}
+
+export function isShelfItemLow(norm: number, stock: number): boolean {
+  return norm > 0 && stock < 0.3 * norm;
+}
+
+export function formatHalfBoxes(val: number): string {
+  const rounded = Math.round(val * 2) / 2;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded).replace('.', ',');
+}
+
+export function getTodayIsoLocal(now = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function getCutoffCountdown(now = new Date()): {
+  isBeforeCutoff: boolean;
+  hh: string;
+  mm: string;
+  ss: string;
+} {
+  const target = new Date(now);
+  target.setHours(20, 0, 0, 0);
+  const diffMs = target.getTime() - now.getTime();
+  if (diffMs <= 0) {
+    // Next day's 20:00 cutoff
+    const nextTarget = new Date(target.getTime() + 86400000);
+    const remSec = Math.max(0, Math.floor((nextTarget.getTime() - now.getTime()) / 1000));
+    const hh = String(Math.floor(remSec / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((remSec % 3600) / 60)).padStart(2, '0');
+    const ss = String(remSec % 60).padStart(2, '0');
+    return { isBeforeCutoff: false, hh, mm, ss };
+  }
+  const remSec = Math.max(0, Math.floor(diffMs / 1000));
+  const hh = String(Math.floor(remSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((remSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(remSec % 60).padStart(2, '0');
+  return { isBeforeCutoff: true, hh, mm, ss };
+}
+
+

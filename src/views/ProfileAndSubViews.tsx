@@ -9,6 +9,7 @@ import {
   Droplet,
   Globe,
   Heart,
+  HelpCircle,
   Info,
   Lock,
   MessageCircle,
@@ -46,13 +47,16 @@ export const ProfileView: React.FC = () => {
     unreadChat,
     darkMode,
     largeText,
+    markupPct,
     lang,
     t,
     toggleTheme,
     toggleLargeText,
+    setMarkupPct,
     setLang,
     openPage,
     setSheet,
+    reopenIntroAndCoach,
   } = useStore();
 
   return (
@@ -97,6 +101,45 @@ export const ProfileView: React.FC = () => {
       <p className="text-[11px] text-[var(--text-muted)] px-1">
         {t.loyaltyInfoNote}
       </p>
+
+      {/* Global Shop Markup % Setting */}
+      <div className="v4-card p-4 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-10 h-10 rounded-[10px] bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-none">
+              <TrendingUp className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            </span>
+            <div className="min-w-0">
+              <div className="font-medium text-sm text-[var(--text-primary)]">
+                {t.markupSettingTitle}
+              </div>
+              <div className="text-xs text-[var(--text-muted)] tabular-nums">
+                {t.markupSettingSub(markupPct)}
+              </div>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-[var(--success-soft)] text-[var(--success)] text-xs font-semibold tabular-nums flex-none">
+            +{markupPct}%
+          </span>
+        </div>
+
+        <input
+          type="range"
+          min={10}
+          max={40}
+          step={1}
+          value={markupPct}
+          aria-label={t.markupSettingTitle}
+          onChange={(e) => setMarkupPct(Number(e.target.value))}
+          className="calm-slider w-full"
+        />
+
+        <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] tabular-nums">
+          <span>10%</span>
+          <span className="text-[var(--success)] font-medium">{t.markupSliderHint}</span>
+          <span>40%</span>
+        </div>
+      </div>
 
       {/* Business Tools & Favorites */}
       <div className="v4-card overflow-hidden divide-y divide-[var(--border-hairline)]">
@@ -344,6 +387,25 @@ export const ProfileView: React.FC = () => {
               }`}
             />
           </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={reopenIntroAndCoach}
+          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)]"
+        >
+          <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
+            <HelpCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm text-[var(--text-primary)]">
+              {t.howItWorksReplayTitle}
+            </div>
+            <div className="text-xs text-[var(--text-muted)] truncate">
+              {t.howItWorksReplaySub}
+            </div>
+          </div>
+          <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)]" strokeWidth={1.5} />
         </button>
 
         <button

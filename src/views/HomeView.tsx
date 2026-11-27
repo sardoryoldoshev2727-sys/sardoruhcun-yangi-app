@@ -5,56 +5,63 @@ import {
   BookmarkCheck,
   Check,
   ChevronRight,
+  ClipboardCheck,
   Clock,
   Heart,
   LayoutGrid,
   Lock,
   MessageCircle,
+  PackagePlus,
   Plus,
   Repeat,
   Search,
-  ShoppingCart,
-  TrendingDown,
+  Sparkles,
+  TrendingUp,
   Truck,
 } from 'lucide-react';
 import { ProductCard, ShelfRowCard } from '../components/ProductCard';
 import { ProductVisual } from '../components/ProductVisual';
-import { CatalogSkeleton, HorizontalStripSkeleton } from '../components/Skeletons';
+import { CatalogSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import {
+  AnorSeedIcon,
   AnorThreeSeeds,
-  GreenAddControl,
   PillButton,
   TweenSom,
+  VelvetNetBasketSvg,
 } from '../components/V4Primitives';
 import { useStore } from '../context/StoreContext';
-import { getCategoryLabel, getProductName } from '../i18n';
+import { getCategoryLabel } from '../i18n';
 import {
   HOT_IDS,
   QUICK_HOME_CATEGORIES,
-  formatNumberThin,
   formatSom,
   getCategoryCircleColor,
-  getLastDeliveredBuyAgainItems,
-  getPromoBoxPrice,
+  getCutoffCountdown,
+  getFlavorTint,
 } from '../utils/catalog';
 
 export const HomeView: React.FC = () => {
   const {
     shelf,
-    refillDueItems,
+    countStreakDates,
+    hasCountedToday,
     editShelf,
     setEditShelf,
     setSheet,
-    fillShelfToCart,
-    addRefillDueToCart,
+    getShelfNorm,
+    getShelfStock,
+    getShelfNeed,
+    isShelfLow,
+    fillShelfNeedsToCart,
+    fillShelfNormsToCart,
+    repeatLastOrder,
     openGuide,
     productsById,
     productsLoading,
-    ordersLoading,
     loadError,
     retryLoad,
-    cart,
+    bumpKey,
     cartCount,
     cartSubtotal,
     checkoutQuote,
@@ -68,12 +75,20 @@ export const HomeView: React.FC = () => {
     goTab,
     setCat,
     openPage,
-    updateQty,
   } = useStore();
 
   const [slideIdx, setSlideIdx] = useState(0);
   const [carouselPaused, setCarouselPaused] = useState(false);
+  const [onlyLowToggle, setOnlyLowToggle] = useState(true);
+  const [countdown, setCountdown] = useState(() => getCutoffCountdown());
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setCountdown(getCutoffCountdown());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const slides = t.heroSlides;
   const currentSlide = slides[slideIdx % slides.length] || slides[0];
@@ -93,17 +108,23 @@ export const HomeView: React.FC = () => {
     return () => window.clearInterval(timer);
   }, [carouselPaused, slides.length]);
 
-  const sortedShelf = [...shelf].sort((a, b) => a[2] - a[3] - (b[2] - b[3]));
-  const totalShelfBoxes = shelf.reduce((sum, s) => sum + s[1], 0);
-  const avgCycleDays =
-    shelf.length > 0
-      ? Math.max(1, Math.round(shelf.reduce((sum, s) => sum + s[2], 0) / shelf.length))
-      : 7;
+  const sortedShelf = [...shelf].sort((a, b) => {
+    const aLow = isShelfLow(a[0]) ? 0 : 1;
+    const bLow = isShelfLow(b[0]) ? 0 : 1;
+    if (aLow !== bLow) return aLow - bLow;
+    return getShelfNeed(b[0]) - getShelfNeed(a[0]);
+  });
+
+  const totalNormBoxes = shelf.reduce((sum, s) => sum + getShelfNorm(s[0]), 0);
+  const lowShelfItems = shelf.filter((s) => isShelfLow(s[0]) && getShelfNeed(s[0]) > 0);
+  const totalNeedAll = shelf.reduce((sum, s) => sum + getShelfNeed(s[0]), 0);
+  const totalNeedLow = lowShelfItems.reduce((sum, s) => sum + getShelfNeed(s[0]), 0);
+  const activeNeedBoxes = onlyLowToggle && totalNeedLow > 0 ? totalNeedLow : totalNeedAll;
 
   const activeOrder = orders.find(
     (o) => o.status === "Yo'lda" || o.status === 'Tasdiqlandi' || o.status === 'Yuborildi',
   );
-  const buyAgainItems = getLastDeliveredBuyAgainItems(orders, productsById);
+  const lastValidOrder = orders.find((o) => o.status !== 'Bekor qilindi') || orders[0] || null;
 
   const userName = session?.userName || 'Dilnoza';
   const hour = new Date().getHours();
@@ -121,6 +142,8 @@ export const HomeView: React.FC = () => {
       ? t.velvetMaxUnlocked
       : t.velvetTierUnlocked(discountNudge.currentPct);
 
+  const streakCount = countStreakDates.length;
+
   if (loadError) {
     return (
       <ErrorState
@@ -133,31 +156,25 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1) Time-based greeting header + shop name + delivery window badge */}
-      <div className="flex items-start justify-between gap-2 pt-0.5">
-        <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)] leading-tight tracking-tight break-words">
-            {timeGreeting}
-          </h2>
-          <p className="text-xs sm:text-[13px] font-normal text-[var(--text-secondary)] mt-0.5 truncate">
-            {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
-          </p>
-        </div>
-        <span className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] text-[11px] font-medium inline-flex items-center gap-1 whitespace-nowrap select-none">
-          <Clock className="w-3.5 h-3.5 text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
-          <span>{t.nextDeliveryChip}</span>
-        </span>
+      {/* 1) Clean single-line greeting + store address (no duplicate delivery chip here) */}
+      <div className="pt-0.5 min-w-0">
+        <h2 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)] leading-tight tracking-tight break-words">
+          {timeGreeting}
+        </h2>
+        <p className="text-xs sm:text-[13px] font-normal text-[var(--text-secondary)] mt-0.5 truncate">
+          {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
+        </p>
       </div>
 
-      {/* 2) Velvet Cart Card (exclusive home for glass, grain & glow + 2 stacked ghost layers) */}
-      <div className="relative pb-2.5">
+      {/* 2) Velvet Cart Card with visible 2-layer ghost stack & woven VelvetNetBasketSvg */}
+      <div className="relative pb-4">
         <div
           aria-hidden="true"
-          className="absolute inset-x-5 bottom-0 h-8 rounded-[20px] bg-[#9B111E]/08 pointer-events-none"
+          className="absolute inset-x-5 bottom-0 h-10 rounded-[22px] bg-[#9B111E]/22 pointer-events-none"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-x-2.5 bottom-1.5 h-8 rounded-[20px] bg-[#9B111E]/16 pointer-events-none"
+          className="absolute inset-x-2.5 bottom-2 h-10 rounded-[22px] bg-[#9B111E]/38 pointer-events-none"
         />
 
         <section className="relative z-10 velvet-moment-card text-white p-5 overflow-hidden">
@@ -166,7 +183,7 @@ export const HomeView: React.FC = () => {
             className="absolute inset-0 velvet-grain-layer pointer-events-none"
           />
 
-          <div className="relative z-10 space-y-4">
+          <div className="relative z-10 space-y-3.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-[13px] font-medium text-white/85 tabular-nums">
                 {t.velvetCartTitle(cartCount)}
@@ -177,22 +194,26 @@ export const HomeView: React.FC = () => {
               </span>
             </div>
 
-            <div>
-              <div className="text-[32px] sm:text-[36px] font-medium leading-none tracking-tight text-white whitespace-nowrap">
-                <TweenSom value={checkoutQuote.total} />
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-[30px] sm:text-[34px] font-medium leading-none tracking-tight text-white whitespace-nowrap">
+                  <TweenSom value={checkoutQuote.total} />
+                </div>
+                <div className="mt-2.5 flex items-center gap-2.5 flex-wrap">
+                  <span className="text-xs font-normal text-white/85 tabular-nums">
+                    {velvetHint}
+                  </span>
+                  <AnorThreeSeeds currentSum={currentSum} variant="velvet" />
+                </div>
               </div>
-              <div className="mt-2.5 flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-normal text-white/85 tabular-nums">
-                  {velvetHint}
-                </span>
-                <AnorThreeSeeds currentSum={currentSum} variant="velvet" />
-              </div>
+
+              <VelvetNetBasketSvg boxesCount={cartCount} fxKey={bumpKey} />
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 pt-0.5">
               <button
                 type="button"
-                onClick={() => fillShelfToCart(false)}
+                onClick={fillShelfNormsToCart}
                 className="v4-btn min-h-[44px] px-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
                 <Repeat className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
@@ -212,87 +233,204 @@ export const HomeView: React.FC = () => {
         </section>
       </div>
 
-      {/* 3) 2x2 Neutral Quick Action Tiles */}
-      <section className="grid grid-cols-2 gap-2.5">
-        <button
-          type="button"
-          onClick={() => goTab('cat')}
-          className="v4-card min-h-[68px] flex items-center gap-2.5 p-3 text-left hover:border-[var(--border-strong)] transition-colors duration-150 min-w-0"
-        >
-          <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-            <LayoutGrid className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          </span>
+      {/* 3) Daily Shelf Check Reminder + 7-Day Streak + 20:00 Cut-off Countdown */}
+      <section className="v4-card p-3.5 space-y-2.5">
+        <div className="flex items-center justify-between gap-2.5">
           <div className="min-w-0 flex-1">
-            <strong className="block text-[13px] font-medium text-[var(--text-primary)] leading-tight line-clamp-1">
-              {t.qaFastOrder}
-            </strong>
-            <span className="block text-[11px] font-normal text-[var(--text-muted)] truncate mt-0.5">
-              {t.qaFastOrderSub}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-8 h-8 rounded-[10px] flex items-center justify-center flex-none ${
+                  hasCountedToday
+                    ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                    : 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
+                }`}
+              >
+                <ClipboardCheck className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-[var(--text-primary)] leading-snug truncate">
+                  {hasCountedToday ? t.shelfCountDoneToday : t.shelfReminderTitle}
+                </div>
+                <div className="text-[11px] text-[var(--text-muted)] tabular-nums truncate">
+                  {t.shelfStreakLabel(streakCount)}
+                </div>
+              </div>
+            </div>
           </div>
-        </button>
 
-        <button
-          type="button"
-          onClick={() => fillShelfToCart(false)}
-          className="v4-card min-h-[68px] flex items-center gap-2.5 p-3 text-left hover:border-[var(--border-strong)] transition-colors duration-150 min-w-0"
-        >
-          <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-            <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <strong className="block text-[13px] font-medium text-[var(--text-primary)] leading-tight line-clamp-1">
-              {t.qaUsualOrder}
-            </strong>
-            <span className="block text-[11px] font-normal text-[var(--text-muted)] truncate mt-0.5">
-              {t.qaUsualOrderSub}
-            </span>
-          </div>
-        </button>
+          <button
+            type="button"
+            onClick={() => setSheet({ type: 'shelfCheck' })}
+            className={`min-h-[44px] px-3.5 rounded-full text-xs font-medium whitespace-nowrap flex-none inline-flex items-center gap-1.5 transition-colors ${
+              hasCountedToday
+                ? 'bg-[var(--bg-raised)] text-[var(--text-primary)] border border-[var(--border-hairline)]'
+                : 'bg-[var(--anor)] text-white hover:bg-[var(--anor-pressed)]'
+            }`}
+          >
+            <span>{t.shelfCountBtn}</span>
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => (activeOrder ? goTab('ord', 'track') : goTab('ord'))}
-          className="v4-card min-h-[68px] flex items-center gap-2.5 p-3 text-left hover:border-[var(--border-strong)] transition-colors duration-150 min-w-0"
-        >
-          <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-            <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <strong className="block text-[13px] font-medium text-[var(--text-primary)] leading-tight line-clamp-1">
-              {t.qaTrackOrder}
-            </strong>
-            <span className="block text-[11px] font-normal text-[var(--text-muted)] truncate mt-0.5 tabular-nums">
-              {t.qaTrackOrderSub(activeOrder ? activeOrder.id : null)}
-            </span>
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)] flex-wrap">
+          <div className="flex items-center gap-1.5" aria-label={t.shelfStreakLabel(streakCount)}>
+            {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
+              <AnorSeedIcon
+                key={dayIdx}
+                filled={dayIdx < Math.min(7, streakCount)}
+                variant="surface"
+                size={12}
+              />
+            ))}
           </div>
-        </button>
 
-        <button
-          type="button"
-          onClick={() => openPage('chat')}
-          className="v4-card relative min-h-[68px] flex items-center gap-2.5 p-3 text-left hover:border-[var(--border-strong)] transition-colors duration-150 min-w-0"
-        >
-          <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-            <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <strong className="block text-[13px] font-medium text-[var(--text-primary)] leading-tight line-clamp-1">
-              {t.qaWriteOperator}
+          <div className="text-[11px] text-[var(--text-secondary)] tabular-nums flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+            <span className="truncate">
+              {countdown.isBeforeCutoff ? t.cutoffLinePrefix : t.cutoffTomorrowPrefix}
+            </span>
+            <strong className="font-semibold text-[var(--anor-text)] whitespace-nowrap">
+              {countdown.hh}:{countdown.mm}:{countdown.ss}
             </strong>
-            <span className="block text-[11px] font-normal text-[var(--text-muted)] truncate mt-0.5 tabular-nums">
-              {t.qaWriteOperatorSub(unreadChat)}
-            </span>
           </div>
-          {unreadChat > 0 && (
-            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums flex-none">
-              {unreadChat}
-            </span>
-          )}
-        </button>
+        </div>
       </section>
 
-      {/* 4) Compact Promo Carousel (~150px, calm hairline card, no glass/grain/shadow) */}
+      {/* 4) Three Clear Ways to Order + 1-tap Utility Row */}
+      <section className="v4-card p-4 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">
+            {t.orderWaysTitle}
+          </h3>
+          {lowShelfItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setOnlyLowToggle((v) => !v)}
+              className={`min-h-[32px] px-2.5 rounded-full text-[11px] font-medium border transition-colors ${
+                onlyLowToggle
+                  ? 'bg-[var(--anor-soft)] border-[var(--anor)] text-[var(--anor-text)]'
+                  : 'bg-[var(--bg-raised)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
+              }`}
+            >
+              {t.orderWayOnlyLowToggle}
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {/* Way 1: Javonni to'ldirish */}
+          <button
+            type="button"
+            data-coach="home"
+            onClick={() => fillShelfNeedsToCart(onlyLowToggle && totalNeedLow > 0)}
+            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+          >
+            <span className="w-10 h-10 rounded-[10px] bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-none">
+              <PackagePlus className="w-[18px] h-[18px]" strokeWidth={1.75} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                {t.orderWayFillShelf}
+              </div>
+              <div className="text-xs text-[var(--text-secondary)] truncate tabular-nums">
+                {t.orderWayFillShelfSub(activeNeedBoxes, lowShelfItems.length)}
+              </div>
+            </div>
+            <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
+          </button>
+
+          {/* Way 2: Odatdagini takrorlash */}
+          <button
+            type="button"
+            onClick={fillShelfNormsToCart}
+            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+          >
+            <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--anor-text)] flex items-center justify-center flex-none">
+              <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                {t.orderWayRepeatUsual}
+              </div>
+              <div className="text-xs text-[var(--text-secondary)] truncate tabular-nums">
+                {t.orderWayRepeatUsualSub(totalNormBoxes)}
+              </div>
+            </div>
+            <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
+          </button>
+
+          {/* Way 3: Katalogdan tanlash */}
+          <button
+            type="button"
+            onClick={() => goTab('cat')}
+            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+          >
+            <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
+              <LayoutGrid className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                {t.orderWayPickCatalog}
+              </div>
+              <div className="text-xs text-[var(--text-secondary)] truncate">
+                {t.orderWayPickCatalogSub}
+              </div>
+            </div>
+            <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
+          </button>
+        </div>
+
+        {/* Compact quick utilities: Active track / Last order quick repeat + Operator OsonChat */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          {activeOrder ? (
+            <button
+              type="button"
+              onClick={() => goTab('ord', 'track')}
+              className="min-h-[44px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] hover:border-[var(--border-strong)] flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-primary)]"
+            >
+              <Truck className="w-4 h-4 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+              <span className="truncate tabular-nums">
+                {t.qaTrackOrderSub(activeOrder.id)}
+              </span>
+            </button>
+          ) : lastValidOrder ? (
+            <button
+              type="button"
+              onClick={repeatLastOrder}
+              className="min-h-[44px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] hover:border-[var(--border-strong)] flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-primary)]"
+            >
+              <Repeat className="w-4 h-4 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+              <span className="truncate tabular-nums">
+                {t.quickLastOrderPill(lastValidOrder.id)}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => goTab('ord')}
+              className="min-h-[44px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-primary)]"
+            >
+              <Truck className="w-4 h-4 text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
+              <span className="truncate">{t.ordersTitle}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => openPage('chat')}
+            className="min-h-[44px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] hover:border-[var(--border-strong)] flex items-center justify-center gap-2 text-xs font-medium text-[var(--text-primary)]"
+          >
+            <MessageCircle className="w-4 h-4 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+            <span className="truncate">{t.osonChat}</span>
+            {unreadChat > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
+                {unreadChat}
+              </span>
+            )}
+          </button>
+        </div>
+      </section>
+
+      {/* 5) Compact Promo Carousel */}
       <section
         aria-label={t.promoTitle}
         onMouseEnter={() => setCarouselPaused(true)}
@@ -315,7 +453,7 @@ export const HomeView: React.FC = () => {
           }
           setCarouselPaused(false);
         }}
-        className="v4-card p-4 overflow-hidden min-h-[148px] flex flex-col justify-between"
+        className="v4-card p-4 overflow-hidden min-h-[144px] flex flex-col justify-between"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -351,7 +489,8 @@ export const HomeView: React.FC = () => {
             {heroProduct && (
               <div
                 onClick={() => setSheet({ type: 'prod', id: heroProduct.id })}
-                className="cursor-pointer flex-none"
+                className="cursor-pointer flex-none rounded-[12px] p-1"
+                style={{ backgroundColor: getFlavorTint(heroProduct) }}
               >
                 <ProductVisual product={heroProduct} size="row" />
               </div>
@@ -381,7 +520,7 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* 5) Search Trigger + Round Category Chips */}
+      {/* 6) Search Trigger + Category Chips */}
       <div className="space-y-2.5">
         <button
           type="button"
@@ -423,167 +562,9 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* 6) Contextual Usual Order Hint */}
-      {shelf.length > 0 && (
-        <section className="v4-card p-3.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-              <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
-            </span>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
-                {t.usualOrderHintTitle}
-              </div>
-              <div className="text-xs text-[var(--text-muted)] tabular-nums truncate">
-                {t.usualOrderHintSub(totalShelfBoxes, avgCycleDays)}
-              </div>
-            </div>
-          </div>
-          <PillButton level="tonal" size="sm" onClick={() => fillShelfToCart(false)}>
-            {t.velvetFillUsual}
-          </PillButton>
-        </section>
-      )}
-
-      {/* 7) Buy Again Horizontal Row (signature GreenAddControl) */}
-      {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
-        <section className="space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] leading-tight">
-                {t.buyAgainTitle}
-              </h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
-                {t.buyAgainSub}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => goTab('ord')}
-              className="min-h-[44px] px-2 inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-[var(--anor-text)] whitespace-nowrap flex-none"
-            >
-              <span>{t.viewAll}</span>
-              <ChevronRight className="w-[18px] h-[18px]" strokeWidth={1.5} />
-            </button>
-          </div>
-
-          {ordersLoading || productsLoading ? (
-            <HorizontalStripSkeleton count={3} />
-          ) : (
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
-              {buyAgainItems.map(({ product, qty }) => {
-                const name = getProductName(product, lang);
-                const promoPrice = getPromoBoxPrice(product);
-                const curQty = cart[product.id] || 0;
-                return (
-                  <div
-                    key={product.id}
-                    onClick={() => setSheet({ type: 'prod', id: product.id })}
-                    className="v4-card w-40 flex-none p-2.5 cursor-pointer flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors"
-                  >
-                    <div className="relative rounded-[10px] overflow-hidden">
-                      <ProductVisual product={product} size="grid" />
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-primary)] text-[11px] font-medium tabular-nums">
-                        {qty} {t.boxUnit}
-                      </span>
-                      <div
-                        className="absolute bottom-2 right-2 z-20"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <GreenAddControl
-                          qty={curQty}
-                          addLabel={t.addToCart}
-                          removeLabel={t.removeFromCart}
-                          unitLabel={t.boxUnit}
-                          onAdd={() => updateQty(product.id, curQty === 0 ? qty : 1)}
-                          onRemove={() => updateQty(product.id, -1)}
-                          onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-2 px-0.5">
-                      <div className="text-xs font-medium text-[var(--text-primary)] line-clamp-2 min-h-[2rem] leading-snug">
-                        {name} {product.vol}
-                      </div>
-                      <div className="mt-1 text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
-                        {formatNumberThin(promoPrice)}{' '}
-                        <span className="text-[11px] font-normal text-[var(--text-muted)]">
-                          so&apos;m
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 8) Smart Refill 'Tugayotganlar' */}
-      <section className="v4-card p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)] leading-tight flex items-center gap-2">
-              <Clock className="w-[18px] h-[18px] text-[var(--warning)] flex-none" strokeWidth={1.5} />
-              <span>{t.smartRefillTitle}</span>
-            </h2>
-            <p className="text-xs text-[var(--text-muted)] mt-1 break-words">
-              {t.smartRefillSub}
-            </p>
-          </div>
-          {refillDueItems.length > 0 && (
-            <PillButton level="primary" size="sm" onClick={addRefillDueToCart}>
-              <ShoppingCart className="w-4 h-4" strokeWidth={1.5} />
-              <span>{t.smartRefillAddAllBtn}</span>
-            </PillButton>
-          )}
-        </div>
-
-        {productsLoading ? (
-          <CatalogSkeleton viewMode="row" />
-        ) : refillDueItems.length === 0 ? (
-          <div className="rounded-[12px] bg-[var(--bg-raised)] p-4 text-center text-xs font-medium text-[var(--text-muted)]">
-            {t.smartRefillEmpty}
-          </div>
-        ) : (
-          <div className="divide-y divide-[var(--border-hairline)]">
-            {refillDueItems.map((item) => {
-              const prod = productsById[item.productId];
-              if (!prod) return null;
-              return (
-                <div
-                  key={item.productId}
-                  onClick={() => setSheet({ type: 'prod', id: prod.id })}
-                  className="py-3 first:pt-1 last:pb-1 flex items-center gap-3 cursor-pointer"
-                >
-                  <ProductVisual product={prod} size="mini" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--text-primary)] truncate">
-                      {getProductName(prod, lang)} {prod.vol}
-                    </div>
-                    <div className="text-xs font-medium text-[var(--warning)] mt-0.5 tabular-nums">
-                      {t.daysLeftEstimate(item.daysRemaining)}
-                    </div>
-                  </div>
-                  <div className="text-right flex-none tabular-nums">
-                    <div className="text-sm font-semibold text-[var(--text-primary)] whitespace-nowrap">
-                      {item.usualBoxes} {t.boxUnit}
-                    </div>
-                    <div className="text-xs text-[var(--text-muted)] whitespace-nowrap">
-                      {formatSom(prod.box * item.usualBoxes)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* 9) Mening javonim */}
+      {/* 7) Unified Mening Javonim (Norm / Stock / Need + Sanash CTA + Swipe-to-count) */}
       <section id="mening-javonim" className="v4-card p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-[var(--text-primary)] leading-tight">
               {t.myShelfTitle}
@@ -592,14 +573,24 @@ export const HomeView: React.FC = () => {
               {t.myShelfSub}
             </p>
           </div>
-          <PillButton
-            level="tonal"
-            size="sm"
-            onClick={() => setEditShelf((v) => !v)}
-          >
-            {editShelf && <Check className="w-4 h-4" strokeWidth={1.5} />}
-            <span>{editShelf ? t.doneLabel : t.editLabel}</span>
-          </PillButton>
+          <div className="flex items-center gap-2">
+            <PillButton
+              level="primary"
+              size="sm"
+              onClick={() => setSheet({ type: 'shelfCheck' })}
+            >
+              <ClipboardCheck className="w-4 h-4" strokeWidth={1.5} />
+              <span>{t.shelfCountBtn}</span>
+            </PillButton>
+            <PillButton
+              level="tonal"
+              size="sm"
+              onClick={() => setEditShelf((v) => !v)}
+            >
+              {editShelf && <Check className="w-4 h-4" strokeWidth={1.5} />}
+              <span>{editShelf ? t.doneLabel : t.editLabel}</span>
+            </PillButton>
+          </div>
         </div>
 
         {productsLoading ? (
@@ -638,28 +629,33 @@ export const HomeView: React.FC = () => {
             <span>{t.addToShelfBtn}</span>
           </PillButton>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5">
-            <PillButton
-              level="primary"
-              fullWidth
-              onClick={() => fillShelfToCart(true)}
-            >
-              <TrendingDown className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
-              <span className="truncate">{t.addLowToCart}</span>
-            </PillButton>
-            <PillButton
-              level="outline"
-              fullWidth
-              onClick={() => fillShelfToCart(false)}
-            >
-              <Repeat className="w-[18px] h-[18px] text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
-              <span className="truncate">{t.addAllToCart}</span>
-            </PillButton>
-          </div>
+          sortedShelf.length > 0 && (
+            <div className="grid grid-cols-2 gap-2.5">
+              <PillButton
+                level="buy"
+                fullWidth
+                disabled={totalNeedAll === 0}
+                onClick={() => fillShelfNeedsToCart(false)}
+              >
+                <PackagePlus className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
+                <span className="truncate">
+                  {t.orderWayFillShelf} ({totalNeedAll})
+                </span>
+              </PillButton>
+              <PillButton
+                level="outline"
+                fullWidth
+                onClick={fillShelfNormsToCart}
+              >
+                <Repeat className="w-[18px] h-[18px] text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+                <span className="truncate">{t.addAllToCart}</span>
+              </PillButton>
+            </div>
+          )
         )}
       </section>
 
-      {/* 10) Qanday ishlaydi? */}
+      {/* 8) Qanday ishlaydi (4 benefit cards) */}
       <section className="v4-card p-4 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-base font-semibold text-[var(--text-primary)]">
@@ -675,9 +671,10 @@ export const HomeView: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {t.guideSteps.map((st, idx) => {
-            const StepIcon = idx === 0 ? Plus : idx === 1 ? Lock : Truck;
+            const StepIcon =
+              idx === 0 ? ClipboardCheck : idx === 1 ? TrendingUp : idx === 2 ? Sparkles : Truck;
             return (
               <div
                 key={st.title}
@@ -686,10 +683,10 @@ export const HomeView: React.FC = () => {
                 <span className="w-7 h-7 rounded-[8px] bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--anor-text)] flex items-center justify-center flex-none">
                   <StepIcon className="w-4 h-4" strokeWidth={1.5} />
                 </span>
-                <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                <div className="text-xs font-semibold text-[var(--text-primary)] line-clamp-1">
                   {idx + 1}. {st.title}
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)] leading-snug line-clamp-1">
+                <p className="text-[11px] text-[var(--text-muted)] leading-snug line-clamp-2">
                   {st.desc}
                 </p>
               </div>
@@ -698,7 +695,7 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* 11) Top sellers in Termiz */}
+      {/* 9) Top sellers in Termiz */}
       <section>
         <div className="flex items-center justify-between mb-3 gap-2">
           <div className="min-w-0">

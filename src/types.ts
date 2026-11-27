@@ -41,6 +41,10 @@ export interface Product {
   out: boolean;
   promoPct?: number;
   isNew?: boolean;
+  promoKind?: 'discount' | 'gift';
+  giftBuyBoxes?: number;
+  giftFreeBoxes?: number;
+  promoEndsDays?: number;
 }
 
 /** [productId, usualBoxes, cycleDays, daysPassed] */
@@ -192,7 +196,10 @@ export type SheetState =
   | { type: 'cancelOrder'; orderId: number }
   | { type: 'confirmClear' }
   | { type: 'rateOrder'; orderId: number }
-  | { type: 'confirmRemoveShelf'; id: number; returnToProd?: boolean };
+  | { type: 'confirmRemoveShelf'; id: number; returnToProd?: boolean }
+  | { type: 'shelfCheck' };
+
+export type CoachScreenKey = 'home' | 'cat' | 'cart' | 'shelf';
 
 export interface ToastItem {
   id: number;

@@ -4,13 +4,14 @@ import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
 import type { Product, ShelfItem } from '../types';
 import {
+  computeBoxProfit,
+  formatHalfBoxes,
   formatNumberThin,
   formatSom,
   getBrandName,
   getPackType,
   getProductBadge,
   getPromoBoxPrice,
-  getStockInfo,
   shortName,
 } from '../utils/catalog';
 import { ProductVisual } from './ProductVisual';
@@ -18,9 +19,10 @@ import { GreenAddControl } from './V4Primitives';
 
 interface StepperProps {
   product: Product;
+  coachId?: string;
 }
 
-export const CartStepper: React.FC<StepperProps> = ({ product }) => {
+export const CartStepper: React.FC<StepperProps> = ({ product, coachId }) => {
   const { cart, t, updateQty, setSheet } = useStore();
   const qty = cart[product.id] || 0;
 
@@ -35,6 +37,7 @@ export const CartStepper: React.FC<StepperProps> = ({ product }) => {
   return (
     <GreenAddControl
       qty={qty}
+      coachId={coachId}
       addLabel={t.addToCart}
       removeLabel={t.removeFromCart}
       unitLabel={t.boxUnit}
@@ -47,45 +50,56 @@ export const CartStepper: React.FC<StepperProps> = ({ product }) => {
 
 function renderBadge(product: Product, t: ReturnType<typeof useStore>['t']) {
   const badgeType = getProductBadge(product);
-  if (!badgeType) return null;
-
-  switch (badgeType) {
-    case 'out':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] text-[11px] font-medium">
-          {t.badgeOut}
-        </span>
-      );
-    case 'promo':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium tabular-nums">
-          −{product.promoPct || 5}%
-        </span>
-      );
-    case 'new':
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--ink-fill)] text-[var(--ink-text)] text-[11px] font-medium">
-          {t.badgeNew}
-        </span>
-      );
-    default:
-      return null;
+  if (badgeType) {
+    switch (badgeType) {
+      case 'out':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] text-[11px] font-medium">
+            {t.badgeOut}
+          </span>
+        );
+      case 'promo':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium tabular-nums">
+            −{product.promoPct || 5}%
+          </span>
+        );
+      case 'new':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--ink-fill)] text-[var(--ink-text)] text-[11px] font-medium">
+            {t.badgeNew}
+          </span>
+        );
+      default:
+        break;
+    }
   }
+  if (product.giftBuyBoxes && product.giftFreeBoxes) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium tabular-nums">
+        {product.giftBuyBoxes}+{product.giftFreeBoxes}
+      </span>
+    );
+  }
+  return null;
 }
 
 interface ProductCardProps {
   product: Product;
   mode?: 'grid' | 'row' | 'cart';
+  coachAdd?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   mode = 'grid',
+  coachAdd = false,
 }) => {
   const {
     cart,
     lang,
     t,
+    markupPct,
     inShelf,
     isFavorite,
     addShelfItem,
@@ -102,6 +116,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const displayName = getProductName(product, lang);
   const hasPromo = Boolean(product.promoPct && product.promoPct > 0);
   const effectiveBox = getPromoBoxPrice(product);
+  const boxProfit = computeBoxProfit(product, markupPct);
 
   const [swipeX, setSwipeX] = useState(0);
   const touchOriginRef = useRef<{ x: number; y: number; swiping: boolean } | null>(null);
@@ -131,6 +146,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             >
               <GreenAddControl
                 qty={qty}
+                coachId={coachAdd ? 'cat' : undefined}
                 addLabel={t.addToCart}
                 removeLabel={t.removeFromCart}
                 unitLabel={t.boxUnit}
@@ -197,8 +213,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {t.boxMetaLine(product.blk)}
         </div>
 
-        {/* Price weight 600 tabular single line */}
-        <div className="mt-auto pt-2 px-0.5 pb-0.5">
+        {/* Profit per box with global markup + single-line wholesale box price */}
+        <div className="mt-auto pt-1.5 px-0.5 pb-0.5">
+          {!product.out && (
+            <div className="text-[11px] font-medium text-[var(--success)] tabular-nums truncate mb-0.5">
+              {t.cardBoxProfit(formatSom(boxProfit))}
+            </div>
+          )}
           {product.out ? (
             <div className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
               {t.outOfStock}
@@ -318,7 +339,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </div>
               </div>
 
-              {/* Outline-pill stepper in cart; decrementing 1 -> 0 removes line and shows undo snackbar */}
               <div
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center min-h-[44px] rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1"
@@ -429,6 +449,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
           <div>
+            {!product.out && (
+              <div className="text-[11px] font-medium text-[var(--success)] tabular-nums mb-0.5">
+                {t.cardBoxProfit(formatSom(boxProfit))}
+              </div>
+            )}
             <div className="flex items-baseline gap-1.5 whitespace-nowrap">
               <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                 {formatNumberThin(effectiveBox)}{' '}
@@ -452,7 +477,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
             </div>
           </div>
-          <CartStepper product={product} />
+          <CartStepper product={product} coachId={coachAdd ? 'cat' : undefined} />
         </div>
       </div>
     </div>
@@ -466,31 +491,68 @@ interface ShelfRowCardProps {
 }
 
 export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editMode }) => {
-  const { cart, shelf, refillById, lang, t, setSheet, updateShelfUsual, removeShelfItem } = useStore();
-  const [id, usual] = item;
+  const {
+    cart,
+    lang,
+    t,
+    getShelfNorm,
+    getShelfStock,
+    getShelfNeed,
+    isShelfLow,
+    adjustShelfStock,
+    setSheet,
+    updateShelfUsual,
+    removeShelfItem,
+  } = useStore();
+  const [id] = item;
   const inCart = (cart[id] || 0) > 0;
-  const st = getStockInfo(product, shelf, lang, refillById[id]);
+  const norm = getShelfNorm(id);
+  const stock = getShelfStock(id);
+  const need = getShelfNeed(id);
+  const low = isShelfLow(id);
+  const pct = Math.max(6, Math.min(100, Math.round((stock / Math.max(1, norm)) * 100)));
   const displayName = shortName(getProductName(product, lang));
 
-  const stockColor =
-    st.cls === 'crit'
-      ? 'text-[var(--anor-text)]'
-      : st.cls === 'warn'
-        ? 'text-[var(--warning)]'
-        : 'text-[var(--text-secondary)]';
-  const stockBarBg =
-    st.cls === 'crit'
-      ? 'bg-[var(--anor)]'
-      : st.cls === 'warn'
-        ? 'bg-[var(--warning)]'
-        : 'bg-[var(--ink-fill)]';
+  // Speed improvement G-2: Swipe-to-count ±0.5 box directly on shelf row
+  const [swipeDx, setSwipeDx] = useState(0);
+  const swipeOriginRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
 
   return (
     <div
+      onTouchStart={(e) => {
+        if (editMode) return;
+        const touch = e.touches[0];
+        if (!touch) return;
+        swipeOriginRef.current = { x: touch.clientX, y: touch.clientY, active: false };
+      }}
+      onTouchMove={(e) => {
+        if (editMode) return;
+        const origin = swipeOriginRef.current;
+        const touch = e.touches[0];
+        if (!origin || !touch) return;
+        const dx = touch.clientX - origin.x;
+        const dy = touch.clientY - origin.y;
+        if (!origin.active && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+          origin.active = true;
+        }
+        if (origin.active) {
+          setSwipeDx(Math.max(-56, Math.min(56, dx)));
+        }
+      }}
+      onTouchEnd={() => {
+        if (!editMode) {
+          if (swipeDx >= 30) adjustShelfStock(id, 0.5);
+          else if (swipeDx <= -30) adjustShelfStock(id, -0.5);
+        }
+        setSwipeDx(0);
+        swipeOriginRef.current = null;
+      }}
       onClick={() => {
+        if (Math.abs(swipeDx) > 8) return;
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`v4-card rounded-[16px] p-3 flex items-stretch gap-3 transition-colors ${
+      style={{ transform: `translateX(${swipeDx}px)` }}
+      className={`v4-card rounded-[16px] p-3 flex items-stretch gap-3 transition-transform duration-150 ${
         editMode ? '' : 'cursor-pointer hover:border-[var(--border-strong)]'
       }`}
     >
@@ -501,29 +563,54 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
             <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
               {displayName} {product.vol}
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium flex-none mt-0.5">
-              <Check className="w-3 h-3" strokeWidth={1.75} />
-              <span>{t.inShelfPill}</span>
+            {low ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium flex-none mt-0.5">
+                {t.shelfLowBadge}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-medium flex-none mt-0.5">
+                <Check className="w-3 h-3" strokeWidth={1.75} />
+                <span>{t.inShelfPill}</span>
+              </span>
+            )}
+          </div>
+
+          <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-2 flex-wrap">
+            <span>
+              {t.shelfNormLabel}: <strong className="font-semibold text-[var(--text-primary)]">{norm}</strong>
+            </span>
+            <span>·</span>
+            <span>
+              {t.shelfStockLabel}:{' '}
+              <strong className={`font-semibold ${low ? 'text-[var(--anor-text)]' : 'text-[var(--text-primary)]'}`}>
+                {formatHalfBoxes(stock)}
+              </strong>
+            </span>
+            <span>·</span>
+            <span>
+              {t.shelfNeedLabel}:{' '}
+              <strong className={`font-semibold ${need > 0 ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
+                {need}
+              </strong>
             </span>
           </div>
-          <div className="text-xs text-[var(--text-muted)] mt-1 tabular-nums">
-            {t.boxMetaLine(product.blk)} · {formatSom(product.one)}
+
+          <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                low ? 'bg-[var(--anor)]' : 'bg-[var(--success)]'
+              }`}
+              style={{ width: `${pct}%` }}
+            />
           </div>
-          <div className="mt-2">
-            <div className="flex items-center justify-between gap-2 text-xs font-medium mb-1">
-              <span className={stockColor}>{st.txt}</span>
-              {st.sub && <span className="text-[var(--text-muted)] whitespace-nowrap">{st.sub}</span>}
+          {Math.abs(swipeDx) > 8 && (
+            <div className="mt-1 text-[11px] font-medium text-[var(--anor-text)] tabular-nums">
+              {swipeDx > 0 ? `+0,5 ${t.boxUnit}` : `−0,5 ${t.boxUnit}`}
             </div>
-            <div className="h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-[width] duration-200 ease-out ${stockBarBg}`}
-                style={{ width: `${st.pct}%` }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
+        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
           <div>
             <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
@@ -532,31 +619,31 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
               </span>
             </div>
             <div className={`text-xs ${inCart ? 'font-medium text-[var(--success)]' : 'font-normal text-[var(--text-muted)]'}`}>
-              {inCart ? t.inCartQty(cart[id]) : formatSom(product.one) + ' ' + t.perPieceSuffix}
+              {inCart ? t.inCartQty(cart[id]) : t.swipeStockHint}
             </div>
           </div>
 
           {editMode ? (
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)]">
+              <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1">
                 <button
                   type="button"
                   aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
-                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
+                  className="w-9 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                 >
-                  <Minus className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  <Minus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
-                <span className="min-w-[28px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
-                  {usual}
+                <span className="min-w-[30px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
+                  {norm}
                 </span>
                 <button
                   type="button"
                   aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
+                  className="w-9 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
                 >
-                  <Plus className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  <Plus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
               </div>
               <button

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, Loader2, Minus, Plus } from 'lucide-react';
+import type { CoachScreenKey } from '../types';
 import { TIERS, formatSom } from '../utils/catalog';
 
 export function useTweenNumber(target: number, duration = 400): number {
@@ -134,7 +135,214 @@ export const AnorThreeSeeds: React.FC<{
   );
 };
 
-export type PillButtonLevel = 'primary' | 'tonal' | 'outline' | 'text' | 'danger';
+export const VelvetNetBasketSvg: React.FC<{
+  boxesCount: number;
+  fxKey: number;
+}> = ({ boxesCount, fxKey }) => {
+  const visibleBottles = Math.min(8, Math.max(0, boxesCount));
+  const extraCount = Math.max(0, boxesCount - 8);
+  const bottleSlots = [
+    { x: 24, y: 31, rot: -6 },
+    { x: 35, y: 29, rot: -2 },
+    { x: 46, y: 30, rot: 3 },
+    { x: 57, y: 31, rot: 7 },
+    { x: 29, y: 42, rot: -3 },
+    { x: 40, y: 41, rot: 1 },
+    { x: 51, y: 42, rot: 4 },
+    { x: 61, y: 43, rot: -4 },
+  ];
+
+  return (
+    <div className="relative w-[92px] h-[84px] flex-none select-none overflow-hidden rounded-[16px]">
+      {fxKey > 0 && (
+        <span
+          key={fxKey}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-10 animate-basket-streak z-20"
+        />
+      )}
+      <svg
+        width="92"
+        height="84"
+        viewBox="0 0 92 84"
+        fill="none"
+        aria-hidden="true"
+        className="w-full h-full"
+      >
+        {/* Soft highlight disc behind basket */}
+        <circle cx="46" cy="48" r="34" fill="rgba(255,255,255,0.08)" />
+
+        {/* Basket handle */}
+        <path
+          d="M31 28C31 18.5 37.5 13 46 13C54.5 13 61 18.5 61 28"
+          stroke="rgba(255,255,255,0.88)"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+
+        {/* Simplified bottle silhouettes inside basket (1 per box up to 8) */}
+        {bottleSlots.slice(0, visibleBottles).map((b, idx) => (
+          <g
+            key={idx}
+            transform={`translate(${b.x}, ${b.y}) rotate(${b.rot})`}
+          >
+            <rect
+              x="-4"
+              y="0"
+              width="8"
+              height="19"
+              rx="3"
+              fill="rgba(255,255,255,0.9)"
+              stroke="rgba(126,14,24,0.35)"
+              strokeWidth="0.9"
+            />
+            <rect
+              x="-2.2"
+              y="-3.5"
+              width="4.4"
+              height="3.8"
+              rx="1.2"
+              fill="rgba(255,255,255,0.95)"
+            />
+          </g>
+        ))}
+
+        {/* Basket body & diamond woven wire/string net */}
+        <path
+          d="M17 30H75L67 69C66.4 72 63.8 74 60.8 74H31.2C28.2 74 25.6 72 25 69L17 30Z"
+          fill="rgba(126,14,24,0.34)"
+          stroke="rgba(255,255,255,0.88)"
+          strokeWidth="1.9"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M14 30H78"
+          stroke="rgba(255,255,255,0.95)"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+        {/* Woven net mesh */}
+        <path
+          d="M23 30L37 73M37 30L51 73M51 30L65 73M69 30L55 73M55 30L41 73M41 30L27 73"
+          stroke="rgba(255,255,255,0.38)"
+          strokeWidth="1.15"
+          strokeLinecap="round"
+        />
+        <path
+          d="M20 43H72M22 57H70"
+          stroke="rgba(255,255,255,0.32)"
+          strokeWidth="1.1"
+        />
+      </svg>
+      {extraCount > 0 && (
+        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white text-[#7E0E18] text-[10px] font-semibold tabular-nums leading-none">
+          +{extraCount}
+        </span>
+      )}
+    </div>
+  );
+};
+
+export const CoachMarkSpotlight: React.FC<{
+  coachKey: CoachScreenKey | null;
+  title: string;
+  desc: string;
+  doneLabel: string;
+  onDismiss: () => void;
+}> = ({ coachKey, title, desc, doneLabel, onDismiss }) => {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useLayoutEffect(() => {
+    if (!coachKey) {
+      setRect(null);
+      return;
+    }
+    const measure = () => {
+      const el = document.querySelector<HTMLElement>(`[data-coach="${coachKey}"]`);
+      if (!el) {
+        setRect(null);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) {
+        setRect(null);
+        return;
+      }
+      setRect(r);
+    };
+
+    measure();
+    const t1 = window.setTimeout(measure, 90);
+    const t2 = window.setTimeout(measure, 280);
+    window.addEventListener('resize', measure);
+    window.addEventListener('scroll', measure, true);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('scroll', measure, true);
+    };
+  }, [coachKey]);
+
+  if (!coachKey || !rect) return null;
+
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 390;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 844;
+  const pad = 6;
+  const rx = Math.max(8, rect.left - pad);
+  const ry = Math.max(8, rect.top - pad);
+  const rw = Math.min(vw - rx - 8, rect.width + pad * 2);
+  const rh = rect.height + pad * 2;
+  const showBelow = ry + rh + 148 < vh;
+  const cardWidth = Math.min(296, vw - 24);
+  const cardLeft = Math.max(12, Math.min(vw - cardWidth - 12, rx + rw / 2 - cardWidth / 2));
+  const cardTop = showBelow ? ry + rh + 12 : Math.max(12, ry - 144);
+
+  return (
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-modal="true"
+      onClick={onDismiss}
+    >
+      {/* Dim mask with crisp spotlight ring */}
+      <div
+        className="fixed rounded-[16px] pointer-events-none transition-all duration-200"
+        style={{
+          left: rx,
+          top: ry,
+          width: rw,
+          height: rh,
+          boxShadow: '0 0 0 9999px rgba(15, 10, 10, 0.52), 0 0 0 2px rgba(255, 255, 255, 0.92)',
+        }}
+      />
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ left: cardLeft, top: cardTop, width: cardWidth }}
+        className="fixed rounded-[16px] bg-[var(--bg-card)] border border-[var(--border-hairline)] p-4 shadow-xl"
+      >
+        <div className="text-[15px] font-semibold text-[var(--text-primary)] leading-snug">
+          {title}
+        </div>
+        <p className="text-xs font-normal text-[var(--text-secondary)] mt-1 leading-relaxed">
+          {desc}
+        </p>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="min-h-[44px] px-4 rounded-full bg-[var(--ink-fill)] text-[var(--ink-text)] text-xs font-medium"
+          >
+            {doneLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export type PillButtonLevel = 'primary' | 'buy' | 'tonal' | 'outline' | 'text' | 'danger';
 export type PillButtonSize = 'lg' | 'md' | 'sm';
 
 interface PillButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -169,15 +377,17 @@ export const PillButton: React.FC<PillButtonProps> = ({
 
   const levelCls = isDisabled
     ? 'bg-[var(--bg-raised)] text-[var(--text-muted)] border border-[var(--border-hairline)] cursor-not-allowed'
-    : level === 'primary'
-      ? 'bg-[var(--anor)] hover:bg-[var(--anor-pressed)] active:bg-[var(--anor-pressed)] text-white'
-      : level === 'tonal'
-        ? 'bg-[var(--anor-soft)] text-[var(--anor-text)] hover:opacity-90'
-        : level === 'outline'
-          ? 'bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-raised)]'
-          : level === 'danger'
-            ? 'bg-[var(--bg-card)] border border-[var(--error)] text-[var(--error)] hover:bg-[var(--error-soft)]'
-            : 'bg-transparent text-[var(--anor-text)] hover:bg-[var(--anor-soft)]';
+    : level === 'buy'
+      ? 'buy-green-btn text-white'
+      : level === 'primary'
+        ? 'bg-[var(--anor)] hover:bg-[var(--anor-pressed)] active:bg-[var(--anor-pressed)] text-white'
+        : level === 'tonal'
+          ? 'bg-[var(--anor-soft)] text-[var(--anor-text)] hover:opacity-90'
+          : level === 'outline'
+            ? 'bg-[var(--bg-card)] border border-[var(--border-strong)] text-[var(--text-primary)] hover:bg-[var(--bg-raised)]'
+            : level === 'danger'
+              ? 'bg-[var(--bg-card)] border border-[var(--error)] text-[var(--error)] hover:bg-[var(--error-soft)]'
+              : 'bg-transparent text-[var(--anor-text)] hover:bg-[var(--anor-soft)]';
 
   return (
     <div className={fullWidth ? 'w-full' : 'inline-flex flex-col'}>
@@ -216,6 +426,7 @@ interface GreenAddControlProps {
   onRemove: () => void;
   onQtyTap?: () => void;
   compactPill?: boolean;
+  coachId?: string;
 }
 
 export const GreenAddControl: React.FC<GreenAddControlProps> = ({
@@ -227,6 +438,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
   onRemove,
   onQtyTap,
   compactPill = false,
+  coachId,
 }) => {
   const [fxKey, setFxKey] = useState(0);
 
@@ -236,7 +448,11 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
   };
 
   return (
-    <div className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+    <div
+      data-coach={coachId}
+      className="relative inline-flex items-center"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Green ring ripple on first tap (550ms) */}
       {fxKey > 0 && (
         <span

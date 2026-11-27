@@ -1,13 +1,13 @@
 /* V4 Design System — Single Color, Surface, Typography & Motion Token Source */
 
 :root {
-  /* Light Neutrals */
-  --bg-app: #FAFAFA;
+  /* Light Neutrals (Warm Paper & Espresso Hairlines) */
+  --bg-app: #FAF6F3;
   --bg-card: #FFFFFF;
-  --bg-raised: #F4F4F5;
-  --bg-tile: #F4F4F5;
-  --border-hairline: rgba(23, 23, 23, 0.08);
-  --border-strong: rgba(23, 23, 23, 0.16);
+  --bg-raised: #F5F1EE;
+  --bg-tile: #F5F1EE;
+  --border-hairline: rgba(60, 30, 20, 0.08);
+  --border-strong: rgba(60, 30, 20, 0.16);
   --text-primary: #171717;
   --text-secondary: #525252;
   --text-muted: #737373;
@@ -21,7 +21,7 @@
   --anor-text: #9B111E;
   --focus-ring: #E7707C;
 
-  /* Buy Green (+ add button & - n + stepper ONLY) */
+  /* Buy Green (+ add button, floating cart bar & final checkout CTA) */
   --buy-green-grad: linear-gradient(145deg, #0B5D2A 0%, #15803D 48%, #22C55E 100%);
   --buy-green-pressed: linear-gradient(145deg, #084720 0%, #0F662F 48%, #16A34A 100%);
   --buy-green-ring: #22C55E;
@@ -38,8 +38,8 @@
   /* Feedback & Skeleton */
   --snackbar-bg: #1F1F22;
   --snackbar-text: #FFFFFF;
-  --skeleton-a: #EFEFF1;
-  --skeleton-b: #F7F7F8;
+  --skeleton-a: #EFEAE6;
+  --skeleton-b: #F8F4F1;
 
   /* Geometry */
   --radius-card: 16px;
@@ -108,7 +108,7 @@ html.dark {
   transform: scale(0.97);
 }
 
-/* Signature Green '+' button and stepper */
+/* Signature Green '+' button, floating cart bar, and final checkout CTA */
 .buy-green-btn {
   background: var(--buy-green-grad);
   box-shadow:
@@ -120,7 +120,7 @@ html.dark {
 }
 
 .buy-green-btn:active:not(:disabled) {
-  transform: scale(0.92);
+  transform: scale(0.95);
   background: var(--buy-green-pressed);
 }
 
@@ -158,6 +158,27 @@ html.dark {
     rgba(255, 255, 255, 0) 100%
   );
   animation: greenShineStreak 700ms var(--ease-enter) forwards;
+}
+
+@keyframes basketLightStreak {
+  0% {
+    transform: translateX(-120%) skewX(-22deg);
+    opacity: 0.82;
+  }
+  100% {
+    transform: translateX(240%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+.animate-basket-streak {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: basketLightStreak 680ms var(--ease-enter) forwards;
 }
 
 /* Home Velvet Moment Card — exclusive home for glass, grain & glow */

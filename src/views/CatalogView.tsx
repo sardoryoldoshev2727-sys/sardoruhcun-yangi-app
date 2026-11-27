@@ -70,14 +70,14 @@ export const CatalogView: React.FC = () => {
         />
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-stretch">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} mode="grid" />
+          {filtered.map((p, idx) => (
+            <ProductCard key={p.id} product={p} mode="grid" coachAdd={idx === 0} />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-          {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} mode="row" />
+          {filtered.map((p, idx) => (
+            <ProductCard key={p.id} product={p} mode="row" coachAdd={idx === 0} />
           ))}
         </div>
       )}

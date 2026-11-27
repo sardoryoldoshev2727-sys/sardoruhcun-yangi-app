@@ -33,6 +33,7 @@ import type {
   CatalogSortMode,
   ChatMessage,
   CheckoutQuote,
+  CoachScreenKey,
   Lang,
   MonthlyReportData,
   NavDirection,
@@ -52,7 +53,14 @@ import type {
   ToastItem,
   UndoSnackbarItem,
 } from '../types';
-import { computeBoxDiscountNudge, shortName } from '../utils/catalog';
+import {
+  computeBoxDiscountNudge,
+  computeShelfNeed,
+  computeSuggestedNorm,
+  getTodayIsoLocal,
+  isShelfItemLow,
+  shortName,
+} from '../utils/catalog';
 
 const STORAGE_KEY = 'lal-v3';
 const OFFLINE_QUEUE_KEY = 'lal-offline-queue-v1';
@@ -74,10 +82,32 @@ function markGuideSeen() {
   }
 }
 
+const DEFAULT_SHELF_STOCKS: Record<number, number> = {
+  1: 1,
+  21: 0.5,
+  7: 2,
+  17: 2.5,
+  2: 2,
+};
+
+const DEFAULT_COACH_SEEN: Record<CoachScreenKey, boolean> = {
+  home: false,
+  cat: false,
+  cart: false,
+  shelf: false,
+};
+
 interface PersistedState {
   cart: Record<number, number>;
   theme: '' | 'dark' | 'light';
   shelf: ShelfItem[];
+  shelfNorms: Record<number, number>;
+  shelfStocks: Record<number, number>;
+  shelfPrevStocks: Record<number, number>;
+  lastCountDate: string | null;
+  countStreakDates: string[];
+  markupPct: number;
+  coachSeen: Record<CoachScreenKey, boolean>;
   favorites: number[];
   auto: boolean;
   lang: Lang;
@@ -88,21 +118,60 @@ const DEFAULT_PERSISTED: PersistedState = {
   cart: { 1: 3, 7: 2 },
   theme: '',
   shelf: DEFAULT_SHELF_SEED,
+  shelfNorms: {},
+  shelfStocks: DEFAULT_SHELF_STOCKS,
+  shelfPrevStocks: {},
+  lastCountDate: null,
+  countStreakDates: [],
+  markupPct: 20,
+  coachSeen: DEFAULT_COACH_SEEN,
   favorites: [],
   auto: false,
   lang: 'uz',
   largeText: false,
 };
 
+function loadNumMap(raw: unknown, allowHalf = false): Record<number, number> {
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Record<number, number> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const id = Number(k);
+    if (!Number.isFinite(id) || typeof v !== 'number' || !Number.isFinite(v)) continue;
+    out[id] = allowHalf ? Math.max(0, Math.round(v * 2) / 2) : Math.max(1, Math.round(v));
+  }
+  return out;
+}
+
 function loadPersisted(): PersistedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_PERSISTED;
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
+    const rawCoach = parsed.coachSeen as Partial<Record<CoachScreenKey, boolean>> | undefined;
     return {
       cart: parsed.cart && typeof parsed.cart === 'object' ? parsed.cart : DEFAULT_PERSISTED.cart,
       theme: parsed.theme === 'dark' || parsed.theme === 'light' ? parsed.theme : '',
       shelf: Array.isArray(parsed.shelf) ? parsed.shelf : DEFAULT_PERSISTED.shelf,
+      shelfNorms: loadNumMap(parsed.shelfNorms, false),
+      shelfStocks:
+        parsed.shelfStocks && typeof parsed.shelfStocks === 'object'
+          ? loadNumMap(parsed.shelfStocks, true)
+          : DEFAULT_SHELF_STOCKS,
+      shelfPrevStocks: loadNumMap(parsed.shelfPrevStocks, true),
+      lastCountDate: typeof parsed.lastCountDate === 'string' ? parsed.lastCountDate : null,
+      countStreakDates: Array.isArray(parsed.countStreakDates)
+        ? parsed.countStreakDates.filter((d): d is string => typeof d === 'string').slice(-7)
+        : [],
+      markupPct:
+        typeof parsed.markupPct === 'number' && Number.isFinite(parsed.markupPct)
+          ? Math.max(10, Math.min(40, Math.round(parsed.markupPct)))
+          : 20,
+      coachSeen: {
+        home: Boolean(rawCoach?.home),
+        cat: Boolean(rawCoach?.cat),
+        cart: Boolean(rawCoach?.cart),
+        shelf: Boolean(rawCoach?.shelf),
+      },
       favorites: Array.isArray(parsed.favorites)
         ? parsed.favorites.filter((x): x is number => typeof x === 'number')
         : DEFAULT_PERSISTED.favorites,
@@ -179,6 +248,27 @@ interface StoreContextValue {
   discountNudge: BoxDiscountNudge;
   submittingOrder: boolean;
   shelf: ShelfItem[];
+  shelfNorms: Record<number, number>;
+  shelfStocks: Record<number, number>;
+  shelfPrevStocks: Record<number, number>;
+  lastCountDate: string | null;
+  countStreakDates: string[];
+  hasCountedToday: boolean;
+  markupPct: number;
+  setMarkupPct: (pct: number) => void;
+  coachSeen: Record<CoachScreenKey, boolean>;
+  activeCoach: CoachScreenKey | null;
+  dismissCoach: (key?: CoachScreenKey) => void;
+  reopenIntroAndCoach: () => void;
+  getShelfNorm: (id: number) => number;
+  getShelfStock: (id: number) => number;
+  getShelfNeed: (id: number) => number;
+  isShelfLow: (id: number) => boolean;
+  setShelfNorm: (id: number, norm: number) => void;
+  adjustShelfStock: (id: number, deltaHalf: number) => void;
+  saveShelfCheck: (stocks: Record<number, number>, norms?: Record<number, number>) => void;
+  fillShelfNeedsToCart: (onlyLow: boolean) => void;
+  fillShelfNormsToCart: () => void;
   favorites: number[];
   guideOpen: boolean;
   openGuide: () => void;
@@ -301,6 +391,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [cart, setCart] = useState<Record<number, number>>(initial.cart);
   const [shelf, setShelf] = useState<ShelfItem[]>(initial.shelf);
+  const [shelfNorms, setShelfNorms] = useState<Record<number, number>>(initial.shelfNorms);
+  const [shelfStocks, setShelfStocks] = useState<Record<number, number>>(initial.shelfStocks);
+  const [shelfPrevStocks, setShelfPrevStocks] = useState<Record<number, number>>(
+    initial.shelfPrevStocks,
+  );
+  const [lastCountDate, setLastCountDate] = useState<string | null>(initial.lastCountDate);
+  const [countStreakDates, setCountStreakDates] = useState<string[]>(initial.countStreakDates);
+  const [markupPctState, setMarkupPctState] = useState<number>(initial.markupPct);
+  const [coachSeen, setCoachSeen] = useState<Record<CoachScreenKey, boolean>>(initial.coachSeen);
   const [favorites, setFavorites] = useState<number[]>(initial.favorites);
   const [guideOpen, setGuideOpen] = useState<boolean>(() => !hasSeenGuide());
   const [autoOrder, setAutoOrder] = useState<boolean>(initial.auto);
@@ -594,6 +693,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cart,
         theme: themeExplicit ? (darkMode ? 'dark' : 'light') : '',
         shelf,
+        shelfNorms,
+        shelfStocks,
+        shelfPrevStocks,
+        lastCountDate,
+        countStreakDates,
+        markupPct: markupPctState,
+        coachSeen,
         favorites,
         auto: autoOrder,
         lang,
@@ -603,7 +709,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // ignore storage quota errors
     }
-  }, [cart, darkMode, themeExplicit, shelf, favorites, autoOrder, lang, largeText]);
+  }, [
+    cart,
+    darkMode,
+    themeExplicit,
+    shelf,
+    shelfNorms,
+    shelfStocks,
+    shelfPrevStocks,
+    lastCountDate,
+    countStreakDates,
+    markupPctState,
+    coachSeen,
+    favorites,
+    autoOrder,
+    lang,
+    largeText,
+  ]);
 
   // Refresh checkout quote via api.ts whenever cart changes (inline tier feedback only)
   useEffect(() => {
@@ -732,6 +854,45 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [notifs],
   );
 
+  const todayIso = getTodayIsoLocal();
+  const hasCountedToday = lastCountDate === todayIso;
+
+  const setMarkupPct = useCallback((pct: number) => {
+    setMarkupPctState(Math.max(10, Math.min(40, Math.round(pct))));
+  }, []);
+
+  const getShelfNorm = useCallback(
+    (id: number): number => {
+      if (typeof shelfNorms[id] === 'number' && shelfNorms[id] > 0) {
+        return shelfNorms[id];
+      }
+      const sh = shelf.find((s) => s[0] === id);
+      const fromOrders = computeSuggestedNorm(id, orders, sh ? sh[1] : 2);
+      return sh ? Math.max(1, sh[1]) : fromOrders;
+    },
+    [orders, shelf, shelfNorms],
+  );
+
+  const getShelfStock = useCallback(
+    (id: number): number => {
+      if (typeof shelfStocks[id] === 'number') {
+        return shelfStocks[id];
+      }
+      return 1;
+    },
+    [shelfStocks],
+  );
+
+  const getShelfNeed = useCallback(
+    (id: number): number => computeShelfNeed(getShelfNorm(id), getShelfStock(id)),
+    [getShelfNorm, getShelfStock],
+  );
+
+  const isShelfLow = useCallback(
+    (id: number): boolean => isShelfItemLow(getShelfNorm(id), getShelfStock(id)),
+    [getShelfNorm, getShelfStock],
+  );
+
   const inShelf = useCallback(
     (id: number) => shelf.some((s) => s[0] === id),
     [shelf],
@@ -742,6 +903,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [favorites],
   );
 
+  const activeCoach: CoachScreenKey | null = useMemo(() => {
+    if (guideOpen) return null;
+    if (sheet?.type === 'shelfCheck' && !coachSeen.shelf) return 'shelf';
+    if (sheet || page) return null;
+    if (tab === 'home' && !coachSeen.home) return 'home';
+    if (tab === 'cat' && !coachSeen.cat) return 'cat';
+    if (tab === 'cart' && cartCount > 0 && !coachSeen.cart) return 'cart';
+    return null;
+  }, [cartCount, coachSeen.cart, coachSeen.cat, coachSeen.home, coachSeen.shelf, guideOpen, page, sheet, tab]);
+
+  const dismissCoach = useCallback(
+    (key?: CoachScreenKey) => {
+      const target = key || activeCoach;
+      if (!target) return;
+      setCoachSeen((prev) => ({ ...prev, [target]: true }));
+    },
+    [activeCoach],
+  );
+
   const openGuide = useCallback(() => {
     setGuideOpen(true);
   }, []);
@@ -749,6 +929,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const closeGuide = useCallback(() => {
     markGuideSeen();
     setGuideOpen(false);
+  }, []);
+
+  const reopenIntroAndCoach = useCallback(() => {
+    setCoachSeen({ home: false, cat: false, cart: false, shelf: false });
+    navStackRef.current = [];
+    setTab('home');
+    setPage(null);
+    setSheet(null);
+    setGuideOpen(true);
   }, []);
 
   const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null, opts?: { reset?: boolean }) => {
@@ -908,6 +1097,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const updateShelfUsual = useCallback((id: number, delta: number) => {
+    setShelfNorms((prev) => {
+      const cur =
+        typeof prev[id] === 'number'
+          ? prev[id]
+          : shelfRef.current.find((item) => item[0] === id)?.[1] ?? 2;
+      return { ...prev, [id]: Math.max(1, cur + delta) };
+    });
     setShelf((prev) =>
       prev.map((item) =>
         item[0] === id
@@ -916,6 +1112,59 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ),
     );
   }, []);
+
+  const setShelfNorm = useCallback((id: number, norm: number) => {
+    const clean = Math.max(1, Math.min(99, Math.round(norm)));
+    setShelfNorms((prev) => ({ ...prev, [id]: clean }));
+    setShelf((prev) =>
+      prev.map((item) => (item[0] === id ? [item[0], clean, item[2], item[3]] : item)),
+    );
+  }, []);
+
+  const adjustShelfStock = useCallback((id: number, deltaHalf: number) => {
+    setShelfStocks((prev) => {
+      const cur = typeof prev[id] === 'number' ? prev[id] : 1;
+      const next = Math.max(0, Math.min(99, Math.round((cur + deltaHalf) * 2) / 2));
+      return { ...prev, [id]: next };
+    });
+    triggerHaptic('add');
+  }, []);
+
+  const saveShelfCheck = useCallback(
+    (stocks: Record<number, number>, norms?: Record<number, number>) => {
+      setShelfPrevStocks((prev) => {
+        const nextPrev = { ...prev };
+        for (const s of shelfRef.current) {
+          const curVal = typeof shelfStocks[s[0]] === 'number' ? shelfStocks[s[0]] : 1;
+          nextPrev[s[0]] = curVal;
+        }
+        return nextPrev;
+      });
+      setShelfStocks((prev) => ({ ...prev, ...stocks }));
+      if (norms) {
+        setShelfNorms((prev) => ({ ...prev, ...norms }));
+        setShelf((prev) =>
+          prev.map((item) =>
+            typeof norms[item[0]] === 'number'
+              ? [item[0], Math.max(1, Math.round(norms[item[0]])), item[2], item[3]]
+              : item,
+          ),
+        );
+      }
+      const today = getTodayIsoLocal();
+      setLastCountDate(today);
+      setCountStreakDates((prev) => (prev.includes(today) ? prev : [...prev, today].slice(-7)));
+      setSheet(null);
+      triggerHaptic('success');
+      showToast({
+        icon: 'check',
+        title: TRANSLATIONS[lang].shelfCountSavedSnack,
+        text: TRANSLATIONS[lang].shelfCountDoneToday,
+        tone: 'ok',
+      });
+    },
+    [lang, shelfStocks, showToast],
+  );
 
   const removeShelfItem = useCallback(
     (id: number) => {
@@ -947,54 +1196,75 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addShelfItem = useCallback(
     (id: number) => {
+      const suggestedNorm = computeSuggestedNorm(id, ordersRef.current, 2);
       setShelf((prev) => {
         if (prev.some((x) => x[0] === id)) return prev;
         triggerHaptic('add');
-        return [...prev, [id, 2, 7, 0]];
+        return [...prev, [id, suggestedNorm, 7, 0]];
       });
+      setShelfNorms((prev) => (typeof prev[id] === 'number' ? prev : { ...prev, [id]: suggestedNorm }));
+      setShelfStocks((prev) => (typeof prev[id] === 'number' ? prev : { ...prev, [id]: 1 }));
     },
     [],
   );
 
-  const fillShelfToCart = useCallback(
+  const fillShelfNeedsToCart = useCallback(
     (onlyLow: boolean) => {
       userMutatedCartRef.current = true;
+      let addedAny = false;
       setCart((prev) => {
         const next = { ...prev };
         shelf.forEach((s) => {
           const prod = productsById[s[0]];
           if (prod?.out) return;
-          const pred = refillById[s[0]];
-          const left = pred ? pred.daysRemaining : s[2] - s[3];
-          if (!onlyLow || left <= 3) {
-            if (!next[s[0]]) {
-              next[s[0]] = pred ? pred.usualBoxes : s[1];
-            }
+          const norm = getShelfNorm(s[0]);
+          const stock = getShelfStock(s[0]);
+          const need = computeShelfNeed(norm, stock);
+          const low = isShelfItemLow(norm, stock);
+          if (need <= 0) return;
+          if (!onlyLow || low) {
+            next[s[0]] = Math.max(next[s[0]] || 0, need);
+            addedAny = true;
           }
         });
         return next;
       });
-      triggerHaptic('add');
-      setBumpKey((k) => k + 1);
+      if (addedAny) {
+        triggerHaptic('add');
+        setBumpKey((k) => k + 1);
+      }
     },
-    [productsById, refillById, shelf],
+    [getShelfNorm, getShelfStock, productsById, shelf],
   );
 
-  const addRefillDueToCart = useCallback(() => {
-    if (refillDueItems.length === 0) return;
+  const fillShelfNormsToCart = useCallback(() => {
     userMutatedCartRef.current = true;
     setCart((prev) => {
       const next = { ...prev };
-      for (const item of refillDueItems) {
-        const prod = productsById[item.productId];
-        if (!prod || prod.out) continue;
-        next[item.productId] = (next[item.productId] || 0) + item.usualBoxes;
-      }
+      shelf.forEach((s) => {
+        const prod = productsById[s[0]];
+        if (prod?.out) return;
+        const norm = getShelfNorm(s[0]);
+        if (!next[s[0]]) {
+          next[s[0]] = norm;
+        }
+      });
       return next;
     });
     triggerHaptic('add');
     setBumpKey((k) => k + 1);
-  }, [productsById, refillDueItems]);
+  }, [getShelfNorm, productsById, shelf]);
+
+  const fillShelfToCart = useCallback(
+    (onlyLow: boolean) => {
+      fillShelfNeedsToCart(onlyLow);
+    },
+    [fillShelfNeedsToCart],
+  );
+
+  const addRefillDueToCart = useCallback(() => {
+    fillShelfNeedsToCart(true);
+  }, [fillShelfNeedsToCart]);
 
   const updateShelfPrice = useCallback((productId: number, shelfPrice: number) => {
     const clean = Math.max(500, Math.round(shelfPrice));
@@ -1281,6 +1551,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     discountNudge,
     submittingOrder,
     shelf,
+    shelfNorms,
+    shelfStocks,
+    shelfPrevStocks,
+    lastCountDate,
+    countStreakDates,
+    hasCountedToday,
+    markupPct: markupPctState,
+    setMarkupPct,
+    coachSeen,
+    activeCoach,
+    dismissCoach,
+    reopenIntroAndCoach,
+    getShelfNorm,
+    getShelfStock,
+    getShelfNeed,
+    isShelfLow,
+    setShelfNorm,
+    adjustShelfStock,
+    saveShelfCheck,
+    fillShelfNeedsToCart,
+    fillShelfNormsToCart,
     favorites,
     guideOpen,
     openGuide,
