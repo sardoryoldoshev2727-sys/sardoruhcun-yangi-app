@@ -167,8 +167,9 @@ interface StoreContextValue {
   cartSubtotal: number;
   unreadNotifCount: number;
   inShelf: (id: number) => boolean;
-  goTab: (t: TabId, nextPage?: SubPageId) => void;
+  goTab: (t: TabId, nextPage?: SubPageId, opts?: { reset?: boolean }) => void;
   openPage: (p: SubPageId) => void;
+  goBack: () => void;
   openOrderDetail: (orderId: number) => void;
   setCat: (c: string) => void;
   setBrandFilter: (b: string) => void;
@@ -289,6 +290,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const addToastCooldownRef = useRef<number>(0);
   const pageRef = useRef<SubPageId>(page);
   pageRef.current = page;
+  // Navigatsiya tarixi: «Orqaga» foydalanuvchi qayerdan kelgan bo'lsa, o'sha joyga qaytaradi
+  const tabRef = useRef<TabId>(tab);
+  tabRef.current = tab;
+  const orderIdRef = useRef<number | null>(selectedOrderId);
+  orderIdRef.current = selectedOrderId;
+  const navStackRef = useRef<{ tab: TabId; page: SubPageId; orderId: number | null }[]>([]);
+  const pushNav = (nextTab: TabId, nextPage: SubPageId) => {
+    if (tabRef.current === nextTab && pageRef.current === nextPage) return;
+    navStackRef.current.push({ tab: tabRef.current, page: pageRef.current, orderId: orderIdRef.current });
+    if (navStackRef.current.length > 30) navStackRef.current.shift();
+  };
   const prevDiscountPctRef = useRef<number | null>(null);
   const userMutatedCartRef = useRef<boolean>(false);
   const promptedRatingIdsRef = useRef<Set<number>>(new Set());
@@ -630,7 +642,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [shelf],
   );
 
-  const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null) => {
+  const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null, opts?: { reset?: boolean }) => {
+    if (opts?.reset) navStackRef.current = [];
+    else pushNav(nextTab, nextPage);
     setTab(nextTab);
     setPage(nextPage);
     setSheet(null);
@@ -643,7 +657,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, []);
 
+  const goBack = useCallback(() => {
+    const prev = navStackRef.current.pop();
+    setSheet(null);
+    setEditShelf(false);
+    if (prev) {
+      setTab(prev.tab);
+      setPage(prev.page);
+      if (prev.orderId !== null) setSelectedOrderId(prev.orderId);
+    } else {
+      setTab('home');
+      setPage(null);
+    }
+  }, []);
+
   const openPage = useCallback((p: SubPageId) => {
+    // openPage(null) = «Orqaga» (kelgan joyga qaytish)
+    if (p === null) {
+      goBack();
+      return;
+    }
+    pushNav(tabRef.current, p);
     setPage(p);
     setSheet(null);
     if (p === 'chat') {
@@ -655,6 +689,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const openOrderDetail = useCallback((orderId: number) => {
+    pushNav('ord', 'orderDetail');
     setSelectedOrderId(orderId);
     setTab('ord');
     setPage('orderDetail');
@@ -1168,6 +1203,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     inShelf,
     goTab,
     openPage,
+    goBack,
     openOrderDetail,
     setCat,
     setBrandFilter,

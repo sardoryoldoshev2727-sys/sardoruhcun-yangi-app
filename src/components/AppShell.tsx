@@ -143,19 +143,10 @@ export const AppShell: React.FC = () => {
     setShowToTop(false);
   }, [tab, page]);
 
+  // «Orqaga» — foydalanuvchi qaysi ekrandan kelgan bo'lsa, o'shanga (navigatsiya tarixi)
   const handleBack = useCallback(() => {
-    if (page === 'orderDetail' || page === 'track' || page === 'success') {
-      openPage(null);
-      return;
-    }
-    if (page) {
-      openPage(null);
-      return;
-    }
-    if (tab !== 'home') {
-      goTab('home');
-    }
-  }, [goTab, openPage, page, tab]);
+    openPage(null);
+  }, [openPage]);
 
   useEffect(() => {
     const showNativeBack = Boolean(page || tab !== 'home');
@@ -307,14 +298,14 @@ export const AppShell: React.FC = () => {
     }
 
     const deliveryHeaderChip = (
-      <button
-        type="button"
-        onClick={() => goTab('cart')}
-        className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 text-white text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+      // Faqat ma'lumot: keyingi yetkazish vaqti (bosilganda hech qayerga olib ketmaydi)
+      <span
+        title={t.nextDeliveryChip}
+        className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-white/15 text-white text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap select-none"
       >
         <Clock className="w-3.5 h-3.5 flex-none" />
         <span>{t.nextDeliveryChip}</span>
-      </button>
+      </span>
     );
 
     if (tab === 'cat') {
@@ -443,6 +434,14 @@ export const AppShell: React.FC = () => {
     if (tab === 'me') {
       return (
         <>
+          <button
+            type="button"
+            aria-label="Orqaga"
+            onClick={handleBack}
+            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.profileTitle}</h1>
           {deliveryHeaderChip}
           <button
@@ -577,7 +576,7 @@ export const AppShell: React.FC = () => {
                     <button
                       key={id}
                       type="button"
-                      onClick={() => goTab(id)}
+                      onClick={() => goTab(id, null, { reset: true })}
                       className={`w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold transition-colors duration-150 ${
                         active
                           ? 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-bold'
@@ -797,7 +796,7 @@ export const AppShell: React.FC = () => {
                   <button
                     key={id}
                     type="button"
-                    onClick={() => goTab(id)}
+                    onClick={() => goTab(id, null, { reset: true })}
                     className={`relative min-h-[56px] flex flex-col items-center justify-center gap-1 px-1 text-xs transition-colors duration-150 ${
                       active
                         ? 'text-[#9B111E] dark:text-[#FB7185] font-bold'
