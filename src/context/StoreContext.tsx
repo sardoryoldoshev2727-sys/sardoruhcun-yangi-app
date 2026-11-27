@@ -84,9 +84,22 @@ function markGuideSeen() {
 
 const DEFAULT_SHELF_STOCKS: Record<number, number> = {
   1: 1,
-  21: 0.5,
+  21: 0,
   7: 2,
-  17: 2.5,
+  17: 2,
+  2: 2,
+};
+
+const DEFAULT_SHELF_LOOSE: Record<number, number> = {
+  21: 4,
+  17: 5,
+};
+
+const DEFAULT_SHELF_PREV_STOCKS: Record<number, number> = {
+  1: 3,
+  21: 2,
+  7: 3,
+  17: 3,
   2: 2,
 };
 
@@ -103,6 +116,7 @@ interface PersistedState {
   shelf: ShelfItem[];
   shelfNorms: Record<number, number>;
   shelfStocks: Record<number, number>;
+  shelfLoosePieces: Record<number, number>;
   shelfPrevStocks: Record<number, number>;
   lastCountDate: string | null;
   countStreakDates: string[];
@@ -120,7 +134,8 @@ const DEFAULT_PERSISTED: PersistedState = {
   shelf: DEFAULT_SHELF_SEED,
   shelfNorms: {},
   shelfStocks: DEFAULT_SHELF_STOCKS,
-  shelfPrevStocks: {},
+  shelfLoosePieces: DEFAULT_SHELF_LOOSE,
+  shelfPrevStocks: DEFAULT_SHELF_PREV_STOCKS,
   lastCountDate: null,
   countStreakDates: [],
   markupPct: 20,
@@ -131,13 +146,13 @@ const DEFAULT_PERSISTED: PersistedState = {
   largeText: false,
 };
 
-function loadNumMap(raw: unknown, allowHalf = false): Record<number, number> {
+function loadNumMap(raw: unknown, minVal = 1): Record<number, number> {
   if (!raw || typeof raw !== 'object') return {};
   const out: Record<number, number> = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
     const id = Number(k);
     if (!Number.isFinite(id) || typeof v !== 'number' || !Number.isFinite(v)) continue;
-    out[id] = allowHalf ? Math.max(0, Math.round(v * 2) / 2) : Math.max(1, Math.round(v));
+    out[id] = Math.max(minVal, Math.round(v));
   }
   return out;
 }
@@ -152,12 +167,19 @@ function loadPersisted(): PersistedState {
       cart: parsed.cart && typeof parsed.cart === 'object' ? parsed.cart : DEFAULT_PERSISTED.cart,
       theme: parsed.theme === 'dark' || parsed.theme === 'light' ? parsed.theme : '',
       shelf: Array.isArray(parsed.shelf) ? parsed.shelf : DEFAULT_PERSISTED.shelf,
-      shelfNorms: loadNumMap(parsed.shelfNorms, false),
+      shelfNorms: loadNumMap(parsed.shelfNorms, 1),
       shelfStocks:
         parsed.shelfStocks && typeof parsed.shelfStocks === 'object'
-          ? loadNumMap(parsed.shelfStocks, true)
+          ? loadNumMap(parsed.shelfStocks, 0)
           : DEFAULT_SHELF_STOCKS,
-      shelfPrevStocks: loadNumMap(parsed.shelfPrevStocks, true),
+      shelfLoosePieces:
+        parsed.shelfLoosePieces && typeof parsed.shelfLoosePieces === 'object'
+          ? loadNumMap(parsed.shelfLoosePieces, 0)
+          : DEFAULT_SHELF_LOOSE,
+      shelfPrevStocks:
+        parsed.shelfPrevStocks && typeof parsed.shelfPrevStocks === 'object'
+          ? loadNumMap(parsed.shelfPrevStocks, 0)
+          : DEFAULT_SHELF_PREV_STOCKS,
       lastCountDate: typeof parsed.lastCountDate === 'string' ? parsed.lastCountDate : null,
       countStreakDates: Array.isArray(parsed.countStreakDates)
         ? parsed.countStreakDates.filter((d): d is string => typeof d === 'string').slice(-7)
@@ -250,6 +272,7 @@ interface StoreContextValue {
   shelf: ShelfItem[];
   shelfNorms: Record<number, number>;
   shelfStocks: Record<number, number>;
+  shelfLoosePieces: Record<number, number>;
   shelfPrevStocks: Record<number, number>;
   lastCountDate: string | null;
   countStreakDates: string[];
@@ -262,12 +285,17 @@ interface StoreContextValue {
   reopenIntroAndCoach: () => void;
   getShelfNorm: (id: number) => number;
   getShelfStock: (id: number) => number;
+  getShelfLoose: (id: number) => number;
   getShelfNeed: (id: number) => number;
   isShelfLow: (id: number) => boolean;
   setShelfNorm: (id: number, norm: number) => void;
-  adjustShelfStock: (id: number, deltaHalf: number) => void;
-  saveShelfCheck: (stocks: Record<number, number>, norms?: Record<number, number>) => void;
-  fillShelfNeedsToCart: (onlyLow: boolean) => void;
+  adjustShelfStock: (id: number, deltaBoxes: number) => void;
+  saveShelfCheck: (
+    stocks: Record<number, number>,
+    loosePieces?: Record<number, number>,
+    norms?: Record<number, number>,
+  ) => void;
+  fillShelfNeedsToCart: (onlyLow: boolean, customStocks?: Record<number, number>, customNorms?: Record<number, number>) => void;
   fillShelfNormsToCart: () => void;
   favorites: number[];
   guideOpen: boolean;
@@ -393,9 +421,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [shelf, setShelf] = useState<ShelfItem[]>(initial.shelf);
   const [shelfNorms, setShelfNorms] = useState<Record<number, number>>(initial.shelfNorms);
   const [shelfStocks, setShelfStocks] = useState<Record<number, number>>(initial.shelfStocks);
+  const [shelfLoosePieces, setShelfLoosePieces] = useState<Record<number, number>>(
+    initial.shelfLoosePieces,
+  );
   const [shelfPrevStocks, setShelfPrevStocks] = useState<Record<number, number>>(
     initial.shelfPrevStocks,
   );
+  const [homeVisitEpoch, setHomeVisitEpoch] = useState<number>(0);
   const [lastCountDate, setLastCountDate] = useState<string | null>(initial.lastCountDate);
   const [countStreakDates, setCountStreakDates] = useState<string[]>(initial.countStreakDates);
   const [markupPctState, setMarkupPctState] = useState<number>(initial.markupPct);
@@ -695,6 +727,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shelf,
         shelfNorms,
         shelfStocks,
+        shelfLoosePieces,
         shelfPrevStocks,
         lastCountDate,
         countStreakDates,
@@ -716,6 +749,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     shelf,
     shelfNorms,
     shelfStocks,
+    shelfLoosePieces,
     shelfPrevStocks,
     lastCountDate,
     countStreakDates,
@@ -876,11 +910,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const getShelfStock = useCallback(
     (id: number): number => {
       if (typeof shelfStocks[id] === 'number') {
-        return shelfStocks[id];
+        return Math.max(0, Math.round(shelfStocks[id]));
       }
       return 1;
     },
     [shelfStocks],
+  );
+
+  const getShelfLoose = useCallback(
+    (id: number): number => {
+      const blk = Math.max(1, productsById[id]?.blk || 9);
+      const raw = typeof shelfLoosePieces[id] === 'number' ? shelfLoosePieces[id] : 0;
+      return Math.max(0, Math.min(blk - 1, Math.round(raw)));
+    },
+    [productsById, shelfLoosePieces],
   );
 
   const getShelfNeed = useCallback(
@@ -904,22 +947,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const activeCoach: CoachScreenKey | null = useMemo(() => {
-    if (guideOpen) return null;
-    if (sheet?.type === 'shelfCheck' && !coachSeen.shelf) return 'shelf';
-    if (sheet || page) return null;
-    if (tab === 'home' && !coachSeen.home) return 'home';
+    if (guideOpen || sheet || page) return null;
+    if (tab === 'home') {
+      if (!coachSeen.home) return 'home';
+      if (homeVisitEpoch > 0 && !coachSeen.shelf && shelf.length > 0) return 'shelf';
+      return null;
+    }
     if (tab === 'cat' && !coachSeen.cat) return 'cat';
     if (tab === 'cart' && cartCount > 0 && !coachSeen.cart) return 'cart';
     return null;
-  }, [cartCount, coachSeen.cart, coachSeen.cat, coachSeen.home, coachSeen.shelf, guideOpen, page, sheet, tab]);
+  }, [cartCount, coachSeen.cart, coachSeen.cat, coachSeen.home, coachSeen.shelf, guideOpen, homeVisitEpoch, page, sheet, shelf.length, tab]);
+
+  const activeCoachRef = useRef<CoachScreenKey | null>(activeCoach);
+  activeCoachRef.current = activeCoach;
 
   const dismissCoach = useCallback(
     (key?: CoachScreenKey) => {
-      const target = key || activeCoach;
+      const target = key || activeCoachRef.current;
       if (!target) return;
       setCoachSeen((prev) => ({ ...prev, [target]: true }));
     },
-    [activeCoach],
+    [],
   );
 
   const openGuide = useCallback(() => {
@@ -933,6 +981,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const reopenIntroAndCoach = useCallback(() => {
     setCoachSeen({ home: false, cat: false, cart: false, shelf: false });
+    setHomeVisitEpoch(0);
     navStackRef.current = [];
     setTab('home');
     setPage(null);
@@ -941,6 +990,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null, opts?: { reset?: boolean }) => {
+    if (activeCoachRef.current) {
+      const leavingCoach = activeCoachRef.current;
+      setCoachSeen((prev) => ({ ...prev, [leavingCoach]: true }));
+    }
+    if (nextTab === 'home' && tabRef.current !== 'home') {
+      setHomeVisitEpoch((e) => e + 1);
+    }
     if (opts?.reset) navStackRef.current = [];
     else pushNav(nextTab, nextPage);
     setNavDirection(nextPage ? 'forward' : 'tab');
@@ -958,15 +1014,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [dismissOperatorBanner]);
 
   const goBack = useCallback(() => {
+    if (activeCoachRef.current) {
+      const leavingCoach = activeCoachRef.current;
+      setCoachSeen((prev) => ({ ...prev, [leavingCoach]: true }));
+    }
     const prev = navStackRef.current.pop();
     setNavDirection('back');
     setSheet(null);
     setEditShelf(false);
     if (prev) {
+      if (prev.tab === 'home' && tabRef.current !== 'home') {
+        setHomeVisitEpoch((e) => e + 1);
+      }
       setTab(prev.tab);
       setPage(prev.page);
       if (prev.orderId !== null) setSelectedOrderId(prev.orderId);
     } else {
+      if (tabRef.current !== 'home') {
+        setHomeVisitEpoch((e) => e + 1);
+      }
       setTab('home');
       setPage(null);
     }
@@ -977,6 +1043,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (p === null) {
       goBack();
       return;
+    }
+    if (activeCoachRef.current) {
+      const leavingCoach = activeCoachRef.current;
+      setCoachSeen((prev) => ({ ...prev, [leavingCoach]: true }));
     }
     pushNav(tabRef.current, p);
     setNavDirection('forward');
@@ -1121,26 +1191,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   }, []);
 
-  const adjustShelfStock = useCallback((id: number, deltaHalf: number) => {
+  const adjustShelfStock = useCallback((id: number, deltaBoxes: number) => {
     setShelfStocks((prev) => {
-      const cur = typeof prev[id] === 'number' ? prev[id] : 1;
-      const next = Math.max(0, Math.min(99, Math.round((cur + deltaHalf) * 2) / 2));
+      const cur = typeof prev[id] === 'number' ? Math.round(prev[id]) : 1;
+      const next = Math.max(0, Math.min(99, cur + Math.round(deltaBoxes)));
       return { ...prev, [id]: next };
     });
     triggerHaptic('add');
   }, []);
 
   const saveShelfCheck = useCallback(
-    (stocks: Record<number, number>, norms?: Record<number, number>) => {
+    (
+      stocks: Record<number, number>,
+      loosePieces?: Record<number, number>,
+      norms?: Record<number, number>,
+    ) => {
       setShelfPrevStocks((prev) => {
         const nextPrev = { ...prev };
         for (const s of shelfRef.current) {
-          const curVal = typeof shelfStocks[s[0]] === 'number' ? shelfStocks[s[0]] : 1;
+          const curVal = typeof shelfStocks[s[0]] === 'number' ? Math.round(shelfStocks[s[0]]) : 1;
           nextPrev[s[0]] = curVal;
         }
         return nextPrev;
       });
-      setShelfStocks((prev) => ({ ...prev, ...stocks }));
+      const cleanStocks: Record<number, number> = {};
+      for (const [k, v] of Object.entries(stocks)) {
+        cleanStocks[Number(k)] = Math.max(0, Math.round(v));
+      }
+      setShelfStocks((prev) => ({ ...prev, ...cleanStocks }));
+      if (loosePieces) {
+        const cleanLoose: Record<number, number> = {};
+        for (const [k, v] of Object.entries(loosePieces)) {
+          const id = Number(k);
+          const blk = Math.max(1, productsById[id]?.blk || 9);
+          cleanLoose[id] = Math.max(0, Math.min(blk - 1, Math.round(v)));
+        }
+        setShelfLoosePieces((prev) => ({ ...prev, ...cleanLoose }));
+      }
       if (norms) {
         setShelfNorms((prev) => ({ ...prev, ...norms }));
         setShelf((prev) =>
@@ -1163,7 +1250,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         tone: 'ok',
       });
     },
-    [lang, shelfStocks, showToast],
+    [lang, productsById, shelfStocks, showToast],
   );
 
   const removeShelfItem = useCallback(
@@ -1209,7 +1296,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const fillShelfNeedsToCart = useCallback(
-    (onlyLow: boolean) => {
+    (onlyLow: boolean, customStocks?: Record<number, number>, customNorms?: Record<number, number>) => {
       userMutatedCartRef.current = true;
       let addedAny = false;
       setCart((prev) => {
@@ -1217,8 +1304,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shelf.forEach((s) => {
           const prod = productsById[s[0]];
           if (prod?.out) return;
-          const norm = getShelfNorm(s[0]);
-          const stock = getShelfStock(s[0]);
+          const norm =
+            customNorms && typeof customNorms[s[0]] === 'number'
+              ? Math.max(1, Math.round(customNorms[s[0]]))
+              : getShelfNorm(s[0]);
+          const stock =
+            customStocks && typeof customStocks[s[0]] === 'number'
+              ? Math.max(0, Math.round(customStocks[s[0]]))
+              : getShelfStock(s[0]);
           const need = computeShelfNeed(norm, stock);
           const low = isShelfItemLow(norm, stock);
           if (need <= 0) return;
@@ -1553,6 +1646,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     shelf,
     shelfNorms,
     shelfStocks,
+    shelfLoosePieces,
     shelfPrevStocks,
     lastCountDate,
     countStreakDates,
@@ -1565,6 +1659,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     reopenIntroAndCoach,
     getShelfNorm,
     getShelfStock,
+    getShelfLoose,
     getShelfNeed,
     isShelfLow,
     setShelfNorm,

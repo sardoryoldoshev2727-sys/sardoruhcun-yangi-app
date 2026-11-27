@@ -24,7 +24,6 @@ import { ProductVisual } from '../components/ProductVisual';
 import { CatalogSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import {
-  AnorSeedIcon,
   AnorThreeSeeds,
   PillButton,
   TweenSom,
@@ -50,7 +49,6 @@ export const HomeView: React.FC = () => {
     setEditShelf,
     setSheet,
     getShelfNorm,
-    getShelfStock,
     getShelfNeed,
     isShelfLow,
     fillShelfNeedsToCart,
@@ -68,8 +66,6 @@ export const HomeView: React.FC = () => {
     discountNudge,
     unreadChat,
     orders,
-    session,
-    shop,
     lang,
     t,
     goTab,
@@ -126,15 +122,6 @@ export const HomeView: React.FC = () => {
   );
   const lastValidOrder = orders.find((o) => o.status !== 'Bekor qilindi') || orders[0] || null;
 
-  const userName = session?.userName || 'Dilnoza';
-  const hour = new Date().getHours();
-  const timeGreeting =
-    hour >= 5 && hour < 12
-      ? t.greetingMorning(userName)
-      : hour >= 12 && hour < 18
-        ? t.greetingDay(userName)
-        : t.greetingEvening(userName);
-
   const currentSum = checkoutQuote.subtotal || cartSubtotal;
   const velvetHint = discountNudge.nextTier
     ? t.velvetUnlockHint(formatSom(discountNudge.amountNeeded), discountNudge.nextTier.pct)
@@ -156,17 +143,7 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1) Clean single-line greeting + store address (no duplicate delivery chip here) */}
-      <div className="pt-0.5 min-w-0">
-        <h2 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)] leading-tight tracking-tight break-words">
-          {timeGreeting}
-        </h2>
-        <p className="text-xs sm:text-[13px] font-normal text-[var(--text-secondary)] mt-0.5 truncate">
-          {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
-        </p>
-      </div>
-
-      {/* 2) Velvet Cart Card with visible 2-layer ghost stack & woven VelvetNetBasketSvg */}
+      {/* 1) Velvet Cart Card with visible 2-layer ghost stack & woven VelvetNetBasketSvg */}
       <div className="relative pb-4">
         <div
           aria-hidden="true"
@@ -210,50 +187,45 @@ export const HomeView: React.FC = () => {
               <VelvetNetBasketSvg boxesCount={cartCount} fxKey={bumpKey} />
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 pt-0.5">
+            <div className="flex items-center gap-2 pt-0.5">
               <button
                 type="button"
                 onClick={fillShelfNormsToCart}
-                className="v4-btn min-h-[44px] px-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                className="v4-btn flex-1 min-w-0 h-11 px-3 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
-                <Repeat className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
-                <span className="truncate">{t.velvetFillUsual}</span>
+                <Repeat className="w-4 h-4 flex-none" strokeWidth={1.5} />
+                <span>{t.velvetUsualShort}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => goTab('cart')}
-                className="v4-btn min-h-[44px] px-3 bg-white/95 hover:bg-white text-[#9B111E] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                className="v4-btn flex-1 min-w-0 h-11 px-3 bg-white/95 hover:bg-white text-[#9B111E] text-xs sm:text-sm font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
-                <span className="truncate">{t.velvetGoCart}</span>
-                <ArrowRight className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
+                <span>{t.velvetGoCart}</span>
+                <ArrowRight className="w-4 h-4 flex-none" strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </section>
       </div>
 
-      {/* 3) Daily Shelf Check Reminder + 7-Day Streak + 20:00 Cut-off Countdown */}
+      {/* 2) Daily Shelf Check Reminder + Conditional 7-Day Dots + Wrapped 20:00 Cut-off */}
       <section className="v4-card p-3.5 space-y-2.5">
-        <div className="flex items-center justify-between gap-2.5">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-8 h-8 rounded-[10px] flex items-center justify-center flex-none ${
-                  hasCountedToday
-                    ? 'bg-[var(--success-soft)] text-[var(--success)]'
-                    : 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
-                }`}
-              >
-                <ClipboardCheck className="w-[18px] h-[18px]" strokeWidth={1.5} />
-              </span>
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-[var(--text-primary)] leading-snug truncate">
-                  {hasCountedToday ? t.shelfCountDoneToday : t.shelfReminderTitle}
-                </div>
-                <div className="text-[11px] text-[var(--text-muted)] tabular-nums truncate">
-                  {t.shelfStreakLabel(streakCount)}
-                </div>
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="min-w-0 flex-1 flex items-start gap-2.5">
+            <span
+              className={`w-9 h-9 rounded-[10px] flex items-center justify-center flex-none ${
+                hasCountedToday
+                  ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                  : 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
+              }`}
+            >
+              <ClipboardCheck className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            </span>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <div className="text-sm font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
+                {hasCountedToday ? t.shelfCountDoneToday : t.shelfReminderShort}
               </div>
             </div>
           </div>
@@ -261,7 +233,7 @@ export const HomeView: React.FC = () => {
           <button
             type="button"
             onClick={() => setSheet({ type: 'shelfCheck' })}
-            className={`min-h-[44px] px-3.5 rounded-full text-xs font-medium whitespace-nowrap flex-none inline-flex items-center gap-1.5 transition-colors ${
+            className={`min-h-[44px] px-4 rounded-full text-xs font-medium whitespace-nowrap flex-none inline-flex items-center gap-1.5 transition-colors ${
               hasCountedToday
                 ? 'bg-[var(--bg-raised)] text-[var(--text-primary)] border border-[var(--border-hairline)]'
                 : 'bg-[var(--anor)] text-white hover:bg-[var(--anor-pressed)]'
@@ -271,78 +243,119 @@ export const HomeView: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)] flex-wrap">
-          <div className="flex items-center gap-1.5" aria-label={t.shelfStreakLabel(streakCount)}>
-            {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
-              <AnorSeedIcon
-                key={dayIdx}
-                filled={dayIdx < Math.min(7, streakCount)}
-                variant="surface"
-                size={12}
-              />
-            ))}
-          </div>
-
-          <div className="text-[11px] text-[var(--text-secondary)] tabular-nums flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
-            <span className="truncate">
-              {countdown.isBeforeCutoff ? t.cutoffLinePrefix : t.cutoffTomorrowPrefix}
+        {streakCount > 0 && (
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)]">
+            <span className="text-xs font-medium text-[var(--text-secondary)] tabular-nums">
+              {t.shelfStreakLabel(streakCount)}
             </span>
-            <strong className="font-semibold text-[var(--anor-text)] whitespace-nowrap">
-              {countdown.hh}:{countdown.mm}:{countdown.ss}
-            </strong>
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => {
+                const done = dayIdx < Math.min(7, streakCount);
+                const isTodayDot = !hasCountedToday && dayIdx === Math.min(6, streakCount);
+                return (
+                  <span
+                    key={dayIdx}
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      done
+                        ? 'bg-[var(--anor)]'
+                        : isTodayDot
+                          ? 'border-[1.5px] border-[var(--anor)] bg-transparent'
+                          : 'bg-[var(--border-strong)]/45'
+                    }`}
+                  />
+                );
+              })}
+            </div>
           </div>
+        )}
+
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)] flex-wrap">
+          <div className="text-xs text-[var(--text-secondary)] leading-snug flex items-center gap-1.5 min-w-0">
+            <Clock className="w-3.5 h-3.5 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+            <span>
+              {countdown.isBeforeCutoff ? t.cutoffShortPrefix : t.cutoffTomorrowShortPrefix}
+            </span>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold tabular-nums whitespace-nowrap flex-none">
+            {countdown.hh}:{countdown.mm}:{countdown.ss}
+          </span>
         </div>
       </section>
 
-      {/* 4) Three Clear Ways to Order + 1-tap Utility Row */}
+      {/* 3) Three Clear Ways to Order + 1-tap Utility Row */}
       <section className="v4-card p-4 space-y-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base font-semibold text-[var(--text-primary)]">
-            {t.orderWaysTitle}
-          </h3>
-          {lowShelfItems.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setOnlyLowToggle((v) => !v)}
-              className={`min-h-[32px] px-2.5 rounded-full text-[11px] font-medium border transition-colors ${
-                onlyLowToggle
-                  ? 'bg-[var(--anor-soft)] border-[var(--anor)] text-[var(--anor-text)]'
-                  : 'bg-[var(--bg-raised)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
-              }`}
-            >
-              {t.orderWayOnlyLowToggle}
-            </button>
-          )}
-        </div>
+        <h3 className="text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          {t.orderWaysTitle}
+        </h3>
 
         <div className="space-y-2">
-          {/* Way 1: Javonni to'ldirish */}
-          <button
-            type="button"
+          {/* Way 1: Javonni to'ldirish with embedded 44x24 switch */}
+          <div
+            role="button"
+            tabIndex={0}
             data-coach="home"
             onClick={() => fillShelfNeedsToCart(onlyLowToggle && totalNeedLow > 0)}
-            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fillShelfNeedsToCart(onlyLowToggle && totalNeedLow > 0);
+              }
+            }}
+            className="w-full min-h-[64px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-start gap-3 text-left transition-colors cursor-pointer"
           >
-            <span className="w-10 h-10 rounded-[10px] bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-none">
+            <span className="w-10 h-10 rounded-[10px] bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-none mt-0.5">
               <PackagePlus className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
-                {t.orderWayFillShelf}
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+                    {t.orderWayFillShelf}
+                  </div>
+                  <div className="text-xs text-[var(--text-secondary)] truncate tabular-nums">
+                    {t.orderWayFillShelfSub(activeNeedBoxes, lowShelfItems.length)}
+                  </div>
+                </div>
+                <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
               </div>
-              <div className="text-xs text-[var(--text-secondary)] truncate tabular-nums">
-                {t.orderWayFillShelfSub(activeNeedBoxes, lowShelfItems.length)}
-              </div>
+
+              {lowShelfItems.length > 0 && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-2 pt-2 border-t border-[var(--border-hairline)]"
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={onlyLowToggle}
+                    onClick={() => setOnlyLowToggle((v) => !v)}
+                    className="w-full min-h-[44px] -my-2 flex items-center justify-between gap-2 text-left"
+                  >
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
+                      {t.orderWayOnlyLowToggle}
+                    </span>
+                    <span
+                      className={`w-11 h-6 rounded-full relative transition-colors duration-150 flex-none ${
+                        onlyLowToggle ? 'bg-[var(--anor)]' : 'bg-[var(--border-strong)]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-150 ${
+                          onlyLowToggle ? 'left-[22px]' : 'left-0.5'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
-            <ChevronRight className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
-          </button>
+          </div>
 
           {/* Way 2: Odatdagini takrorlash */}
           <button
             type="button"
             onClick={fillShelfNormsToCart}
-            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+            className="w-full min-h-[64px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
           >
             <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--anor-text)] flex items-center justify-center flex-none">
               <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -362,7 +375,7 @@ export const HomeView: React.FC = () => {
           <button
             type="button"
             onClick={() => goTab('cat')}
-            className="w-full min-h-[60px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
+            className="w-full min-h-[64px] p-3 rounded-[14px] bg-[var(--bg-raised)] hover:border-[var(--border-strong)] border border-[var(--border-hairline)] flex items-center gap-3 text-left transition-colors"
           >
             <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
               <LayoutGrid className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -478,7 +491,7 @@ export const HomeView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => goTab(currentSlide.targetTab)}
-                  className="min-h-[36px] inline-flex items-center gap-1 text-xs font-semibold text-[var(--anor-text)] hover:opacity-80 transition-opacity"
+                  className="min-h-[44px] -my-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[var(--anor-text)] hover:opacity-80 transition-opacity"
                 >
                   <span>{currentSlide.cta}</span>
                   <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
@@ -489,16 +502,19 @@ export const HomeView: React.FC = () => {
             {heroProduct && (
               <div
                 onClick={() => setSheet({ type: 'prod', id: heroProduct.id })}
-                className="cursor-pointer flex-none rounded-[12px] p-1"
-                style={{ backgroundColor: getFlavorTint(heroProduct) }}
+                className="cursor-pointer flex-none"
               >
-                <ProductVisual product={heroProduct} size="row" />
+                <ProductVisual
+                  product={heroProduct}
+                  size="row"
+                  tileBg={getFlavorTint(heroProduct)}
+                />
               </div>
             )}
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex items-center gap-1.5 pt-2">
+        <div className="flex items-center pt-1 -mx-3">
           {slides.map((s, idx) => {
             const active = idx === slideIdx;
             return (
@@ -507,7 +523,7 @@ export const HomeView: React.FC = () => {
                 type="button"
                 aria-label={`${idx + 1} / ${slides.length}`}
                 onClick={() => setSlideIdx(idx)}
-                className="min-h-[28px] px-0.5 flex items-center justify-center"
+                className="w-11 h-11 flex items-center justify-center"
               >
                 <span
                   className={`h-1.5 rounded-full transition-all duration-200 ${
@@ -575,6 +591,7 @@ export const HomeView: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <PillButton
+              data-coach="shelf"
               level="primary"
               size="sm"
               onClick={() => setSheet({ type: 'shelfCheck' })}

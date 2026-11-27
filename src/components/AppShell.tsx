@@ -8,7 +8,6 @@ import {
   BookmarkCheck,
   Check,
   ClipboardList,
-  Clock,
   Droplet,
   Globe,
   Heart,
@@ -23,6 +22,7 @@ import {
   Moon,
   Phone,
   Plus,
+  RefreshCw,
   Repeat,
   Search,
   ShoppingCart,
@@ -123,6 +123,8 @@ export const AppShell: React.FC = () => {
     isOnline,
     loadError,
     retryLoad,
+    refreshingOrders,
+    refreshOrders,
     lang,
     t,
     toast,
@@ -326,14 +328,19 @@ export const AppShell: React.FC = () => {
     </button>
   );
 
-  const deliveryHeaderChip = (
-    <span
-      title={t.nextDeliveryChip}
-      className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] text-[11px] font-medium inline-flex items-center gap-1 whitespace-nowrap select-none"
+  const refreshOrdersHeaderBtn = (
+    <button
+      type="button"
+      aria-label={t.refreshBtnLabel}
+      disabled={refreshingOrders}
+      onClick={() => void refreshOrders()}
+      className="w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none transition-colors disabled:opacity-60"
     >
-      <Clock className="w-3.5 h-3.5 flex-none text-[var(--text-muted)]" strokeWidth={1.5} />
-      <span>{t.nextDeliveryChip}</span>
-    </span>
+      <RefreshCw
+        className={`w-[18px] h-[18px] ${refreshingOrders ? 'animate-spin' : ''}`}
+        strokeWidth={1.5}
+      />
+    </button>
   );
 
   const renderTopBar = () => {
@@ -354,7 +361,7 @@ export const AppShell: React.FC = () => {
             <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.orderNumberPrefix}{selectedOrderId || 2481}
             </h1>
-            <small className="block text-xs text-[var(--text-secondary)] tabular-nums">
+            <small className="block text-xs text-[var(--text-secondary)] tabular-nums truncate">
               {t.driverRouteLabel}
             </small>
           </div>
@@ -392,7 +399,7 @@ export const AppShell: React.FC = () => {
             <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
               {shop?.operatorName || 'Madina'}
             </h1>
-            <small className="block text-xs text-[var(--success)]">
+            <small className="block text-xs text-[var(--success)] truncate">
               {t.operatorOnline(shop?.operatorName || 'Madina')}
             </small>
           </div>
@@ -430,14 +437,13 @@ export const AppShell: React.FC = () => {
         <>
           {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               {t.navCatalog}
             </h1>
             <small className="block text-[11px] text-[var(--text-muted)] truncate">
               {products.length} {t.productsInBoxMeta}
             </small>
           </div>
-          {deliveryHeaderChip}
           {themeToggleBtn}
           {headerCartBtn}
         </>
@@ -448,8 +454,9 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.promoTitle}</h1>
-          {deliveryHeaderChip}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.promoHeaderShort}
+          </h1>
           {themeToggleBtn}
           {headerCartBtn}
         </>
@@ -461,14 +468,15 @@ export const AppShell: React.FC = () => {
         <>
           {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">{t.cartTitle}</h1>
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
+              {t.cartHeaderShort}
+            </h1>
             {cartCount > 0 && (
               <small className="block text-[11px] text-[var(--text-muted)] tabular-nums">
                 {cartCount} {t.boxUnit}
               </small>
             )}
           </div>
-          {deliveryHeaderChip}
           {themeToggleBtn}
         </>
       );
@@ -477,10 +485,12 @@ export const AppShell: React.FC = () => {
     if (tab === 'ord') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.ordersTitle}</h1>
-          {deliveryHeaderChip}
+          {headerBackBtn}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.ordersHeaderShort}
+          </h1>
+          {refreshOrdersHeaderBtn}
           {themeToggleBtn}
-          {headerCartBtn}
         </>
       );
     }
@@ -489,7 +499,9 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.profileTitle}</h1>
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.profileTitle}
+          </h1>
           {themeToggleBtn}
           <button
             type="button"
@@ -508,10 +520,10 @@ export const AppShell: React.FC = () => {
       );
     }
 
-    // Home top bar: store · Termiz · date, sun/moon toggle, bell + count, profile shortcut
+    // Home top bar: logo + store name ONCE + Termiz · date + bell + profile + theme
     return (
       <>
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <img
             src={LOGO}
             alt="Lal Anaar"
@@ -519,14 +531,13 @@ export const AppShell: React.FC = () => {
           />
           <div className="min-w-0">
             <h1 className="text-sm sm:text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
-              {t.appName}
+              {shop?.name || "«Baraka» do'koni"}
             </h1>
             <small className="block text-[11px] text-[var(--text-secondary)] truncate">
-              {shop?.name || "«Baraka» do'koni"} · Termiz · {todayDateLabel}
+              Termiz · {todayDateLabel}
             </small>
           </div>
         </div>
-        {themeToggleBtn}
         <button
           type="button"
           aria-label={t.notifLabel}
@@ -553,6 +564,7 @@ export const AppShell: React.FC = () => {
             </span>
           )}
         </button>
+        {themeToggleBtn}
       </>
     );
   };
@@ -684,7 +696,7 @@ export const AppShell: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void retryLoad()}
-                  className="min-h-[36px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--error)] text-xs font-semibold whitespace-nowrap flex-none"
+                  className="min-h-[44px] px-3.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--error)] text-xs font-semibold whitespace-nowrap flex-none"
                 >
                   {t.retryBtn}
                 </button>
@@ -716,7 +728,7 @@ export const AppShell: React.FC = () => {
                         type="button"
                         aria-label={t.clearLabel}
                         onClick={() => setSearchQuery('')}
-                        className="w-10 h-10 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                        className="w-11 h-11 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                       >
                         <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
                       </button>
@@ -725,7 +737,7 @@ export const AppShell: React.FC = () => {
                       type="button"
                       aria-label={listeningVoice ? t.voiceListeningLabel : t.voiceSearchLabel}
                       onClick={handleVoiceSearch}
-                      className={`w-10 h-10 -mr-2 rounded-full flex items-center justify-center transition-colors ${
+                      className={`w-11 h-11 -mr-2.5 rounded-full flex items-center justify-center transition-colors ${
                         listeningVoice
                           ? 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
                           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -757,7 +769,7 @@ export const AppShell: React.FC = () => {
                         key={c}
                         type="button"
                         onClick={() => setCat(c)}
-                        className={`flex-none min-h-[40px] px-3.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border inline-flex items-center gap-1.5 transition-colors duration-150 ${
+                        className={`flex-none min-h-[44px] px-3.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border inline-flex items-center gap-1.5 transition-colors duration-150 ${
                           active
                             ? 'bg-[var(--ink-fill)] text-[var(--ink-text)] border-[var(--ink-fill)]'
                             : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-hairline)]'
@@ -783,9 +795,9 @@ export const AppShell: React.FC = () => {
               onScroll={handleScroll}
               className={`flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-3 md:px-6 pt-4 ${
                 showFloatingCartPill
-                  ? 'pb-[calc(168px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
+                  ? 'pb-[calc(176px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
                   : tab === 'cart'
-                    ? 'pb-[calc(176px+env(safe-area-inset-bottom))] md:pb-28'
+                    ? 'pb-[calc(184px+env(safe-area-inset-bottom))] md:pb-28'
                     : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-8'
               }`}
             >
@@ -902,7 +914,7 @@ export const AppShell: React.FC = () => {
                         dismissOperatorBanner();
                         goTab('me', 'chat');
                       }}
-                      className="min-h-[36px] px-3 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold whitespace-nowrap flex-none"
+                      className="min-h-[44px] px-3.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold whitespace-nowrap flex-none"
                     >
                       {t.openChatLabel}
                     </button>
@@ -910,7 +922,7 @@ export const AppShell: React.FC = () => {
                       type="button"
                       aria-label={t.closeLabel}
                       onClick={dismissOperatorBanner}
-                      className="w-9 h-9 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center flex-none"
+                      className="w-11 h-11 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center flex-none"
                     >
                       <X className="w-4 h-4" strokeWidth={1.5} />
                     </button>
@@ -930,7 +942,7 @@ export const AppShell: React.FC = () => {
                   transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
                   className={`absolute left-3 right-3 ${overlayBottomOffset} z-35 flex justify-center pointer-events-none`}
                 >
-                  <div className="pointer-events-auto w-full max-w-md rounded-full bg-[var(--snackbar-bg)] text-[var(--snackbar-text)] px-4 py-2.5 min-h-[48px] flex items-center gap-3">
+                  <div className="pointer-events-auto w-full max-w-md rounded-full bg-[var(--snackbar-bg)] text-[var(--snackbar-text)] px-4 py-2 min-h-[52px] flex items-center gap-3">
                     <Check className="w-[18px] h-[18px] text-[var(--snackbar-text)] flex-none" strokeWidth={1.75} />
                     <span className="flex-1 text-xs sm:text-sm font-medium truncate">
                       {undoSnackbar.message}
@@ -941,7 +953,7 @@ export const AppShell: React.FC = () => {
                         undoSnackbar.onUndo();
                         dismissUndoSnackbar();
                       }}
-                      className="min-h-[36px] px-3 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold whitespace-nowrap flex-none"
+                      className="min-h-[44px] px-3.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold whitespace-nowrap flex-none"
                     >
                       {undoSnackbar.undoLabel || t.undoLabel}
                     </button>
@@ -1071,19 +1083,19 @@ export const AppShell: React.FC = () => {
                             </button>
                           </div>
                           <div className="flex items-center justify-between gap-2">
-                            <div className="inline-flex items-center h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)]">
+                            <div className="inline-flex items-center h-11 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)]">
                               <button
                                 type="button"
                                 aria-label={t.removeFromCart}
                                 onClick={() => updateQty(id, -1)}
-                                className="w-10 h-10 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
+                                className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                               >
                                 <Minus className="w-4 h-4" strokeWidth={1.5} />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setSheet({ type: 'quickQty', id })}
-                                className="min-w-[30px] h-10 px-1 text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums"
+                                className="min-w-[30px] h-11 px-1 text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums"
                               >
                                 {q}
                               </button>
@@ -1091,7 +1103,7 @@ export const AppShell: React.FC = () => {
                                 type="button"
                                 aria-label={t.addToCart}
                                 onClick={() => updateQty(id, 1)}
-                                className="w-10 h-10 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
+                                className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                               >
                                 <Plus className="w-4 h-4" strokeWidth={1.5} />
                               </button>

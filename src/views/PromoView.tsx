@@ -89,7 +89,7 @@ export const PromoView: React.FC = () => {
               key={seg.id}
               type="button"
               onClick={() => setFilter(seg.id)}
-              className={`flex-none min-h-[40px] px-4 rounded-full text-xs sm:text-sm font-medium border transition-colors whitespace-nowrap ${
+              className={`flex-none min-h-[44px] px-4 rounded-full text-xs sm:text-sm font-medium border transition-colors whitespace-nowrap ${
                 active
                   ? 'bg-[var(--ink-fill)] text-[var(--ink-text)] border-[var(--ink-fill)]'
                   : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-hairline)]'
@@ -144,15 +144,14 @@ export const PromoView: React.FC = () => {
                   <div
                     key={prod.id}
                     onClick={() => setSheet({ type: 'prod', id: prod.id })}
-                    className="v4-card relative cursor-pointer flex flex-col justify-between overflow-visible hover:border-[var(--border-strong)] transition-colors"
+                    className="v4-card rounded-[16px] p-3.5 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden hover:border-[var(--border-strong)] transition-colors"
                   >
-                    <div className="p-3.5 pb-3 flex items-center gap-3">
-                      <div
-                        className="rounded-[14px] p-1.5 flex-none"
-                        style={{ backgroundColor: getFlavorTint(prod) }}
-                      >
-                        <ProductVisual product={prod} size="row" />
-                      </div>
+                    <div className="flex items-start gap-3">
+                      <ProductVisual
+                        product={prod}
+                        size="row"
+                        tileBg={getFlavorTint(prod)}
+                      />
 
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center justify-between gap-1.5 flex-wrap">
@@ -160,7 +159,7 @@ export const PromoView: React.FC = () => {
                             {hasPct ? `−${prod.promoPct}%` : `${giftBuy}+${giftFree}`}
                           </span>
                           {prod.promoEndsDays && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--warning)] tabular-nums whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium tabular-nums whitespace-nowrap">
                               <Clock className="w-3 h-3" strokeWidth={1.75} />
                               <span>{t.promoDaysLeft(prod.promoEndsDays)}</span>
                             </span>
@@ -178,8 +177,8 @@ export const PromoView: React.FC = () => {
                     </div>
 
                     {/* Deal / Gift Progress Bar */}
-                    <div className="px-3.5 pb-3 space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 text-xs font-medium">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
                         <span
                           className={`inline-flex items-center gap-1.5 tabular-nums ${
                             giftUnlocked ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'
@@ -217,22 +216,9 @@ export const PromoView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Ticket notch cut-outs */}
-                    <div className="relative flex items-center px-3">
-                      <span
-                        aria-hidden="true"
-                        className="absolute -left-2.5 w-5 h-5 rounded-full bg-[var(--bg-app)] border-r border-[var(--border-hairline)]"
-                      />
-                      <div className="w-full border-t border-dashed border-[var(--border-hairline)]" />
-                      <span
-                        aria-hidden="true"
-                        className="absolute -right-2.5 w-5 h-5 rounded-full bg-[var(--bg-app)] border-l border-[var(--border-hairline)]"
-                      />
-                    </div>
-
-                    {/* Bottom price + GreenAddControl */}
+                    {/* Bottom price + GreenAddControl inline inside same card */}
                     <div
-                      className="p-3.5 pt-3 flex items-center justify-between gap-2"
+                      className="flex items-center justify-between gap-2 pt-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="min-w-0">

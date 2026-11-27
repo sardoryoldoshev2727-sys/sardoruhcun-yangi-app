@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Info,
   Lock,
+  MapPin,
   MessageCircle,
   Moon,
   Package,
@@ -82,13 +83,17 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
 
-        <div className="pt-3 border-t border-[var(--border-hairline)] flex items-center justify-between gap-2 text-xs">
-          <div className="min-w-0">
+        <div className="pt-3 border-t border-[var(--border-hairline)] flex items-start justify-between gap-2 text-xs">
+          <div className="min-w-0 space-y-1">
             <div className="font-medium text-[var(--text-primary)] truncate">
               {shop?.name || "«Baraka» do'koni"}
             </div>
+            <div className="text-[var(--text-secondary)] inline-flex items-center gap-1 max-w-full">
+              <MapPin className="w-3.5 h-3.5 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
+              <span className="truncate">{shop?.address || 'Termiz, Alpomish 14'}</span>
+            </div>
             <div className="text-[var(--text-muted)] truncate">
-              {session?.userName || 'Dilnoza'} · {shop?.address || 'Termiz, Alpomish 14'}
+              {session?.userName || 'Dilnoza'}
             </div>
           </div>
           <div className="text-right flex-none tabular-nums">
@@ -306,11 +311,11 @@ export const ProfileView: React.FC = () => {
           <div className="flex-1 font-medium text-sm text-[var(--text-primary)]">
             {t.languageTitle}
           </div>
-          <div className="inline-flex rounded-[10px] bg-[var(--bg-raised)] p-1 border border-[var(--border-hairline)]">
+          <div className="inline-flex rounded-[12px] bg-[var(--bg-raised)] p-1 border border-[var(--border-hairline)]">
             <button
               type="button"
               onClick={() => setLang('uz')}
-              className={`min-h-[36px] px-3 rounded-[8px] text-xs font-medium transition-colors duration-150 ${
+              className={`min-h-[44px] px-3 rounded-[9px] text-xs font-medium transition-colors duration-150 ${
                 lang === 'uz'
                   ? 'bg-[var(--anor)] text-white'
                   : 'text-[var(--text-muted)]'
@@ -321,7 +326,7 @@ export const ProfileView: React.FC = () => {
             <button
               type="button"
               onClick={() => setLang('ru')}
-              className={`min-h-[36px] px-3 rounded-[8px] text-xs font-medium transition-colors duration-150 ${
+              className={`min-h-[44px] px-3 rounded-[9px] text-xs font-medium transition-colors duration-150 ${
                 lang === 'ru'
                   ? 'bg-[var(--anor)] text-white'
                   : 'text-[var(--text-muted)]'
@@ -351,12 +356,12 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
           <span
-            className={`w-12 h-7 rounded-full relative transition-colors duration-150 flex-none ${
+            className={`w-11 h-6 rounded-full relative transition-colors duration-150 flex-none ${
               largeText ? 'bg-[var(--anor)]' : 'bg-[var(--border-strong)]'
             }`}
           >
             <span
-              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all duration-150 ${
+              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-150 ${
                 largeText ? 'left-[22px]' : 'left-0.5'
               }`}
             />
@@ -377,12 +382,12 @@ export const ProfileView: React.FC = () => {
             {t.darkModeTitle}
           </div>
           <span
-            className={`w-12 h-7 rounded-full relative transition-colors duration-150 flex-none ${
+            className={`w-11 h-6 rounded-full relative transition-colors duration-150 flex-none ${
               darkMode ? 'bg-[var(--anor)]' : 'bg-[var(--border-strong)]'
             }`}
           >
             <span
-              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all duration-150 ${
+              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-150 ${
                 darkMode ? 'left-[22px]' : 'left-0.5'
               }`}
             />

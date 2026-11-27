@@ -5,7 +5,6 @@ import { getProductName } from '../i18n';
 import type { Product, ShelfItem } from '../types';
 import {
   computeBoxProfit,
-  formatHalfBoxes,
   formatNumberThin,
   formatSom,
   getBrandName,
@@ -341,13 +340,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center min-h-[44px] rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1"
+                className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1"
               >
                 <button
                   type="button"
                   aria-label={t.removeFromCart}
                   onClick={() => updateQty(product.id, -1)}
-                  className="w-10 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
+                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
                 >
                   <Minus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
@@ -355,7 +354,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   type="button"
                   aria-label={`${qty} ${t.boxUnit}`}
                   onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-                  className="min-w-[28px] h-11 px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums hover:bg-[var(--bg-raised)] transition-colors"
+                  className="min-w-[30px] h-11 px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums hover:bg-[var(--bg-raised)] transition-colors"
                 >
                   {qty}
                 </button>
@@ -363,7 +362,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   type="button"
                   aria-label={t.addToCart}
                   onClick={() => updateQty(product.id, 1)}
-                  className="w-10 h-11 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
+                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
                 >
                   <Plus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
@@ -497,6 +496,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
     t,
     getShelfNorm,
     getShelfStock,
+    getShelfLoose,
     getShelfNeed,
     isShelfLow,
     adjustShelfStock,
@@ -508,12 +508,13 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
   const inCart = (cart[id] || 0) > 0;
   const norm = getShelfNorm(id);
   const stock = getShelfStock(id);
+  const loose = getShelfLoose(id);
   const need = getShelfNeed(id);
   const low = isShelfLow(id);
   const pct = Math.max(6, Math.min(100, Math.round((stock / Math.max(1, norm)) * 100)));
   const displayName = shortName(getProductName(product, lang));
 
-  // Speed improvement G-2: Swipe-to-count ±0.5 box directly on shelf row
+  // Swipe-to-count ±1 whole box directly on shelf row
   const [swipeDx, setSwipeDx] = useState(0);
   const swipeOriginRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
 
@@ -541,8 +542,8 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
       }}
       onTouchEnd={() => {
         if (!editMode) {
-          if (swipeDx >= 30) adjustShelfStock(id, 0.5);
-          else if (swipeDx <= -30) adjustShelfStock(id, -0.5);
+          if (swipeDx >= 30) adjustShelfStock(id, 1);
+          else if (swipeDx <= -30) adjustShelfStock(id, -1);
         }
         setSwipeDx(0);
         swipeOriginRef.current = null;
@@ -564,7 +565,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
               {displayName} {product.vol}
             </div>
             {low ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium flex-none mt-0.5">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium flex-none mt-0.5">
                 {t.shelfLowBadge}
               </span>
             ) : (
@@ -575,16 +576,21 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
             )}
           </div>
 
-          <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-2 flex-wrap">
+          <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-1.5 flex-wrap">
             <span>
               {t.shelfNormLabel}: <strong className="font-semibold text-[var(--text-primary)]">{norm}</strong>
             </span>
             <span>·</span>
             <span>
               {t.shelfStockLabel}:{' '}
-              <strong className={`font-semibold ${low ? 'text-[var(--anor-text)]' : 'text-[var(--text-primary)]'}`}>
-                {formatHalfBoxes(stock)}
+              <strong className={`font-semibold ${low ? 'text-[var(--warning)]' : 'text-[var(--text-primary)]'}`}>
+                {stock}
               </strong>
+              {loose > 0 && (
+                <span className="text-[var(--text-muted)]">
+                  {' '}(+{loose} {t.pieceUnit})
+                </span>
+              )}
             </span>
             <span>·</span>
             <span>
@@ -598,14 +604,14 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
           <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
             <div
               className={`h-full rounded-full transition-[width] duration-200 ease-out ${
-                low ? 'bg-[var(--anor)]' : 'bg-[var(--success)]'
+                low ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'
               }`}
               style={{ width: `${pct}%` }}
             />
           </div>
           {Math.abs(swipeDx) > 8 && (
             <div className="mt-1 text-[11px] font-medium text-[var(--anor-text)] tabular-nums">
-              {swipeDx > 0 ? `+0,5 ${t.boxUnit}` : `−0,5 ${t.boxUnit}`}
+              {swipeDx > 0 ? `+1 ${t.boxUnit}` : `−1 ${t.boxUnit}`}
             </div>
           )}
         </div>
@@ -630,18 +636,18 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                   type="button"
                   aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
-                  className="w-9 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
+                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                 >
                   <Minus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
-                <span className="min-w-[30px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
+                <span className="min-w-[28px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
                   {norm}
                 </span>
                 <button
                   type="button"
                   aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-9 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
+                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
                 >
                   <Plus className="w-4 h-4" strokeWidth={1.75} />
                 </button>

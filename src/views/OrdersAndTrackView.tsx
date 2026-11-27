@@ -10,7 +10,6 @@ import {
   MessageCircle,
   Package,
   Phone,
-  RefreshCw,
   Repeat,
   Star,
   Truck,
@@ -135,7 +134,7 @@ const MiniHorizontalSteps: React.FC<{
                 ) : null}
               </span>
               <span
-                className={`mt-1 text-[10px] leading-tight text-center w-full truncate ${
+                className={`mt-1.5 text-[11px] leading-tight text-center w-full break-words ${
                   isActive
                     ? 'font-semibold text-[var(--anor-text)]'
                     : isDone
@@ -307,22 +306,7 @@ export const OrdersView: React.FC = () => {
         refreshingLabel={t.refreshingLabel}
       />
 
-      <div className="flex items-center justify-end px-0.5">
-        <PillButton
-          level="outline"
-          size="sm"
-          disabled={refreshingOrders}
-          onClick={() => void refreshOrders()}
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${refreshingOrders ? 'animate-spin' : ''}`}
-            strokeWidth={1.5}
-          />
-          <span>{refreshingOrders ? t.refreshingLabel : t.refreshBtnLabel}</span>
-        </PillButton>
-      </div>
-
-      {/* Buy Again horizontal row */}
+      {/* Buy Again horizontal snap strip sized so next card peeks */}
       {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
         <section className="space-y-2">
           <div>
@@ -336,7 +320,7 @@ export const OrdersView: React.FC = () => {
           {ordersLoading || productsLoading ? (
             <HorizontalStripSkeleton count={3} />
           ) : (
-            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-pl-3 -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
               {buyAgainItems.map(({ product, qty }) => {
                 const name = getProductName(product, lang);
                 const promoPrice = getPromoBoxPrice(product);
@@ -345,7 +329,7 @@ export const OrdersView: React.FC = () => {
                   <div
                     key={product.id}
                     onClick={() => setSheet({ type: 'prod', id: product.id })}
-                    className="v4-card w-40 flex-none p-2.5 cursor-pointer flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors"
+                    className="v4-card snap-start w-[144px] sm:w-44 flex-none p-2.5 cursor-pointer flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors"
                   >
                     <div className="relative rounded-[10px] overflow-hidden">
                       <ProductVisual product={product} size="grid" />
@@ -386,8 +370,15 @@ export const OrdersView: React.FC = () => {
         </section>
       )}
 
-      {/* Weekly Auto-order toggle card */}
-      <div className="v4-card p-4 flex items-center gap-3">
+      {/* Weekly Auto-order full-row tappable 44x24 switch */}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={autoOrder}
+        aria-label={t.autoOrderTitle}
+        onClick={toggleAutoOrder}
+        className="v4-card w-full min-h-[64px] p-4 flex items-center gap-3 text-left hover:border-[var(--border-strong)] transition-colors"
+      >
         <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
           <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </span>
@@ -399,23 +390,18 @@ export const OrdersView: React.FC = () => {
             {autoOrder ? t.autoOrderOnSub : t.autoOrderOffSub}
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={autoOrder}
-          aria-label={t.autoOrderTitle}
-          onClick={toggleAutoOrder}
-          className={`w-12 h-7 rounded-full relative transition-colors duration-150 flex-none ${
+        <span
+          className={`w-11 h-6 rounded-full relative transition-colors duration-150 flex-none ${
             autoOrder ? 'bg-[var(--anor)]' : 'bg-[var(--border-strong)]'
           }`}
         >
           <span
-            className={`absolute top-0.5 w-6 h-6 rounded-full bg-white transition-all duration-150 ${
+            className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-150 ${
               autoOrder ? 'left-[22px]' : 'left-0.5'
             }`}
           />
-        </button>
-      </div>
+        </span>
+      </button>
 
       {/* Segment switch */}
       <div className="grid grid-cols-3 bg-[var(--bg-raised)] rounded-[12px] p-1 gap-1">
@@ -873,7 +859,7 @@ export const TrackView: React.FC = () => {
               goTab('me');
               openPage('chat');
             }}
-            className="font-semibold text-[var(--anor-text)] whitespace-nowrap"
+            className="min-h-[44px] px-2 font-semibold text-[var(--anor-text)] whitespace-nowrap"
           >
             {t.writeOperatorBtn}
           </button>

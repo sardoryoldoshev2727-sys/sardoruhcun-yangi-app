@@ -118,7 +118,7 @@ export const CartView: React.FC = () => {
                 <span className="w-9 h-9 rounded-[10px] bg-[var(--bg-raised)] text-[var(--anor-text)] flex items-center justify-center flex-none">
                   <Tag className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 </span>
-                <span className="text-[13px] font-medium text-[var(--text-primary)] break-words">
+                <span className="text-[13px] font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
                   {nudgeLineText}
                 </span>
               </div>
@@ -182,21 +182,32 @@ export const CartView: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {SLOTS.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setSlot(i)}
-                  className={`min-h-[44px] px-3 rounded-[12px] border text-xs flex items-center justify-center gap-2 transition-colors duration-150 ${
-                    i === slot
-                      ? 'bg-[var(--anor-soft)] border-[var(--anor)] text-[var(--anor-text)] font-semibold'
-                      : 'bg-[var(--bg-raised)] border-[var(--border-hairline)] text-[var(--text-secondary)] font-medium'
-                  }`}
-                >
-                  <Clock className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
-                  <span className="truncate">{getSlotLabel(i, lang)}</span>
-                </button>
-              ))}
+              {SLOTS.map((_, i) => {
+                const caption = i === 0 ? t.slotCaptionMorning : t.slotCaptionAfternoon;
+                const range = i === 0 ? '9–13' : '13–18';
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setSlot(i)}
+                    className={`min-h-[56px] px-3 py-2 rounded-[12px] border flex items-center justify-center gap-2 transition-colors duration-150 ${
+                      i === slot
+                        ? 'bg-[var(--anor-soft)] border-[var(--anor)] text-[var(--anor-text)]'
+                        : 'bg-[var(--bg-raised)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    <Clock className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
+                    <div className="text-left leading-tight">
+                      <span className="block text-[11px] font-normal opacity-80 whitespace-nowrap">
+                        {caption}
+                      </span>
+                      <span className="block text-sm font-semibold tabular-nums whitespace-nowrap">
+                        {range}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="flex items-center gap-2 min-h-[44px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] rounded-[12px] px-3 focus-within:border-[var(--anor)]">

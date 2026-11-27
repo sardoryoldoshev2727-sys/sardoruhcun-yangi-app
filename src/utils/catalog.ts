@@ -522,7 +522,7 @@ export function computeSuggestedNorm(productId: number, orders: OrderRecord[], f
 }
 
 export function computeShelfNeed(norm: number, stock: number): number {
-  return Math.max(0, Math.ceil(norm - stock));
+  return Math.max(0, Math.round(norm) - Math.max(0, Math.floor(stock)));
 }
 
 export function isShelfItemLow(norm: number, stock: number): boolean {

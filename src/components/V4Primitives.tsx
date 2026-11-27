@@ -251,12 +251,15 @@ export const CoachMarkSpotlight: React.FC<{
   onDismiss: () => void;
 }> = ({ coachKey, title, desc, doneLabel, onDismiss }) => {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [cardHeight, setCardHeight] = useState<number>(148);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!coachKey) {
       setRect(null);
       return;
     }
+
     const measure = () => {
       const el = document.querySelector<HTMLElement>(`[data-coach="${coachKey}"]`);
       if (!el) {
@@ -269,16 +272,28 @@ export const CoachMarkSpotlight: React.FC<{
         return;
       }
       setRect(r);
+      if (cardRef.current) {
+        const h = cardRef.current.offsetHeight;
+        if (h > 0) setCardHeight(h);
+      }
     };
 
-    measure();
-    const t1 = window.setTimeout(measure, 90);
+    const el = document.querySelector<HTMLElement>(`[data-coach="${coachKey}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
+    const rafId = window.requestAnimationFrame(measure);
+    const t1 = window.setTimeout(measure, 120);
     const t2 = window.setTimeout(measure, 280);
+    const t3 = window.setTimeout(measure, 450);
     window.addEventListener('resize', measure);
     window.addEventListener('scroll', measure, true);
     return () => {
+      window.cancelAnimationFrame(rafId);
       window.clearTimeout(t1);
       window.clearTimeout(t2);
+      window.clearTimeout(t3);
       window.removeEventListener('resize', measure);
       window.removeEventListener('scroll', measure, true);
     };
@@ -293,10 +308,11 @@ export const CoachMarkSpotlight: React.FC<{
   const ry = Math.max(8, rect.top - pad);
   const rw = Math.min(vw - rx - 8, rect.width + pad * 2);
   const rh = rect.height + pad * 2;
-  const showBelow = ry + rh + 148 < vh;
+  const showBelow = ry + rh + 12 + cardHeight <= vh - 12;
   const cardWidth = Math.min(296, vw - 24);
   const cardLeft = Math.max(12, Math.min(vw - cardWidth - 12, rx + rw / 2 - cardWidth / 2));
-  const cardTop = showBelow ? ry + rh + 12 : Math.max(12, ry - 144);
+  const rawTop = showBelow ? ry + rh + 12 : ry - cardHeight - 12;
+  const cardTop = Math.max(12, Math.min(Math.max(12, vh - cardHeight - 12), rawTop));
 
   return (
     <div
@@ -318,6 +334,7 @@ export const CoachMarkSpotlight: React.FC<{
       />
 
       <div
+        ref={cardRef}
         onClick={(e) => e.stopPropagation()}
         style={{ left: cardLeft, top: cardTop, width: cardWidth }}
         className="fixed rounded-[16px] bg-[var(--bg-card)] border border-[var(--border-hairline)] p-4 shadow-xl"
@@ -372,7 +389,7 @@ export const PillButton: React.FC<PillButtonProps> = ({
     size === 'lg'
       ? 'min-h-[48px] px-5 text-[15px]'
       : size === 'sm'
-        ? 'min-h-[36px] px-3.5 text-xs'
+        ? 'min-h-[44px] px-3.5 text-xs'
         : 'min-h-[44px] px-4 text-sm';
 
   const levelCls = isDisabled
@@ -473,7 +490,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
             exit={{ scale: 0.84, opacity: 0 }}
             transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
             onClick={handleFirstAdd}
-            className="relative overflow-hidden w-10 h-10 rounded-full buy-green-btn text-white flex items-center justify-center after:absolute after:-inset-0.5 after:content-['']"
+            className="relative overflow-hidden w-11 h-11 rounded-full buy-green-btn text-white flex items-center justify-center"
           >
             <Plus className="w-[18px] h-[18px] relative z-10" strokeWidth={2} />
           </motion.button>
@@ -485,7 +502,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
             exit={{ scale: 0.86, opacity: 0 }}
             transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
             className={`relative overflow-hidden rounded-full buy-green-btn text-white inline-flex items-center px-0.5 ${
-              compactPill ? 'h-9' : 'h-10'
+              compactPill ? 'h-11' : 'h-11'
             }`}
           >
             {/* 700ms shine streak on activation */}
@@ -500,7 +517,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
               type="button"
               aria-label={removeLabel}
               onClick={onRemove}
-              className="relative z-10 w-8 h-10 rounded-l-full flex items-center justify-center hover:bg-black/10 active:bg-black/15 after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+              className="relative z-10 w-10 h-11 rounded-l-full flex items-center justify-center hover:bg-black/10 active:bg-black/15"
             >
               <Minus className="w-4 h-4" strokeWidth={2} />
             </button>
@@ -508,7 +525,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
               type="button"
               aria-label={`${qty} ${unitLabel}`}
               onClick={onQtyTap}
-              className="relative z-10 min-w-[24px] h-10 px-1 text-center font-semibold text-sm tabular-nums hover:bg-black/10 after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+              className="relative z-10 min-w-[28px] h-11 px-1 text-center font-semibold text-sm tabular-nums hover:bg-black/10"
             >
               {qty}
             </button>
@@ -516,7 +533,7 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
               type="button"
               aria-label={addLabel}
               onClick={onAdd}
-              className="relative z-10 w-8 h-10 rounded-r-full flex items-center justify-center hover:bg-black/10 active:bg-black/15 after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
+              className="relative z-10 w-10 h-11 rounded-r-full flex items-center justify-center hover:bg-black/10 active:bg-black/15"
             >
               <Plus className="w-4 h-4" strokeWidth={2} />
             </button>

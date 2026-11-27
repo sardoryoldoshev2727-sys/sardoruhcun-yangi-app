@@ -400,6 +400,21 @@ export interface Translations {
   swipeStockHint: string;
   quickNormChip: (qty: number) => string;
   quickNeedChip: (qty: number) => string;
+  // Round 8: Audit fixes
+  promoHeaderShort: string;
+  cartHeaderShort: string;
+  ordersHeaderShort: string;
+  velvetUsualShort: string;
+  shelfReminderShort: string;
+  cutoffShortPrefix: string;
+  cutoffTomorrowShortPrefix: string;
+  slotCaptionMorning: string;
+  slotCaptionAfternoon: string;
+  shelfNormWithBoxes: (n: number) => string;
+  shelfLooseLabel: string;
+  shelfTrendLine: (prev: number, cur: number, trend: string) => string;
+  shelfSaveAndAddNeedBtn: (boxes: number) => string;
+  shelfSaveOnlyBtn: string;
 }
 
 export const TRANSLATIONS: Record<Lang, Translations> = {
@@ -636,8 +651,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     billPromoDiscount: 'Aksiya chegirmasi',
     billOrderDiscount: (pct) => `Summa chegirmasi (${pct}%)`,
     discountSavingsLine: (pct, saved) => `${pct}% chegirma — ${saved} tejaysiz`,
-    discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
-      `Yana ${amount} (≈ ${boxesNeeded} quti) — ${pct}% chegirma, ≈ ${saved} tejaysiz`,
+    discountNudgeLine: (boxesNeeded, pct, _saved, amount) =>
+      `${pct}% chegirmagacha ${amount} (≈${boxesNeeded} quti)`,
     discountNudgeMax: (pct) => `Maksimal ${pct}% chegirma faol`,
     discountTierReachedTitle: (pct) => `${pct}% chegirma faollashdi`,
     discountTierReachedText: (saved) => `Ushbu buyurtmada ${saved} tejaysiz`,
@@ -848,8 +863,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
         desc: 'Vaqt oralig‘ini tanlab 4 xonali PIN bilan yuboring — yetkazish bepul',
       },
       shelf: {
-        title: 'Yarim qutigacha sanang',
-        desc: 'Minus va plyus orqali javonda qancha qolganini belgilang',
+        title: 'Butun qutilarni sanang',
+        desc: 'Javonda nechta quti borligini belgilang — kamomad darhol hisoblanadi',
       },
     },
     coachDoneBtn: 'Tushunarli',
@@ -869,9 +884,24 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     voiceSearchLabel: 'Ovozli qidiruv',
     voiceListeningLabel: 'Gapiring…',
     voiceUnsupportedSnack: 'Ovozli qidiruv mavjud emas — klaviaturadan yozing',
-    swipeStockHint: 'Surib 0,5 qutiga o‘zgartiring',
+    swipeStockHint: 'Surib ±1 qutiga o‘zgartiring',
     quickNormChip: (qty) => `Norma (${qty})`,
     quickNeedChip: (qty) => `Kerak (${qty})`,
+    promoHeaderShort: 'Aksiyalar',
+    cartHeaderShort: 'Savat',
+    ordersHeaderShort: 'Buyurtmalar',
+    velvetUsualShort: 'Odatdagi',
+    shelfReminderShort: 'Javonni sanang — 1 daqiqa',
+    cutoffShortPrefix: '20:00 gacha buyurtma — ertaga 9–13',
+    cutoffTomorrowShortPrefix: 'Ertaga 20:00 gacha — indinga 9–13',
+    slotCaptionMorning: 'Ertalab',
+    slotCaptionAfternoon: 'Tushdan keyin',
+    shelfNormWithBoxes: (n) => `Norma ${n} quti`,
+    shelfLooseLabel: '+ dona',
+    shelfTrendLine: (prev, cur, trend) => `Oldin ${prev} → hozir ${cur}, ${trend}`,
+    shelfSaveAndAddNeedBtn: (boxes) =>
+      boxes > 0 ? `Kerakli ${boxes} qutini savatga solish` : 'Javonda kamomad yo‘q',
+    shelfSaveOnlyBtn: 'Faqat saqlash',
   },
   ru: {
     appName: 'LAL ANAAR',
@@ -1106,8 +1136,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     billPromoDiscount: 'Скидка по акции',
     billOrderDiscount: (pct) => `Скидка от суммы (${pct}%)`,
     discountSavingsLine: (pct, saved) => `Скидка ${pct}% — вы экономите ${saved}`,
-    discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
-      `Ещё ${amount} (≈ ${boxesNeeded} кор.) — скидка ${pct}%, ≈ ${saved} экономии`,
+    discountNudgeLine: (boxesNeeded, pct, _saved, amount) =>
+      `До скидки ${pct}% — ${amount} (≈${boxesNeeded} кор.)`,
     discountNudgeMax: (pct) => `Активна максимальная скидка ${pct}%`,
     discountTierReachedTitle: (pct) => `Скидка ${pct}% активирована`,
     discountTierReachedText: (saved) => `Экономия на заказе: ${saved}`,
@@ -1318,8 +1348,8 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
         desc: 'Выберите окно доставки и подтвердите 4-значным PIN — доставка бесплатная',
       },
       shelf: {
-        title: 'Считайте до полкоробки',
-        desc: 'Отмечайте текущий остаток крупными кнопками минус и плюс',
+        title: 'Считайте целыми коробками',
+        desc: 'Отметьте количество коробок на полке — нехватка посчитается сразу',
       },
     },
     coachDoneBtn: 'Понятно',
@@ -1339,9 +1369,24 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     voiceSearchLabel: 'Голосовой поиск',
     voiceListeningLabel: 'Говорите…',
     voiceUnsupportedSnack: 'Голосовой поиск недоступен — используйте клавиатуру',
-    swipeStockHint: 'Свайп влево/вправо на ±0,5 кор.',
+    swipeStockHint: 'Свайп влево/вправо на ±1 кор.',
     quickNormChip: (qty) => `Норма (${qty})`,
     quickNeedChip: (qty) => `Нужно (${qty})`,
+    promoHeaderShort: 'Акции',
+    cartHeaderShort: 'Корзина',
+    ordersHeaderShort: 'Заказы',
+    velvetUsualShort: 'Обычный',
+    shelfReminderShort: 'Пересчитайте полку — 1 мин',
+    cutoffShortPrefix: 'Заказ до 20:00 — завтра 9–13',
+    cutoffTomorrowShortPrefix: 'До 20:00 завтра — послезавтра',
+    slotCaptionMorning: 'Утром',
+    slotCaptionAfternoon: 'Днём',
+    shelfNormWithBoxes: (n) => `Норма ${n} кор.`,
+    shelfLooseLabel: '+ шт.',
+    shelfTrendLine: (prev, cur, trend) => `Было ${prev} → стало ${cur}, ${trend}`,
+    shelfSaveAndAddNeedBtn: (boxes) =>
+      boxes > 0 ? `В корзину нужные ${boxes} кор.` : 'На полке всё в норме',
+    shelfSaveOnlyBtn: 'Только сохранить',
   },
 };
 
