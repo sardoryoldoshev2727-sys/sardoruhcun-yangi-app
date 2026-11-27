@@ -53,11 +53,29 @@ import { computeBoxDiscountNudge, formatSom, shortName } from '../utils/catalog'
 
 const STORAGE_KEY = 'lal-v3';
 const OFFLINE_QUEUE_KEY = 'lal-offline-queue-v1';
+const GUIDE_SEEN_KEY = 'lal-guide-seen-v1';
+
+function hasSeenGuide(): boolean {
+  try {
+    return localStorage.getItem(GUIDE_SEEN_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
+function markGuideSeen() {
+  try {
+    localStorage.setItem(GUIDE_SEEN_KEY, '1');
+  } catch {
+    // ignore storage errors
+  }
+}
 
 interface PersistedState {
   cart: Record<number, number>;
   theme: '' | 'dark' | 'light';
   shelf: ShelfItem[];
+  favorites: number[];
   auto: boolean;
   lang: Lang;
   largeText: boolean;
@@ -67,6 +85,7 @@ const DEFAULT_PERSISTED: PersistedState = {
   cart: { 1: 3, 7: 2 },
   theme: '',
   shelf: DEFAULT_SHELF_SEED,
+  favorites: [],
   auto: false,
   lang: 'uz',
   largeText: false,
@@ -81,6 +100,9 @@ function loadPersisted(): PersistedState {
       cart: parsed.cart && typeof parsed.cart === 'object' ? parsed.cart : DEFAULT_PERSISTED.cart,
       theme: parsed.theme === 'dark' || parsed.theme === 'light' ? parsed.theme : '',
       shelf: Array.isArray(parsed.shelf) ? parsed.shelf : DEFAULT_PERSISTED.shelf,
+      favorites: Array.isArray(parsed.favorites)
+        ? parsed.favorites.filter((x): x is number => typeof x === 'number')
+        : DEFAULT_PERSISTED.favorites,
       auto: Boolean(parsed.auto),
       lang: parsed.lang === 'ru' ? 'ru' : 'uz',
       largeText: Boolean(parsed.largeText),
@@ -152,6 +174,10 @@ interface StoreContextValue {
   discountNudge: BoxDiscountNudge;
   submittingOrder: boolean;
   shelf: ShelfItem[];
+  favorites: number[];
+  guideOpen: boolean;
+  openGuide: () => void;
+  closeGuide: () => void;
   refillPredictions: RefillPrediction[];
   refillById: Record<number, RefillPrediction>;
   refillDueItems: RefillPrediction[];
@@ -167,6 +193,7 @@ interface StoreContextValue {
   cartSubtotal: number;
   unreadNotifCount: number;
   inShelf: (id: number) => boolean;
+  isFavorite: (id: number) => boolean;
   goTab: (t: TabId, nextPage?: SubPageId, opts?: { reset?: boolean }) => void;
   openPage: (p: SubPageId) => void;
   goBack: () => void;
@@ -258,6 +285,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [cart, setCart] = useState<Record<number, number>>(initial.cart);
   const [shelf, setShelf] = useState<ShelfItem[]>(initial.shelf);
+  const [favorites, setFavorites] = useState<number[]>(initial.favorites);
+  const [guideOpen, setGuideOpen] = useState<boolean>(() => !hasSeenGuide());
   const [autoOrder, setAutoOrder] = useState<boolean>(initial.auto);
 
   const [boxDiscountTiers, setBoxDiscountTiers] = useState<BoxDiscountTier[]>([
@@ -497,6 +526,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cart,
         theme: themeExplicit ? (darkMode ? 'dark' : 'light') : '',
         shelf,
+        favorites,
         auto: autoOrder,
         lang,
         largeText,
@@ -505,7 +535,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {
       // ignore storage quota errors
     }
-  }, [cart, darkMode, themeExplicit, shelf, autoOrder, lang, largeText]);
+  }, [cart, darkMode, themeExplicit, shelf, favorites, autoOrder, lang, largeText]);
 
   // Refresh checkout quote via api.ts whenever cart changes & show tier-reached toast
   useEffect(() => {
@@ -642,6 +672,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [shelf],
   );
 
+  const isFavorite = useCallback(
+    (id: number) => favorites.includes(id),
+    [favorites],
+  );
+
+  const openGuide = useCallback(() => {
+    setGuideOpen(true);
+  }, []);
+
+  const closeGuide = useCallback(() => {
+    markGuideSeen();
+    setGuideOpen(false);
+  }, []);
+
   const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null, opts?: { reset?: boolean }) => {
     if (opts?.reset) navStackRef.current = [];
     else pushNav(nextTab, nextPage);
@@ -760,26 +804,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const p = productsById[id];
       if (!p) return;
       triggerHaptic('add');
-      setShelf((prev) => {
-        const exists = prev.some((x) => x[0] === id);
+      setFavorites((prev) => {
+        const exists = prev.includes(id);
         window.setTimeout(() => {
           showToast({
             icon: 'heart',
             title: exists
               ? lang === 'ru'
-                ? 'Убрано с полки'
-                : 'Javondan olindi'
+                ? 'Убрано из избранного'
+                : 'Yoqqanlardan olindi'
               : lang === 'ru'
-                ? 'Добавлено на полку'
-                : "Javonga qo'shildi",
+                ? 'Добавлено в избранное'
+                : "Yoqqanlarga qo'shildi",
             text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
-            tone: exists ? 'red' : 'blue',
+            tone: exists ? 'red' : 'ok',
           });
         }, 0);
         if (exists) {
-          return prev.filter((x) => x[0] !== id);
+          return prev.filter((x) => x !== id);
         }
-        return [...prev, [id, 2, 7, 0]];
+        return [id, ...prev];
       });
     },
     [lang, productsById, showToast],
@@ -795,13 +839,46 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   }, []);
 
-  const removeShelfItem = useCallback((id: number) => {
-    setShelf((prev) => prev.filter((item) => item[0] !== id));
-  }, []);
+  const removeShelfItem = useCallback(
+    (id: number) => {
+      const p = productsById[id];
+      setShelf((prev) => prev.filter((item) => item[0] !== id));
+      if (p) {
+        triggerHaptic('remove');
+        window.setTimeout(() => {
+          showToast({
+            icon: 'info',
+            title: lang === 'ru' ? 'Убрано с полки' : 'Javondan olindi',
+            text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
+            tone: 'red',
+          });
+        }, 0);
+      }
+    },
+    [lang, productsById, showToast],
+  );
 
-  const addShelfItem = useCallback((id: number) => {
-    setShelf((prev) => (prev.some((x) => x[0] === id) ? prev : [...prev, [id, 2, 7, 0]]));
-  }, []);
+  const addShelfItem = useCallback(
+    (id: number) => {
+      const p = productsById[id];
+      setShelf((prev) => {
+        if (prev.some((x) => x[0] === id)) return prev;
+        if (p) {
+          triggerHaptic('add');
+          window.setTimeout(() => {
+            showToast({
+              icon: 'check',
+              title: lang === 'ru' ? 'Добавлено на полку' : "Javonga qo'shildi",
+              text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
+              tone: 'ok',
+            });
+          }, 0);
+        }
+        return [...prev, [id, 2, 7, 0]];
+      });
+    },
+    [lang, productsById, showToast],
+  );
 
   const fillShelfToCart = useCallback(
     (onlyLow: boolean) => {
@@ -1186,6 +1263,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     discountNudge,
     submittingOrder,
     shelf,
+    favorites,
+    guideOpen,
+    openGuide,
+    closeGuide,
     refillPredictions,
     refillById,
     refillDueItems,
@@ -1201,6 +1282,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     cartSubtotal,
     unreadNotifCount,
     inShelf,
+    isFavorite,
     goTab,
     openPage,
     goBack,

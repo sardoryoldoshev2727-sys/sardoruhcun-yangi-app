@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Droplet,
   Globe,
+  Heart,
   Info,
   Lock,
   MessageCircle,
@@ -25,9 +26,10 @@ import {
   Wallet,
 } from 'lucide-react';
 import { LOGO } from '../api';
+import { ProductCard } from '../components/ProductCard';
 import { ProductVisual } from '../components/ProductVisual';
 import { ProfitCalculatorCard } from '../components/ProfitCalculatorCard';
-import { ListRowsSkeleton, ReportSkeleton } from '../components/Skeletons';
+import { CatalogSkeleton, ListRowsSkeleton, ReportSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
@@ -39,6 +41,7 @@ export const ProfileView: React.FC = () => {
     monthTotal,
     session,
     shop,
+    favorites,
     unreadChat,
     darkMode,
     largeText,
@@ -105,8 +108,33 @@ export const ProfileView: React.FC = () => {
         {t.loyaltyInfoNote}
       </p>
 
-      {/* Business Tools: Profit Calculator & Monthly Report */}
+      {/* Business Tools & Favorites */}
       <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+        <button
+          type="button"
+          onClick={() => openPage('favorites')}
+          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F4F5F7] dark:hover:bg-zinc-900/50 transition-colors duration-150"
+        >
+          <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+            <Heart className="w-5 h-5" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm text-[#111827] dark:text-zinc-100">
+              {t.favoritesTitle}
+            </div>
+            <div className="text-xs text-[#6B7280] dark:text-zinc-400 truncate tabular-nums">
+              {t.favoritesCountSub(favorites.length)}
+            </div>
+          </div>
+          {favorites.length > 0 ? (
+            <span className="min-w-[22px] h-5 px-2 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-bold flex items-center justify-center tabular-nums">
+              {favorites.length}
+            </span>
+          ) : (
+            <ChevronRight className="w-5 h-5 text-[#6B7280]" />
+          )}
+        </button>
+
         <button
           type="button"
           onClick={() => openPage('profit')}
@@ -349,6 +377,61 @@ export const ProfileView: React.FC = () => {
       <p className="text-center text-xs text-[#6B7280] dark:text-zinc-500 pt-1">
         {t.sinceYear}
       </p>
+    </div>
+  );
+};
+
+export const FavoritesView: React.FC = () => {
+  const {
+    favorites,
+    productsById,
+    productsLoading,
+    loadError,
+    retryLoad,
+    goTab,
+    t,
+  } = useStore();
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title={t.loadErrorTitle}
+        retryLabel={t.retryBtn}
+        onRetry={() => void retryLoad()}
+      />
+    );
+  }
+
+  if (productsLoading) {
+    return <CatalogSkeleton viewMode="grid" />;
+  }
+
+  const favProducts = favorites
+    .map((id) => productsById[id])
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  if (favProducts.length === 0) {
+    return (
+      <EmptyState
+        icon={<Heart className="w-5 h-5" />}
+        title={t.favoritesEmptyTitle}
+        subtitle={t.favoritesEmptySub}
+        actionLabel={t.goToCatalog}
+        onAction={() => goTab('cat')}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400 tabular-nums">
+        {t.shownCount(favProducts.length)}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-stretch">
+        {favProducts.map((p) => (
+          <ProductCard key={p.id} product={p} mode="grid" />
+        ))}
+      </div>
     </div>
   );
 };

@@ -27,7 +27,30 @@ export interface Translations {
   loadErrorTitle: string;
   // Home
   greetingHello: (name: string) => string;
+  greetingMorning: (name: string) => string;
+  greetingDay: (name: string) => string;
+  greetingEvening: (name: string) => string;
   nextDeliveryChip: string;
+  statCartLabel: string;
+  statCartVal: (n: number) => string;
+  statOrderLabel: string;
+  statOrderNone: string;
+  statDiscountLabel: string;
+  statDiscountMax: string;
+  qaFastOrder: string;
+  qaFastOrderSub: string;
+  qaUsualOrder: string;
+  qaUsualOrderSub: string;
+  qaTrackOrder: string;
+  qaTrackOrderSub: (orderId: number | null) => string;
+  qaWriteOperator: string;
+  qaWriteOperatorSub: (unread: number) => string;
+  howItWorksTitle: string;
+  howItWorksMoreBtn: string;
+  guideSkipBtn: string;
+  guideNextBtn: string;
+  guideStartBtn: string;
+  guideSteps: { title: string; desc: string }[];
   heroSlides: {
     eyebrow: string;
     title: string;
@@ -94,6 +117,13 @@ export interface Translations {
   pieceUnit: string;
   inStock: string;
   outOfStock: string;
+  addToShelfPill: string;
+  inShelfPill: string;
+  removeShelfConfirmTitle: string;
+  removeShelfConfirmSub: (name: string) => string;
+  yesRemoveBtn: string;
+  favoriteAddLabel: string;
+  favoriteRemoveLabel: string;
   // Promo tab
   promoTitle: string;
   promoSub: string;
@@ -243,6 +273,10 @@ export interface Translations {
   languageName: string;
   aboutTitle: string;
   notifTitle: string;
+  favoritesTitle: string;
+  favoritesCountSub: (n: number) => string;
+  favoritesEmptyTitle: string;
+  favoritesEmptySub: string;
   sinceYear: string;
   monthPurchaseLabel: string;
   ordersCountLabel: string;
@@ -306,7 +340,45 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     retryBtn: 'Qayta urinish',
     loadErrorTitle: "Ma'lumot yuklanmadi",
     greetingHello: (name) => `Assalomu alaykum, ${name}`,
+    greetingMorning: (name) => `Xayrli tong, ${name}`,
+    greetingDay: (name) => `Xayrli kun, ${name}`,
+    greetingEvening: (name) => `Xayrli kech, ${name}`,
     nextDeliveryChip: 'Ertaga 9–13',
+    statCartLabel: 'Savatda',
+    statCartVal: (n) => `${n} quti`,
+    statOrderLabel: 'Faol buyurtma',
+    statOrderNone: "Yo'q",
+    statDiscountLabel: 'Chegirmagacha',
+    statDiscountMax: '10% faol',
+    qaFastOrder: 'Tez buyurtma',
+    qaFastOrderSub: 'Katalogdan tanlash',
+    qaUsualOrder: 'Odatdagi buyurtma',
+    qaUsualOrderSub: 'Javondagi miqdorlar',
+    qaTrackOrder: 'Kuzatish',
+    qaTrackOrderSub: (orderId) =>
+      orderId ? `#${orderId} · yo'lda` : "Buyurtmalar ro'yxati",
+    qaWriteOperator: 'Operatorga yozish',
+    qaWriteOperatorSub: (unread) =>
+      unread > 0 ? `${unread} ta yangi xabar` : 'OsonChat orqali',
+    howItWorksTitle: 'Qanday ishlaydi?',
+    howItWorksMoreBtn: 'Batafsil',
+    guideSkipBtn: "O'tkazib yuborish",
+    guideNextBtn: 'Keyingi',
+    guideStartBtn: 'Boshlash',
+    guideSteps: [
+      {
+        title: 'Tanlang',
+        desc: 'Mahsulot yonidagi + tugmasini bosib kerakli qutilar sonini belgilang',
+      },
+      {
+        title: 'Tasdiqlang',
+        desc: 'Savatga o‘ting, yetkazish vaqtini tanlang va 4 xonali PIN bilan tasdiqlang',
+      },
+      {
+        title: 'Kuzating',
+        desc: "Haydovchini kuzatib boring va savollar bo'lsa OsonChat'da yozing",
+      },
+    ],
     heroSlides: [
       {
         eyebrow: 'Haftalik aksiya',
@@ -395,6 +467,13 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     pieceUnit: 'dona',
     inStock: 'Omborda bor',
     outOfStock: 'Tugagan',
+    addToShelfPill: 'Javonga',
+    inShelfPill: 'Javonda',
+    removeShelfConfirmTitle: 'Javondan olinsinmi?',
+    removeShelfConfirmSub: (name) => `«${name}» doimiy javoningizdan olib tashlanadi.`,
+    yesRemoveBtn: 'Ha, olish',
+    favoriteAddLabel: "Yoqqanlarga qo'shish",
+    favoriteRemoveLabel: 'Yoqqanlardan olish',
     promoTitle: 'Aksiyalar va chegirmalar',
     promoSub: 'Har bir buyurtma summasiga qarab chegirma va haftalik aksiyalar',
     currentDiscounts: 'Chegirmadagi mahsulotlar',
@@ -547,6 +626,11 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     languageName: "O'zbekcha",
     aboutTitle: 'Biz haqimizda',
     notifTitle: 'Xabarlar',
+    favoritesTitle: 'Yoqqanlar',
+    favoritesCountSub: (n) =>
+      n > 0 ? `${n} ta saqlangan ichimlik` : "Hozircha saqlanganlar yo'q",
+    favoritesEmptyTitle: "Yoqqan mahsulotlar yo'q",
+    favoritesEmptySub: "Katalogdagi yurakcha tugmasini bosib saqlab qo'ying",
     sinceYear: 'Lal Anaar · 2015 yildan beri',
     monthPurchaseLabel: 'bu oy xarid',
     ordersCountLabel: 'buyurtma',
@@ -605,7 +689,45 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     retryBtn: 'Повторить',
     loadErrorTitle: 'Не удалось загрузить данные',
     greetingHello: (name) => `Здравствуйте, ${name}`,
+    greetingMorning: (name) => `Доброе утро, ${name}`,
+    greetingDay: (name) => `Добрый день, ${name}`,
+    greetingEvening: (name) => `Добрый вечер, ${name}`,
     nextDeliveryChip: 'Завтра 9–13',
+    statCartLabel: 'В корзине',
+    statCartVal: (n) => `${n} кор.`,
+    statOrderLabel: 'Активный заказ',
+    statOrderNone: 'Нет',
+    statDiscountLabel: 'До скидки',
+    statDiscountMax: '10% активна',
+    qaFastOrder: 'Быстрый заказ',
+    qaFastOrderSub: 'Выбрать в каталоге',
+    qaUsualOrder: 'Обычный заказ',
+    qaUsualOrderSub: 'Набор с вашей полки',
+    qaTrackOrder: 'Отследить',
+    qaTrackOrderSub: (orderId) =>
+      orderId ? `#${orderId} · в пути` : 'Список заказов',
+    qaWriteOperator: 'Написать оператору',
+    qaWriteOperatorSub: (unread) =>
+      unread > 0 ? `${unread} новых сообщ.` : 'Через OsonChat',
+    howItWorksTitle: 'Как это работает?',
+    howItWorksMoreBtn: 'Подробнее',
+    guideSkipBtn: 'Пропустить',
+    guideNextBtn: 'Далее',
+    guideStartBtn: 'Начать',
+    guideSteps: [
+      {
+        title: 'Выбирайте',
+        desc: 'Нажмите + на карточке товара, чтобы выбрать нужное количество коробок',
+      },
+      {
+        title: 'Подтверждайте',
+        desc: 'Выберите время доставки в корзине и подтвердите заказ 4-значным PIN',
+      },
+      {
+        title: 'Отслеживайте',
+        desc: 'Следите за водителем в пути и пишите оператору в OsonChat',
+      },
+    ],
     heroSlides: [
       {
         eyebrow: 'Акция недели',
@@ -694,6 +816,13 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     pieceUnit: 'шт.',
     inStock: 'В наличии',
     outOfStock: 'Нет в наличии',
+    addToShelfPill: 'На полку',
+    inShelfPill: 'На полке',
+    removeShelfConfirmTitle: 'Убрать с полки?',
+    removeShelfConfirmSub: (name) => `«${name}» будет убран из вашей постоянной полки.`,
+    yesRemoveBtn: 'Да, убрать',
+    favoriteAddLabel: 'Добавить в избранное',
+    favoriteRemoveLabel: 'Убрать из избранного',
     promoTitle: 'Акции и скидки',
     promoSub: 'Скидки от суммы каждого заказа и акции недели',
     currentDiscounts: 'Товары со скидкой',
@@ -846,6 +975,11 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     languageName: 'Русский',
     aboutTitle: 'О нас',
     notifTitle: 'Уведомления',
+    favoritesTitle: 'Избранное',
+    favoritesCountSub: (n) =>
+      n > 0 ? `${n} сохранённых напитков` : 'Пока нет сохранённых',
+    favoritesEmptyTitle: 'Нет избранных товаров',
+    favoritesEmptySub: 'Нажмите на сердечко в каталоге, чтобы сохранить',
     sinceYear: 'Lal Anaar · с 2015 года',
     monthPurchaseLabel: 'за этот месяц',
     ordersCountLabel: 'заказов',

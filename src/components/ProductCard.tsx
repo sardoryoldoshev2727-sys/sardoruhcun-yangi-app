@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { Check, Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
 import type { Product, ShelfItem } from '../types';
@@ -130,10 +130,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   mode = 'grid',
 }) => {
-  const { cart, lang, t, inShelf, toggleFavorite, setSheet, updateQty } = useStore();
+  const {
+    cart,
+    lang,
+    t,
+    inShelf,
+    isFavorite,
+    addShelfItem,
+    toggleFavorite,
+    setSheet,
+    updateQty,
+  } = useStore();
   const qty = cart[product.id] || 0;
   const inCart = qty > 0;
-  const fav = inShelf(product.id);
+  const fav = isFavorite(product.id);
+  const onShelf = inShelf(product.id);
   const brand = getBrandName(product);
   const pack = getPackType(product);
   const displayName = getProductName(product, lang);
@@ -169,7 +180,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Top-right favorite toggle (44x44 tap target) */}
           <button
             type="button"
-            aria-label={fav ? t.addToShelfBtn : t.myShelfTitle}
+            aria-label={fav ? t.favoriteRemoveLabel : t.favoriteAddLabel}
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite(product.id);
@@ -251,6 +262,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product name (max 2 lines) */}
         <div className="mt-2.5 px-1 font-bold text-sm leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.45rem] break-words">
           {displayName} {product.vol}
+        </div>
+
+        {/* Separate Shelf ('Javonim') pill control under product name (44px tap target) */}
+        <div className="px-1 -my-1 flex items-center">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onShelf) {
+                setSheet({ type: 'confirmRemoveShelf', id: product.id });
+              } else {
+                addShelfItem(product.id);
+              }
+            }}
+            className="min-h-[44px] inline-flex items-center text-left focus-visible:outline-none"
+          >
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors duration-150 ${
+                onShelf
+                  ? 'bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185]'
+                  : 'border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-300 hover:border-[#9B111E] hover:text-[#9B111E]'
+              }`}
+            >
+              {onShelf ? (
+                <Check className="w-3 h-3 stroke-[2.5] flex-none" />
+              ) : (
+                <Plus className="w-3 h-3 stroke-[2.5] flex-none" />
+              )}
+              <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
+            </span>
+          </button>
         </div>
 
         {/* Small grey pack meta ('1 quti = 9 dona') */}
@@ -428,7 +470,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
             <button
               type="button"
-              aria-label={fav ? t.addToShelfBtn : t.myShelfTitle}
+              aria-label={fav ? t.favoriteRemoveLabel : t.favoriteAddLabel}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleFavorite(product.id);
@@ -445,8 +487,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </button>
           </div>
 
-          <div className="mt-1 text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
-            {t.boxMetaLine(product.blk)} · {pack}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onShelf) {
+                  setSheet({ type: 'confirmRemoveShelf', id: product.id });
+                } else {
+                  addShelfItem(product.id);
+                }
+              }}
+              className="min-h-[44px] -my-1.5 inline-flex items-center"
+            >
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors duration-150 ${
+                  onShelf
+                    ? 'bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185]'
+                    : 'border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-300 hover:border-[#9B111E] hover:text-[#9B111E]'
+                }`}
+              >
+                {onShelf ? (
+                  <Check className="w-3 h-3 stroke-[2.5] flex-none" />
+                ) : (
+                  <Plus className="w-3 h-3 stroke-[2.5] flex-none" />
+                )}
+                <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
+              </span>
+            </button>
+            <span className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
+              {t.boxMetaLine(product.blk)} · {pack}
+            </span>
           </div>
         </div>
 
@@ -528,7 +599,10 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
             <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
               {displayName} {product.vol}
             </div>
-            <Heart className="w-5 h-5 fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185] flex-none mt-1" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-[11px] font-semibold flex-none mt-0.5">
+              <Check className="w-3 h-3 stroke-[2.5]" />
+              <span>{t.inShelfPill}</span>
+            </span>
           </div>
           <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
             {t.boxMetaLine(product.blk)} · {formatSom(product.one)}

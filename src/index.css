@@ -140,6 +140,27 @@ input[type='range'].calm-slider::-moz-range-thumb {
   cursor: pointer;
 }
 
+@keyframes heroSheen {
+  0%,
+  15% {
+    transform: translateX(-140%) skewX(-22deg);
+  }
+  55%,
+  100% {
+    transform: translateX(260%) skewX(-22deg);
+  }
+}
+
+.hero-sheen {
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  animation: heroSheen 6.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

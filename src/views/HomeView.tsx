@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight,
+  BookmarkCheck,
   Check,
   ChevronRight,
   Clock,
-  Droplet,
-  Heart,
+  LayoutGrid,
+  Lock,
   MessageCircle,
   Plus,
   Repeat,
@@ -40,12 +41,13 @@ export const HomeView: React.FC = () => {
     setSheet,
     fillShelfToCart,
     addRefillDueToCart,
-    repeatLastOrder,
+    openGuide,
     productsById,
     productsLoading,
     ordersLoading,
     loadError,
     retryLoad,
+    cartCount,
     discountNudge,
     unreadChat,
     orders,
@@ -83,17 +85,20 @@ export const HomeView: React.FC = () => {
   }, [carouselPaused, slides.length]);
 
   const sortedShelf = [...shelf].sort((a, b) => a[2] - a[3] - (b[2] - b[3]));
-  const lowCount = refillDueItems.length || shelf.filter((s) => s[2] - s[3] <= 3).length;
   const next = discountNudge.nextTier;
   const activeOrder = orders.find(
     (o) => o.status === "Yo'lda" || o.status === 'Tasdiqlandi' || o.status === 'Yuborildi',
   );
   const buyAgainItems = getLastDeliveredBuyAgainItems(orders, productsById);
 
-  const scrollToShelf = () => {
-    const el = document.getElementById('mening-javonim');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  const userName = session?.userName || 'Dilnoza';
+  const hour = new Date().getHours();
+  const timeGreeting =
+    hour >= 5 && hour < 12
+      ? t.greetingMorning(userName)
+      : hour >= 12 && hour < 18
+        ? t.greetingDay(userName)
+        : t.greetingEvening(userName);
 
   if (loadError) {
     return (
@@ -107,17 +112,65 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1) Greeting header + shop name (delivery chip stays in AppShell header across all tabs) */}
+      {/* 1) Time-based greeting header + shop name */}
       <div className="pt-0.5">
         <h2 className="text-xl sm:text-2xl font-extrabold text-[#111827] dark:text-white leading-tight tracking-tight break-words">
-          {t.greetingHello(session?.userName || 'Dilnoza')}
+          {timeGreeting}
         </h2>
         <p className="text-xs sm:text-[13px] font-medium text-[#6B7280] dark:text-zinc-400 mt-0.5 truncate">
           {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
         </p>
       </div>
 
-      {/* 2) Hero Promo Carousel (radius 24, bordeaux gradient #9B111E -> #6E0B15, auto-advance 5s, swipe) */}
+      {/* 2) Quick-stats row of 3 mini cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => goTab('cart')}
+          className="min-h-[62px] bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 hover:border-[#9B111E] rounded-2xl p-2.5 text-left card-calm transition-colors duration-150 flex flex-col justify-between min-w-0"
+        >
+          <span className="text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 truncate block w-full">
+            {t.statCartLabel}
+          </span>
+          <strong className="text-[13px] sm:text-sm font-extrabold text-[#111827] dark:text-white tabular-nums truncate block w-full mt-1">
+            {t.statCartVal(cartCount)}
+          </strong>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => (activeOrder ? goTab('ord', 'track') : goTab('ord'))}
+          className="min-h-[62px] bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 hover:border-[#9B111E] rounded-2xl p-2.5 text-left card-calm transition-colors duration-150 flex flex-col justify-between min-w-0"
+        >
+          <span className="text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 truncate block w-full">
+            {t.statOrderLabel}
+          </span>
+          <strong
+            className={`text-[13px] sm:text-sm font-extrabold tabular-nums truncate block w-full mt-1 ${
+              activeOrder
+                ? 'text-[#9B111E] dark:text-[#FB7185]'
+                : 'text-[#6B7280] dark:text-zinc-400'
+            }`}
+          >
+            {activeOrder ? `#${activeOrder.id}` : t.statOrderNone}
+          </strong>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => goTab('promo')}
+          className="min-h-[62px] bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 hover:border-[#9B111E] rounded-2xl p-2.5 text-left card-calm transition-colors duration-150 flex flex-col justify-between min-w-0"
+        >
+          <span className="text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 truncate block w-full">
+            {t.statDiscountLabel}
+          </span>
+          <strong className="text-[13px] sm:text-sm font-extrabold text-[#111827] dark:text-white tabular-nums truncate block w-full mt-1">
+            {next ? formatSom(discountNudge.amountNeeded) : t.statDiscountMax}
+          </strong>
+        </button>
+      </div>
+
+      {/* 3) Hero Promo Carousel (larger bottle, subtle diagonal light sheen, auto-advance 5s, swipe) */}
       <section
         aria-label={t.promoTitle}
         onMouseEnter={() => setCarouselPaused(true)}
@@ -143,6 +196,10 @@ export const HomeView: React.FC = () => {
         className="relative rounded-[24px] bg-gradient-to-br from-[#9B111E] to-[#6E0B15] text-white p-5 overflow-hidden shadow-[0_10px_28px_-8px_rgba(155,17,30,0.42)]"
       >
         <div
+          className="absolute inset-y-0 left-0 w-1/2 hero-sheen pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
           className="absolute -right-8 -top-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none"
           aria-hidden="true"
         />
@@ -158,7 +215,7 @@ export const HomeView: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -14 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative z-10 flex items-center justify-between gap-3"
+            className="relative z-10 flex items-center justify-between gap-2.5"
           >
             <div className="flex-1 min-w-0 space-y-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/15 text-white text-[11px] font-bold tracking-wide uppercase">
@@ -194,7 +251,7 @@ export const HomeView: React.FC = () => {
         </AnimatePresence>
 
         {/* Indicator dots */}
-        <div className="relative z-10 flex items-center gap-1.5 mt-3">
+        <div className="relative z-10 flex items-center gap-1.5 mt-2">
           {slides.map((s, idx) => {
             const active = idx === slideIdx;
             return (
@@ -203,7 +260,7 @@ export const HomeView: React.FC = () => {
                 type="button"
                 aria-label={`${idx + 1} / ${slides.length}`}
                 onClick={() => setSlideIdx(idx)}
-                className="py-1.5 px-0.5 flex items-center justify-center"
+                className="min-h-[44px] -my-3 px-0.5 flex items-center justify-center"
               >
                 <span
                   className={`h-1.5 rounded-full transition-all duration-200 ${
@@ -216,7 +273,87 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* 3) Compact Search & Round Category Chips with small flavor-colored circles */}
+      {/* 4) 4 Quick Action Tiles in a 2x2 grid */}
+      <section className="grid grid-cols-2 gap-2.5">
+        <button
+          type="button"
+          onClick={() => goTab('cat')}
+          className="min-h-[68px] flex items-center gap-2.5 p-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150 min-w-0"
+        >
+          <span className="w-9 h-9 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+            <LayoutGrid className="w-4.5 h-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong className="block text-[13px] font-bold text-[#111827] dark:text-zinc-100 leading-tight line-clamp-1">
+              {t.qaFastOrder}
+            </strong>
+            <span className="block text-[11px] text-[#6B7280] dark:text-zinc-400 truncate mt-0.5">
+              {t.qaFastOrderSub}
+            </span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => fillShelfToCart(false)}
+          className="min-h-[68px] flex items-center gap-2.5 p-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150 min-w-0"
+        >
+          <span className="w-9 h-9 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+            <Repeat className="w-4.5 h-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong className="block text-[13px] font-bold text-[#111827] dark:text-zinc-100 leading-tight line-clamp-1">
+              {t.qaUsualOrder}
+            </strong>
+            <span className="block text-[11px] text-[#6B7280] dark:text-zinc-400 truncate mt-0.5">
+              {t.qaUsualOrderSub}
+            </span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => (activeOrder ? goTab('ord', 'track') : goTab('ord'))}
+          className="min-h-[68px] flex items-center gap-2.5 p-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150 min-w-0"
+        >
+          <span className="w-9 h-9 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+            <Truck className="w-4.5 h-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong className="block text-[13px] font-bold text-[#111827] dark:text-zinc-100 leading-tight line-clamp-1">
+              {t.qaTrackOrder}
+            </strong>
+            <span className="block text-[11px] text-[#6B7280] dark:text-zinc-400 truncate mt-0.5 tabular-nums">
+              {t.qaTrackOrderSub(activeOrder ? activeOrder.id : null)}
+            </span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => openPage('chat')}
+          className="relative min-h-[68px] flex items-center gap-2.5 p-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150 min-w-0"
+        >
+          <span className="w-9 h-9 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+            <MessageCircle className="w-4.5 h-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <strong className="block text-[13px] font-bold text-[#111827] dark:text-zinc-100 leading-tight line-clamp-1">
+              {t.qaWriteOperator}
+            </strong>
+            <span className="block text-[11px] text-[#6B7280] dark:text-zinc-400 truncate mt-0.5 tabular-nums">
+              {t.qaWriteOperatorSub(unreadChat)}
+            </span>
+          </div>
+          {unreadChat > 0 && (
+            <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#9B111E] text-white text-[11px] font-bold flex items-center justify-center tabular-nums flex-none">
+              {unreadChat}
+            </span>
+          )}
+        </button>
+      </section>
+
+      {/* 5) Compact Search & Round Category Chips with small flavor-colored circles */}
       <div className="space-y-2.5">
         <button
           type="button"
@@ -241,7 +378,7 @@ export const HomeView: React.FC = () => {
                 className="flex-none min-h-[44px] px-3.5 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 text-xs sm:text-sm font-semibold text-[#111827] dark:text-zinc-200 whitespace-nowrap inline-flex items-center gap-2 hover:border-[#9B111E] transition-colors duration-150 card-calm"
               >
                 {c === 'Javonim' ? (
-                  <Heart className="w-3.5 h-3.5 fill-[#9B111E] text-[#9B111E] flex-none" />
+                  <BookmarkCheck className="w-3.5 h-3.5 text-[#9B111E] dark:text-[#FB7185] flex-none" />
                 ) : (
                   <span
                     className="w-2.5 h-2.5 rounded-full flex-none"
@@ -256,131 +393,44 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* Active Delivery Card + Quick Actions */}
-      <div className="space-y-3">
-        {activeOrder && (
+      {/* 6) Compact 3-step 'Qanday ishlaydi?' strip with 'Batafsil' reopening the guide */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-base font-bold text-[#111827] dark:text-white">
+            {t.howItWorksTitle}
+          </h3>
           <button
             type="button"
-            onClick={() => goTab('ord', 'track')}
-            className="w-full text-left rounded-[20px] p-4 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 hover:border-[#9B111E] dark:hover:border-[#FB7185] card-calm transition-colors duration-150"
+            onClick={openGuide}
+            className="min-h-[44px] -my-2 px-3 rounded-full text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA] dark:hover:bg-rose-950/40 inline-flex items-center gap-1 transition-colors"
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-11 h-11 rounded-2xl bg-[#9B111E] text-white flex items-center justify-center flex-none">
-                  <Truck className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]">
-                    {t.activeDelivery} · {t.queuePos}
-                  </div>
-                  <strong className="block text-base font-bold text-[#111827] dark:text-white leading-snug">
-                    {t.orderNumberPrefix}{activeOrder.id}
-                  </strong>
-                  <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate">
-                    Bugun 14:00–17:00 · Akmal
-                  </span>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1 min-h-[44px] px-4 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] text-sm font-semibold flex-none whitespace-nowrap">
-                <span>{t.trackButton}</span>
-                <ChevronRight className="w-5 h-5" />
-              </span>
-            </div>
-
-            <div className="grid grid-cols-5 gap-1.5 mt-3">
-              <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-              <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-              <span className="h-2 rounded-full bg-[#9B111E] dark:bg-[#F43F5E]" />
-              <span className="h-2 rounded-full bg-[#9B111E]/75 dark:bg-[#F43F5E]/75 animate-pulse" />
-              <span className="h-2 rounded-full bg-[#E5E7EB] dark:bg-zinc-800" />
-            </div>
-          </button>
-        )}
-
-        {/* Quick-Action Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <button
-            type="button"
-            onClick={repeatLastOrder}
-            className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150"
-          >
-            <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
-              <Repeat className="w-5 h-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <strong className="block text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
-                {t.repeatLastOrder}
-              </strong>
-              <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate">
-                {t.repeatLastOrderSub}
-              </span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-[#6B7280] sm:hidden" />
-          </button>
-
-          {unreadChat > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                goTab('me');
-                openPage('chat');
-              }}
-              className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150"
-            >
-              <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
-                <MessageCircle className="w-5 h-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <strong className="block text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
-                  Madina · {unreadChat}
-                </strong>
-                <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate">
-                  {t.osonChat}
-                </span>
-              </div>
-              <ChevronRight className="w-5 h-5 text-[#6B7280] sm:hidden" />
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={scrollToShelf}
-            className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#D97706] transition-colors duration-150"
-          >
-            <span className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-[#D97706] dark:text-[#FBBF24] flex items-center justify-center flex-none">
-              <TrendingDown className="w-5 h-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <strong className="block text-sm font-bold text-[#111827] dark:text-zinc-100 truncate tabular-nums">
-                {t.lowStockBanner(lowCount)}
-              </strong>
-              <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate">
-                {t.lowStockSub}
-              </span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-[#6B7280] sm:hidden" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => goTab('promo')}
-            className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150"
-          >
-            <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
-              <Droplet className="w-5 h-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <strong className="block text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
-                {next ? t.nextTierBanner(next.pct) : t.maxTierBanner}
-              </strong>
-              <span className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate tabular-nums">
-                {next ? t.remainingAmount(formatSom(discountNudge.amountNeeded)) : t.activePartnerLevel}
-              </span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-[#6B7280] sm:hidden" />
+            <span>{t.howItWorksMoreBtn}</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {t.guideSteps.map((st, idx) => {
+            const StepIcon = idx === 0 ? Plus : idx === 1 ? Lock : Truck;
+            return (
+              <div
+                key={st.title}
+                className="rounded-xl bg-[#F4F5F7] dark:bg-zinc-900/70 p-2.5 flex flex-col gap-1.5 min-w-0"
+              >
+                <span className="w-7 h-7 rounded-lg bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+                  <StepIcon className="w-4 h-4" />
+                </span>
+                <div className="text-xs font-bold text-[#111827] dark:text-zinc-100 truncate">
+                  {idx + 1}. {st.title}
+                </div>
+                <p className="text-[11px] text-[#6B7280] dark:text-zinc-400 leading-snug line-clamp-1">
+                  {st.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Instacart 'Yana buyurtma qilish' horizontal row from last delivered order */}
       {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (

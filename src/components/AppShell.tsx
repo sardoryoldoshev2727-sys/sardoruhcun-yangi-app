@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUp,
   Bell,
+  BookmarkCheck,
   Check,
   ClipboardList,
   Clock,
@@ -57,6 +58,7 @@ const TrackView = lazyNamed(loadOrders, 'TrackView');
 const loadProfile = () => import('../views/ProfileAndSubViews');
 const AboutView = lazyNamed(loadProfile, 'AboutView');
 const ChatView = lazyNamed(loadProfile, 'ChatView');
+const FavoritesView = lazyNamed(loadProfile, 'FavoritesView');
 const FinanceView = lazyNamed(loadProfile, 'FinanceView');
 const MonthlyReportView = lazyNamed(loadProfile, 'MonthlyReportView');
 const NotifView = lazyNamed(loadProfile, 'NotifView');
@@ -274,13 +276,21 @@ export const AppShell: React.FC = () => {
         </>
       );
     }
-    if (page === 'shop' || page === 'fin' || page === 'about' || page === 'profit' || page === 'report') {
+    if (
+      page === 'shop' ||
+      page === 'fin' ||
+      page === 'about' ||
+      page === 'profit' ||
+      page === 'report' ||
+      page === 'favorites'
+    ) {
       const titles = {
         shop: t.shopInfoTitle,
         fin: t.financeTitle,
         about: t.aboutTitle,
         profit: t.profitCalcTitle,
         report: t.monthlyReportTitle,
+        favorites: t.favoritesTitle,
       };
       return (
         <>
@@ -314,7 +324,7 @@ export const AppShell: React.FC = () => {
           <button
             type="button"
             aria-label={t.backLabel}
-            onClick={() => goTab('home')}
+            onClick={() => openPage(null)}
             className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -351,7 +361,7 @@ export const AppShell: React.FC = () => {
           <button
             type="button"
             aria-label={t.backLabel}
-            onClick={() => goTab('home')}
+            onClick={() => openPage(null)}
             className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -381,7 +391,7 @@ export const AppShell: React.FC = () => {
           <button
             type="button"
             aria-label={t.backLabel}
-            onClick={() => goTab('cat')}
+            onClick={() => openPage(null)}
             className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -436,8 +446,8 @@ export const AppShell: React.FC = () => {
         <>
           <button
             type="button"
-            aria-label="Orqaga"
-            onClick={handleBack}
+            aria-label={t.backLabel}
+            onClick={() => openPage(null)}
             className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -519,6 +529,7 @@ export const AppShell: React.FC = () => {
     if (page === 'about') return <AboutView />;
     if (page === 'profit') return <ProfitCalculatorView />;
     if (page === 'report') return <MonthlyReportView />;
+    if (page === 'favorites') return <FavoritesView />;
 
     switch (tab) {
       case 'cat':
@@ -666,9 +677,9 @@ export const AppShell: React.FC = () => {
                         }`}
                       >
                         {c === 'Javonim' ? (
-                          <Heart
+                          <BookmarkCheck
                             className={`w-3.5 h-3.5 flex-none ${
-                              active ? 'fill-white text-white' : 'fill-[#9B111E] text-[#9B111E]'
+                              active ? 'text-white' : 'text-[#9B111E] dark:text-[#FB7185]'
                             }`}
                           />
                         ) : (

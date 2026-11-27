@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, Delete, Heart, Lock, Package, Plus, Star, Trash2, X } from 'lucide-react';
+import { BookmarkCheck, Check, Delete, Heart, Lock, Package, Plus, Star, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getProductName, getSlotLabel } from '../i18n';
 import { formatSom, getStockInfo } from '../utils/catalog';
@@ -9,6 +9,67 @@ import { ProductVisual } from './ProductVisual';
 import { ProfitCalculatorCard } from './ProfitCalculatorCard';
 
 const QUICK_PRESETS = [1, 2, 3, 5, 10, 15, 20, 25];
+
+function GuideStepIllustration({ step }: { step: number }) {
+  if (step === 0) {
+    return (
+      <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">
+        <rect x="34" y="10" width="152" height="104" rx="20" fill="#FCE8EA" />
+        <rect x="46" y="20" width="84" height="84" rx="16" fill="#FFFFFF" />
+        <rect x="81" y="28" width="14" height="8" rx="3" fill="#D97706" />
+        <path
+          d="M82 37h12l6 12c2 4 3 8 3 13v28a6 6 0 0 1-6 6H79a6 6 0 0 1-6-6V62c0-5 1-9 3-13z"
+          fill="#9B111E"
+        />
+        <rect x="75" y="59" width="26" height="14" rx="2" fill="#FFFFFF" opacity="0.92" />
+        <rect x="140" y="28" width="34" height="8" rx="4" fill="#9B111E" opacity="0.22" />
+        <rect x="140" y="42" width="26" height="6" rx="3" fill="#9B111E" opacity="0.14" />
+        <circle cx="158" cy="84" r="18" fill="#9B111E" />
+        <path d="M158 76v16M150 84h16" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (step === 1) {
+    return (
+      <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">
+        <rect x="26" y="12" width="168" height="100" rx="20" fill="#FCE8EA" />
+        <rect x="42" y="26" width="76" height="52" rx="12" fill="#FFFFFF" stroke="#9B111E" strokeWidth="2.5" />
+        <line x1="42" y1="42" x2="118" y2="42" stroke="#9B111E" strokeWidth="2" opacity="0.35" />
+        <rect x="54" y="32" width="14" height="36" rx="4" fill="#9B111E" opacity="0.85" />
+        <rect x="73" y="32" width="14" height="36" rx="4" fill="#D97706" opacity="0.85" />
+        <rect x="92" y="32" width="14" height="36" rx="4" fill="#059669" opacity="0.85" />
+        <circle cx="154" cy="48" r="22" fill="#FFFFFF" stroke="#9B111E" strokeWidth="2.5" />
+        <path d="M154 38v11l7 4" stroke="#9B111E" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <rect x="64" y="88" width="92" height="16" rx="8" fill="#FFFFFF" />
+        <circle cx="84" cy="96" r="4" fill="#9B111E" />
+        <circle cx="101" cy="96" r="4" fill="#9B111E" />
+        <circle cx="118" cy="96" r="4" fill="#9B111E" />
+        <circle cx="135" cy="96" r="4" fill="#9B111E" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">
+      <rect x="24" y="12" width="172" height="100" rx="20" fill="#FCE8EA" />
+      <path
+        d="M46 86 C76 86, 86 42, 126 44 C150 45, 160 66, 176 66"
+        stroke="#9B111E"
+        strokeWidth="3.5"
+        strokeDasharray="6 6"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="46" cy="86" r="8" fill="#9B111E" />
+      <circle cx="46" cy="86" r="3" fill="#FFFFFF" />
+      <circle cx="116" cy="47" r="14" fill="#9B111E" />
+      <rect x="109" y="42" width="14" height="10" rx="2.5" fill="#FFFFFF" />
+      <rect x="138" y="68" width="46" height="30" rx="12" fill="#FFFFFF" />
+      <circle cx="152" cy="83" r="2.5" fill="#9B111E" />
+      <circle cx="161" cy="83" r="2.5" fill="#9B111E" />
+      <circle cx="170" cy="83" r="2.5" fill="#9B111E" />
+    </svg>
+  );
+}
 
 export const SheetsAndModals: React.FC = () => {
   const {
@@ -27,8 +88,12 @@ export const SheetsAndModals: React.FC = () => {
     t,
     submittingOrder,
     inShelf,
+    isFavorite,
+    guideOpen,
+    closeGuide,
     toggleFavorite,
     addShelfItem,
+    removeShelfItem,
     updateQty,
     setExactQty,
     clearCart,
@@ -46,6 +111,14 @@ export const SheetsAndModals: React.FC = () => {
   const [rateChips, setRateChips] = useState<string[]>([]);
   const [rateComment, setRateComment] = useState<string>('');
   const [submittingRate, setSubmittingRate] = useState<boolean>(false);
+  const [guideStep, setGuideStep] = useState<number>(0);
+  const guideTouchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (guideOpen) {
+      setGuideStep(0);
+    }
+  }, [guideOpen]);
 
   useEffect(() => {
     if (sheet?.type === 'quickQty') {
@@ -396,7 +469,8 @@ export const SheetsAndModals: React.FC = () => {
       {sheet?.type === 'prod' && (() => {
         const product = productsById[sheet.id];
         if (!product) return null;
-        const fav = inShelf(product.id);
+        const fav = isFavorite(product.id);
+        const onShelf = inShelf(product.id);
         const st = getStockInfo(product, shelf, lang, refillById[product.id]);
         const qty = cart[product.id] || 1;
         const displayName = getProductName(product, lang);
@@ -444,10 +518,36 @@ export const SheetsAndModals: React.FC = () => {
                     {product.vol}
                     {product.out ? ` · ${t.outOfStock}` : ''}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onShelf) {
+                        setSheet({ type: 'confirmRemoveShelf', id: product.id, returnToProd: true });
+                      } else {
+                        addShelfItem(product.id);
+                      }
+                    }}
+                    className="min-h-[44px] -my-1 inline-flex items-center"
+                  >
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 ${
+                        onShelf
+                          ? 'bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185]'
+                          : 'border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-300 hover:border-[#9B111E] hover:text-[#9B111E]'
+                      }`}
+                    >
+                      {onShelf ? (
+                        <Check className="w-3.5 h-3.5 stroke-[2.5] flex-none" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5] flex-none" />
+                      )}
+                      <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
+                    </span>
+                  </button>
                 </div>
                 <button
                   type="button"
-                  aria-label={t.myShelfTitle}
+                  aria-label={fav ? t.favoriteRemoveLabel : t.favoriteAddLabel}
                   onClick={() => toggleFavorite(product.id)}
                   className="w-11 h-11 rounded-xl border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900 flex items-center justify-center flex-none"
                 >
@@ -895,6 +995,186 @@ export const SheetsAndModals: React.FC = () => {
           </motion.div>
         );
       })()}
+      {sheet?.type === 'confirmRemoveShelf' && (() => {
+        const product = productsById[sheet.id];
+        if (!product) return null;
+        const displayName = `${getProductName(product, lang)} ${product.vol}`;
+        const closeConfirm = () => {
+          if (sheet.returnToProd) {
+            setSheet({ type: 'prod', id: sheet.id });
+          } else {
+            setSheet(null);
+          }
+        };
+        return (
+          <motion.div
+            key="confirmRemoveShelf"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            onClick={closeConfirm}
+            className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-white dark:bg-[#1A1C20] rounded-[20px] p-5 border border-[#E5E7EB] dark:border-zinc-800"
+            >
+              <div className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center mb-3">
+                <BookmarkCheck className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-[#111827] dark:text-white">
+                {t.removeShelfConfirmTitle}
+              </h3>
+              <p className="text-sm text-[#6B7280] dark:text-zinc-400 mt-1 break-words">
+                {t.removeShelfConfirmSub(displayName)}
+              </p>
+              <div className="flex gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={closeConfirm}
+                  className="flex-1 min-h-[44px] rounded-xl border border-[#E5E7EB] dark:border-zinc-700 font-semibold text-sm text-[#111827] dark:text-zinc-200 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800"
+                >
+                  {t.cancelBtn}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    removeShelfItem(sheet.id);
+                    closeConfirm();
+                  }}
+                  className="flex-1 min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150"
+                >
+                  {t.yesRemoveBtn}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        );
+      })()}
+
+      {guideOpen && (
+        <motion.div
+          key="guideBottomSheet"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
+          onClick={closeGuide}
+          className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center md:p-4"
+        >
+          <motion.div
+            initial={{ y: '100%', opacity: 0.94 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0.85 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              guideTouchStartX.current = e.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const startX = guideTouchStartX.current;
+              const endX = e.changedTouches[0]?.clientX;
+              guideTouchStartX.current = null;
+              if (startX !== null && endX !== undefined) {
+                const dx = endX - startX;
+                if (dx < -36 && guideStep < t.guideSteps.length - 1) {
+                  setGuideStep((s) => s + 1);
+                } else if (dx > 36 && guideStep > 0) {
+                  setGuideStep((s) => s - 1);
+                }
+              }
+            }}
+            className="w-full max-w-md bg-white dark:bg-[#1A1C20] rounded-t-[24px] md:rounded-[24px] p-5 pb-6 border-t md:border border-[#E5E7EB] dark:border-zinc-800 space-y-4"
+          >
+            <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto md:hidden" />
+
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9B111E] dark:text-[#FB7185] tabular-nums">
+                {t.howItWorksTitle} · {guideStep + 1}/{t.guideSteps.length}
+              </span>
+              <button
+                type="button"
+                aria-label={t.closeLabel}
+                onClick={closeGuide}
+                className="w-11 h-11 -mr-1 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] dark:text-zinc-300 flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={guideStep}
+                  initial={{ opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -18 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="text-center space-y-3 py-1"
+                >
+                  <GuideStepIllustration step={guideStep} />
+                  <h3 className="text-xl font-extrabold text-[#111827] dark:text-white">
+                    {guideStep + 1}. {t.guideSteps[guideStep]?.title}
+                  </h3>
+                  <p className="text-sm text-[#6B7280] dark:text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                    {t.guideSteps[guideStep]?.desc}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Dots indicator (44px tap targets) */}
+            <div className="flex items-center justify-center gap-1">
+              {t.guideSteps.map((st, idx) => {
+                const active = idx === guideStep;
+                return (
+                  <button
+                    key={st.title}
+                    type="button"
+                    aria-label={`${idx + 1} / ${t.guideSteps.length}`}
+                    onClick={() => setGuideStep(idx)}
+                    className="min-h-[44px] px-1.5 flex items-center justify-center"
+                  >
+                    <span
+                      className={`h-2 rounded-full transition-all duration-200 ${
+                        active ? 'w-6 bg-[#9B111E] dark:bg-[#FB7185]' : 'w-2 bg-[#E5E7EB] dark:bg-zinc-700'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={closeGuide}
+                className="flex-1 min-h-[44px] rounded-xl border border-[#E5E7EB] dark:border-zinc-700 font-semibold text-sm text-[#6B7280] dark:text-zinc-300 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800"
+              >
+                {t.guideSkipBtn}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (guideStep < t.guideSteps.length - 1) {
+                    setGuideStep((s) => s + 1);
+                  } else {
+                    closeGuide();
+                  }
+                }}
+                className="flex-[1.3] min-h-[44px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150"
+              >
+                {guideStep < t.guideSteps.length - 1 ? t.guideNextBtn : t.guideStartBtn}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 };

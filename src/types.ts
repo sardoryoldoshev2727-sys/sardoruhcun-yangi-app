@@ -15,7 +15,8 @@ export type SubPageId =
   | 'fin'
   | 'about'
   | 'profit'
-  | 'report';
+  | 'report'
+  | 'favorites';
 
 export type OrderStatus =
   | 'Yuborildi'
@@ -190,7 +191,8 @@ export type SheetState =
   | { type: 'pin'; changeMode?: boolean }
   | { type: 'cancelOrder'; orderId: number }
   | { type: 'confirmClear' }
-  | { type: 'rateOrder'; orderId: number };
+  | { type: 'rateOrder'; orderId: number }
+  | { type: 'confirmRemoveShelf'; id: number; returnToProd?: boolean };
 
 export interface ToastItem {
   id: number;

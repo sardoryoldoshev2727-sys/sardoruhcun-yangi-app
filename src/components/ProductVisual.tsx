@@ -84,9 +84,9 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'hero') {
     return (
-      <div className="relative flex items-center justify-center w-24 h-28 sm:w-28 sm:h-32 flex-none">
+      <div className="relative flex items-center justify-center w-28 h-36 sm:w-36 sm:h-44 flex-none">
         <div
-          className="absolute bottom-1 w-16 h-3 rounded-full bg-black/30 blur-[5px]"
+          className="absolute bottom-1 w-20 h-3.5 rounded-full bg-black/30 blur-[6px]"
           aria-hidden="true"
         />
         {showPhoto ? (
@@ -98,13 +98,13 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
             onLoad={(e) => {
               if (e.currentTarget.naturalWidth === 0) setImgFailed(true);
             }}
-            className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-[0_10px_14px_rgba(0,0,0,0.3)]"
+            className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-[0_12px_16px_rgba(0,0,0,0.32)]"
           />
         ) : (
           <BottleSvg
             product={product}
             color="#FFFFFF"
-            className="relative z-10 h-[92%] w-auto drop-shadow-[0_10px_14px_rgba(0,0,0,0.28)]"
+            className="relative z-10 h-[94%] w-auto drop-shadow-[0_12px_16px_rgba(0,0,0,0.28)]"
           />
         )}
       </div>
