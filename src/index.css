@@ -108,3 +108,8 @@ input[type='range'].calm-slider::-moz-range-thumb {
     scroll-behavior: auto !important;
   }
 }
+
+/* V4 illustratsiyalar: yumshoq paydo bo'lish */
+@keyframes v4ArtIn { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+.v4-art-in { animation: v4ArtIn .5s cubic-bezier(.05,.7,.1,1) both; }
+@media (prefers-reduced-motion: reduce) { .v4-art-in { animation: none; } }

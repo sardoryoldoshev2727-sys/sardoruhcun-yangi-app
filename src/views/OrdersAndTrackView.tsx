@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { ART } from '../data/assets';
 import {
   Check,
   CheckCircle2,
@@ -930,9 +931,8 @@ export const SuccessView: React.FC = () => {
   return (
     <div className="max-w-md mx-auto pt-4">
       <div className="v4-card rounded-[20px] p-5 sm:p-6 space-y-5 text-center">
-        <div className="w-16 h-16 rounded-full bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center mx-auto">
-          <Check className="w-8 h-8" strokeWidth={2} />
-        </div>
+        <img src={ART.success} alt="" aria-hidden="true" decoding="async"
+          className="w-40 h-40 mx-auto object-cover rounded-[24px] v4-art-in" />
 
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">

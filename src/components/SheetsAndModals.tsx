@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ART } from '../data/assets';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   BookmarkCheck,
@@ -35,6 +36,13 @@ import { PillButton } from './V4Primitives';
 const QUICK_PRESETS = [1, 2, 3, 5, 10, 15, 20, 25];
 
 function GuideStepIllustration({ step }: { step: number }) {
+  const art = [ART.shelf, ART.profit, ART.discount, ART.delivery][step];
+  if (art) {
+    return (
+      <img src={art} alt="" aria-hidden="true" loading="lazy" decoding="async"
+        className="w-44 h-[13.75rem] mx-auto object-cover rounded-[20px] v4-art-in" />
+    );
+  }
   if (step === 0) {
     return (
       <svg viewBox="0 0 220 124" className="w-52 h-28 mx-auto" aria-hidden="true">

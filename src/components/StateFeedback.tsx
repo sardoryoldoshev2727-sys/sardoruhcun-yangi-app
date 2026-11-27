@@ -1,4 +1,5 @@
 import React from 'react';
+import { ART } from '../data/assets';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 import { PillButton } from './V4Primitives';
 
@@ -16,6 +17,9 @@ interface EmptyStateProps {
 const EmptyIllustration: React.FC<{ variant: NonNullable<EmptyStateProps['variant']> }> = ({
   variant,
 }) => {
+  if (variant === 'cart') {
+    return <img src={ART.emptyCart} alt="" aria-hidden="true" loading="lazy" className="w-36 h-36 object-cover rounded-[20px] v4-art-in" />;
+  }
   return (
     <svg
       viewBox="0 0 112 84"
@@ -24,7 +28,7 @@ const EmptyIllustration: React.FC<{ variant: NonNullable<EmptyStateProps['varian
       aria-hidden="true"
     >
       <circle cx="56" cy="42" r="32" fill="var(--bg-raised)" />
-      {variant === 'cart' && (
+      {(variant as string) === 'cart' && (
         <>
           <rect x="34" y="17" width="6" height="4" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
           <path d="M33 21h8l2 7v12H31V28z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

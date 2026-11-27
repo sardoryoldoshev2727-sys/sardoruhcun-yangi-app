@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ART } from '../data/assets';
 import { ArrowRight, Check, ChevronRight, Clock, Gift, MessageCircle, Tag } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import { ProductVisual } from '../components/ProductVisual';
@@ -79,6 +80,9 @@ export const PromoView: React.FC = () => {
           {t.promoSub}
         </p>
       </div>
+
+      <img src={ART.promo} alt="" aria-hidden="true" loading="lazy" decoding="async"
+        className="w-full aspect-[16/9] object-cover rounded-[20px] v4-art-in" />
 
       {/* Top Segmented Filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">

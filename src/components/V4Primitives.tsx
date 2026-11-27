@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ART } from '../data/assets';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, Loader2, Minus, Plus } from 'lucide-react';
 import type { CoachScreenKey } from '../types';
@@ -152,6 +153,15 @@ export const VelvetNetBasketSvg: React.FC<{
     { x: 61, y: 43, rot: -4 },
   ];
 
+  return (
+    <div className="relative w-[96px] h-[96px] flex-none select-none overflow-hidden rounded-[18px]">
+      <img src={ART.basket} alt="" aria-hidden="true" decoding="async" className="absolute inset-0 w-full h-full object-cover" style={{ WebkitMaskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)', maskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)' }} />
+      {boxesCount > 0 && (
+        <span className="absolute right-1 bottom-1 z-30 min-w-[22px] h-[22px] px-1.5 rounded-full bg-white text-[#7E0E18] text-[11px] font-semibold tabular-nums flex items-center justify-center shadow-sm">{boxesCount}</span>
+      )}
+    </div>
+  );
+  // eslint-disable-next-line no-unreachable
   return (
     <div className="relative w-[92px] h-[84px] flex-none select-none overflow-hidden rounded-[16px]">
       {fxKey > 0 && (
