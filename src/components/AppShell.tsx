@@ -543,7 +543,7 @@ export const AppShell: React.FC = () => {
       : toast?.tone === 'red'
         ? 'bg-[#9B111E]'
         : toast?.tone === 'blue'
-          ? 'bg-[#2563EB]'
+          ? 'bg-[#1F2937]'
           : 'bg-[#16A34A]';
 
   return (
