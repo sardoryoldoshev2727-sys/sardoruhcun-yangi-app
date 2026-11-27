@@ -1516,6 +1516,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             text: t.offlineSavedText,
             tone: 'warn',
           });
+        } else {
+          // Panel buyurtmani rad etdi (PIN noto'g'ri / qulflangan / juda oson PIN va h.k.) — sababini aniq ko'rsatamiz
+          triggerHaptic('error');
+          const reason = err instanceof Error && err.message ? err.message : '';
+          showToast({
+            icon: 'info',
+            title: lang === 'ru' ? 'Заказ не отправлен' : 'Buyurtma yuborilmadi',
+            text: reason || (lang === 'ru' ? 'Попробуйте ещё раз' : "Qayta urinib ko'ring"),
+            tone: 'red',
+          });
         }
       } finally {
         setSubmittingOrder(false);
@@ -1537,6 +1547,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       submittingOrder,
       t.offlineSavedText,
       t.offlineSavedTitle,
+      lang,
     ],
   );
 

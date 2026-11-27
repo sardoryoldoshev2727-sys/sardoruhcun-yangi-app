@@ -178,7 +178,13 @@ export const SheetsAndModals: React.FC = () => {
     }
   }, [guideOpen]);
 
+  // Oyna ochilganda bir marta boshlang'ich qiymatlar. Faqat [sheet] o'zgarganda ishlaydi:
+  // fonda panel ma'lumoti yangilanganda PIN / javon sanash / miqdor tozalanib ketmasin.
+  const sheetInitRef = useRef({ cart, t, shelf, getShelfNorm, getShelfStock, getShelfLoose });
+  sheetInitRef.current = { cart, t, shelf, getShelfNorm, getShelfStock, getShelfLoose };
+
   useEffect(() => {
+    const { cart, t, shelf, getShelfNorm, getShelfStock, getShelfLoose } = sheetInitRef.current;
     if (sheet?.type === 'quickQty') {
       const current = cart[sheet.id] || 1;
       setCustomQty(String(current));
@@ -212,7 +218,8 @@ export const SheetsAndModals: React.FC = () => {
       setDraftNorms(normsInit);
       setEditingNormId(null);
     }
-  }, [sheet, cart, t.cancelReasons, shelf, getShelfNorm, getShelfStock, getShelfLoose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sheet]);
 
   const dismiss = () => {
     setPin('');

@@ -628,7 +628,7 @@ function mapPanelOrder(o: PanelOrder, L: Live): OrderRecord {
     orderedAt: (o.created_at || '').slice(0, 10),
     status: STATUS_FROM_PANEL(o),
     subtotal,
-    discountPct: o.discount_pct || 0,
+    discountPct: o.discount_pct || (subtotal > 0 && o.total < subtotal ? Math.round(((subtotal - o.total) / subtotal) * 100) : 0),
     discountAmount: Math.max(0, subtotal - o.total),
     totalSum: o.total,
     boxCount: items.reduce((a, x) => a + x.qty, 0),
@@ -728,10 +728,18 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
 
   const L = await getLive();
   if (L) {
-    const items = Object.entries(payload.items)
-      .filter(([, qty]) => qty > 0)
-      .map(([idStr, qty]) => ({ product_id: L.toPanel.get(Number(idStr)), blocks: qty }))
-      .filter((x) => x.product_id);
+    const wanted = Object.entries(payload.items).filter(([, qty]) => qty > 0);
+    // Panelda yo'q mahsulot jimgina tushib qolmasin — buyurtmani to'xtatib, nomini aytamiz
+    const missing = wanted
+      .filter(([idStr]) => !L.toPanel.get(Number(idStr)))
+      .map(([idStr]) => {
+        const p = MOCK_PRODUCTS[Number(idStr)];
+        return p ? p.name + ' ' + p.vol : '#' + idStr;
+      });
+    if (missing.length) {
+      throw new Error("Hozir omborda yo'q: " + missing.join(', ') + ". Savatdan olib tashlang va qayta yuboring");
+    }
+    const items = wanted.map(([idStr, qty]) => ({ product_id: L.toPanel.get(Number(idStr)), blocks: qty }));
     const body = { items, pin: payload.pin, comment: payload.comment.trim() };
     let d: { order: PanelOrder };
     try {
