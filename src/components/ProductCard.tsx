@@ -248,7 +248,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const lineNet = Math.round(lineGross * (1 - (product.promoPct || 0) / 100));
 
     return (
-      <div className="relative rounded-[16px] overflow-hidden bg-[var(--anor)]">
+      <div className={`relative rounded-[16px] overflow-hidden ${swipeX < 0 ? "bg-[var(--anor)]" : ""}`}>
         {/* Swipe-left-to-remove background reveal */}
         <button
           type="button"

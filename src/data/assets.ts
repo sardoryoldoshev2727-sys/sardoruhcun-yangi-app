@@ -7,4 +7,6 @@ export const ART = {
   basket: V4('1-savatcha'), shelf: V4('2-javon'), discount: V4('3-chegirma'), profit: V4('4-foyda'),
   delivery: V4('5-yetkazish'), emptyCart: V4('6-bosh-savat'), shelfCount: V4('7-javon-sanash'),
   promo: V4('8-aksiya-banner'), success: V4('9-yuborildi'), chat: V4('10-chat'),
+  heroAnor: V4('11-anor-hero'), heroOlxori: V4('12-olxori-hero'), promoGift: V4('13-aksiya-sovga'),
+  promoPct: V4('14-aksiya-foiz'), promoNew: V4('15-aksiya-yangi'),
 };

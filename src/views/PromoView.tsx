@@ -150,6 +150,16 @@ export const PromoView: React.FC = () => {
                     onClick={() => setSheet({ type: 'prod', id: prod.id })}
                     className="v4-card rounded-[16px] p-3.5 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden hover:border-[var(--border-strong)] transition-colors"
                   >
+                    <div className="relative -mx-3.5 -mt-3.5 mb-0.5 overflow-hidden">
+                      <img
+                        src={hasGift ? ART.promoGift : hasPct ? ART.promoPct : ART.promoNew}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full aspect-[16/9] object-cover v4-kenburns"
+                      />
+                    </div>
                     <div className="flex items-start gap-3">
                       <ProductVisual
                         product={prod}

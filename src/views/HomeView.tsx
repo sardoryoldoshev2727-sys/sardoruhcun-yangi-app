@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ART } from '../data/assets';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight,
@@ -504,10 +505,12 @@ export const HomeView: React.FC = () => {
                 onClick={() => setSheet({ type: 'prod', id: heroProduct.id })}
                 className="cursor-pointer flex-none"
               >
-                <ProductVisual
-                  product={heroProduct}
-                  size="row"
-                  tileBg={getFlavorTint(heroProduct)}
+                <img
+                  src={[ART.heroAnor, ART.heroOlxori, ART.discount][slideIdx % 3]}
+                  alt=""
+                  aria-hidden="true"
+                  decoding="async"
+                  className="w-28 h-28 rounded-[18px] object-cover v4-art-in"
                 />
               </div>
             )}

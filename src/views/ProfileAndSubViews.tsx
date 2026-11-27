@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ART } from '../data/assets';
 import {
   Award,
   BarChart3,
@@ -1064,6 +1065,7 @@ export const ChatView: React.FC = () => {
   return (
     <div className="flex flex-col min-h-[60dvh]">
       <div className="flex flex-col gap-2 pb-3">
+        <img src={ART.chat} alt="" aria-hidden="true" loading="lazy" className="w-24 h-24 mx-auto rounded-[20px] object-cover v4-art-in" />
         {chat.map((m, idx) =>
           m[0] === 'sys' ? (
             <div

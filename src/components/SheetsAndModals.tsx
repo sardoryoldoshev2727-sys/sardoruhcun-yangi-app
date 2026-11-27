@@ -1216,7 +1216,8 @@ export const SheetsAndModals: React.FC = () => {
               <div className="w-10 h-1 rounded-full bg-[var(--border-strong)] mx-auto mb-3 md:hidden" />
 
               <div className="flex items-start justify-between gap-2 pb-3 border-b border-[var(--border-hairline)]">
-                <div>
+                <img src={ART.shelfCount} alt="" aria-hidden="true" className="w-14 h-14 rounded-[14px] object-cover flex-none v4-art-in" />
+                <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-semibold text-[var(--text-primary)]">
                     {t.shelfCheckTitle}
                   </h3>

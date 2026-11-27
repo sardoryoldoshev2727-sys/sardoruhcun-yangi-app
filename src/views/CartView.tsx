@@ -279,17 +279,17 @@ export const CartView: React.FC = () => {
       </div>
 
       {/* Always-visible Sticky Bottom Checkout Bar (never blocks checkout, Green purchase CTA) */}
-      <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] md:bottom-0 -mx-3 md:-mx-6 px-3.5 md:px-6 py-3 bg-[var(--bg-card)] border-t border-[var(--border-hairline)] z-20">
+      <div className="sticky bottom-0 -mx-3 md:-mx-6 px-3.5 md:px-6 py-3 bg-[var(--bg-card)] border-t border-[var(--border-hairline)] z-20">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <span className="block text-[11px] sm:text-xs font-normal text-[var(--text-muted)] truncate tabular-nums">
+            <span className="block text-[11px] sm:text-xs font-normal text-[var(--text-muted)] leading-tight tabular-nums">
               {t.cartStickyTotalLabel(totalSavings > 0 ? formatSom(totalSavings) : null)}
             </span>
             <div className="text-[20px] sm:text-[22px] font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               <TweenSom value={total} />
             </div>
             {estimatedProfit > 0 && (
-              <span className="block text-[11px] font-medium text-[var(--success)] truncate tabular-nums">
+              <span className="block text-[11px] font-medium text-[var(--success)] leading-tight tabular-nums">
                 {t.estimatedCartProfit(formatSom(estimatedProfit))}
               </span>
             )}

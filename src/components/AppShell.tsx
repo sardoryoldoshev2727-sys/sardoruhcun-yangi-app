@@ -797,7 +797,7 @@ export const AppShell: React.FC = () => {
                 showFloatingCartPill
                   ? 'pb-[calc(176px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
                   : tab === 'cart'
-                    ? 'pb-[calc(184px+env(safe-area-inset-bottom))] md:pb-28'
+                    ? 'pb-[calc(60px+env(safe-area-inset-bottom))] md:pb-6'
                     : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-8'
               }`}
             >
