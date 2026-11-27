@@ -245,7 +245,7 @@ export const VelvetNetBasketSvg: React.FC<{
         />
       </svg>
       {extraCount > 0 && (
-        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white text-[#7E0E18] text-[10px] font-semibold tabular-nums leading-none">
+        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white text-[#7E0E18] text-[11px] font-semibold tabular-nums leading-none">
           +{extraCount}
         </span>
       )}

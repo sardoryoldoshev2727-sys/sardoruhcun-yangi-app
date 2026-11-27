@@ -252,7 +252,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Swipe-left-to-remove background reveal */}
         <button
           type="button"
-          aria-label={t.removeFromCart}
+          aria-label={t.clearCartBtn + ': ' + displayName}
+          tabIndex={swipeX < -10 ? 0 : -1}
           onClick={(e) => {
             e.stopPropagation();
             updateQty(product.id, -qty);

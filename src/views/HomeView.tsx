@@ -435,7 +435,7 @@ export const HomeView: React.FC = () => {
             <MessageCircle className="w-4 h-4 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
             <span className="truncate">{t.osonChat}</span>
             {unreadChat > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[10px] font-semibold flex items-center justify-center tabular-nums">
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
                 {unreadChat}
               </span>
             )}
