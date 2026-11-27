@@ -9,6 +9,7 @@ import type {
   OrderLineItem,
   OrderRating,
   OrderRecord,
+  OrderStatus,
   PaymentRecord,
   Product,
   RefillPrediction,
@@ -449,34 +450,223 @@ const MOCK_MONTHLY_REPORTS: Record<string, MonthlyReportData> = {
   },
 };
 
+// ======================================================================
+// PANEL KO'PRIGI. Ilova xodimlar paneli ichida (iframe, bir xil domen)
+// ochilsa — panelning /api/shop/* manzillari bilan ishlaydi: haqiqiy
+// katalog/narx/rasm, do'kon, PIN bilan buyurtma (operatorga tushadi),
+// buyurtma holati va OsonChat. Alohida ochilsa — namuna ma'lumot.
+// ======================================================================
+type PanelProduct = {
+  id: number; name: string; volume: string; price: number; block: number;
+  category?: string; discount?: number; active?: number; photo?: string;
+};
+type PanelOrder = {
+  id: number; status: string; stage?: string; total: number; discount_pct?: number;
+  created_at?: string; comment?: string | null; cancel_reason?: string | null;
+  items?: { product_id: number; qty: number; block: number; price: number }[];
+};
+type Live = { f: typeof fetch; toPanel: Map<number, number>; toStudio: Map<number, number> };
+let live: Live | null = null;
+let liveInit: Promise<Live | null> | null = null;
+
+const normKey = (name: string, vol: string) =>
+  `${name} ${vol}`.toLowerCase().replace(/,/g, '.').replace(/[^a-z0-9.']+/g, '');
+
+function parentFetch(): typeof fetch | null {
+  try {
+    const p = window.parent as Window & typeof globalThis;
+    if (p && p !== window && p.location.origin === window.location.origin && typeof p.fetch === 'function') {
+      return p.fetch.bind(p);
+    }
+  } catch {
+    /* boshqa domen — panel emas */
+  }
+  return null;
+}
+
+async function pj<T = any>(f: typeof fetch, path: string, body?: unknown): Promise<T> {
+  const r = await f(
+    path,
+    body === undefined
+      ? {}
+      : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF': 'demo' }, body: JSON.stringify(body) },
+  );
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.ok === false) throw new Error(d.error || `Xato ${r.status}`);
+  return d as T;
+}
+
+function catFromPanel(p: PanelProduct): string {
+  const n = `${p.name} ${p.category || ''}`.toLowerCase();
+  if (n.includes('gazli')) return 'Gazli';
+  if (n.includes('aloe')) return 'Aloe vera';
+  if (n.includes('basil') || n.includes("urug'")) return "Urug'li";
+  if (n.includes('banka')) return 'Banka';
+  if (n.includes('bombacha') || n.includes('bolalar')) return 'Bolalar uchun';
+  const v = p.volume.replace('.', ',');
+  return ['1 L', '0,9 L', '0,5 L'].includes(v) ? v : v;
+}
+
+async function getLive(): Promise<Live | null> {
+  if (live) return live;
+  if (!liveInit) {
+    liveInit = (async () => {
+      const f = parentFetch();
+      if (!f) return null;
+      try {
+        const me = await pj<{ shop?: any }>(f, '/api/shop/me');
+        const cat = await pj<{ products: PanelProduct[] }>(f, '/api/shop/catalog');
+        const toPanel = new Map<number, number>();
+        const toStudio = new Map<number, number>();
+        const byKey = new Map(cat.products.map((p) => [normKey(p.name, p.volume), p]));
+        const used = new Set<number>();
+        const apply = (sp: Product, pp: PanelProduct) => {
+          sp.one = pp.price;
+          sp.blk = pp.block;
+          sp.box = pp.price * pp.block;
+          sp.out = pp.active === 0;
+          sp.promoPct = pp.discount ? pp.discount : undefined;
+          if (!sp.photo && pp.photo) sp.photo = '/' + pp.photo.replace(/^\//, '');
+          toPanel.set(sp.id, pp.id);
+          toStudio.set(pp.id, sp.id);
+          used.add(pp.id);
+        };
+        for (const sp of MOCK_PRODUCTS) {
+          const pp = byKey.get(normKey(sp.name, sp.vol));
+          if (pp) apply(sp, pp);
+          else sp.out = true; // panelda yo'q mahsulot — buyurtma qilinmaydi
+        }
+        for (const pp of cat.products) {
+          if (used.has(pp.id)) continue;
+          const sp: Product = {
+            id: MOCK_PRODUCTS.length, name: pp.name, vol: pp.volume, blk: pp.block, one: pp.price,
+            box: pp.price * pp.block, cat: catFromPanel(pp), ph: '', photo: '', out: false,
+          };
+          MOCK_PRODUCTS.push(sp);
+          apply(sp, pp);
+        }
+        const s = me.shop || {};
+        Object.assign(MOCK_SHOP, {
+          name: s.name || MOCK_SHOP.name,
+          owner: s.owner || MOCK_SHOP.owner,
+          phone: s.phone || MOCK_SHOP.phone,
+          address: [s.district, s.address].filter(Boolean).join(', ') || MOCK_SHOP.address,
+        });
+        if (s.owner) mockSession = { ...mockSession, userName: String(s.owner).split(/\s+/)[0] };
+        live = { f, toPanel, toStudio };
+        return live;
+      } catch {
+        return null; // panel ichida, lakin do'konchi sifatida kirilmagan — namuna rejimi
+      }
+    })();
+  }
+  return liveInit;
+}
+
+/** Ilova panel demo-bazasiga ulanganmi (UI'da belgi ko'rsatish uchun). */
+export async function isLiveMode(): Promise<boolean> {
+  return !!(await getLive());
+}
+
+const STATUS_FROM_PANEL = (o: PanelOrder): OrderStatus => {
+  if (o.status === 'cancelled' || o.status === 'rejected') return 'Bekor qilindi';
+  switch (o.stage) {
+    case 'yakunlangan': return 'Yetkazildi';
+    case 'yolda': return "Yo'lda";
+    case 'tasdiqlangan':
+    case 'biriktirilgan': return 'Tasdiqlandi';
+    default: return o.status === 'delivered' ? 'Yetkazildi' : 'Yuborildi';
+  }
+};
+
+function dateLabelOf(iso?: string): string {
+  if (!iso) return '';
+  const today = new Date().toISOString().slice(0, 10);
+  const hm = iso.slice(11, 16);
+  return iso.slice(0, 10) === today ? `Bugun ${hm}` : `${iso.slice(8, 10)}.${iso.slice(5, 7)} ${hm}`;
+}
+
+function mapPanelOrder(o: PanelOrder, L: Live): OrderRecord {
+  const items: OrderLineItem[] = (o.items || []).map((x) => ({
+    productId: L.toStudio.get(x.product_id) ?? -1,
+    qty: Math.max(1, Math.round(x.qty / (x.block || 1))),
+    boxPrice: x.price * (x.block || 1),
+  }));
+  const subtotal = items.reduce((a, x) => a + x.qty * x.boxPrice, 0);
+  return {
+    id: o.id,
+    dateLabel: dateLabelOf(o.created_at),
+    orderedAt: (o.created_at || '').slice(0, 10),
+    status: STATUS_FROM_PANEL(o),
+    subtotal,
+    discountPct: o.discount_pct || 0,
+    discountAmount: Math.max(0, subtotal - o.total),
+    totalSum: o.total,
+    boxCount: items.reduce((a, x) => a + x.qty, 0),
+    deliveryDay: 0,
+    deliverySlot: 0,
+    comment: o.comment || '',
+    items,
+    cancelReason: o.cancel_reason || undefined,
+  };
+}
+
+/** OsonChat tarixi paneldan (operator javoblari ham). Panel rejimi bo'lmasa — null. */
+export async function getPanelChat(): Promise<{ messages: ChatMessage[]; unread: number } | null> {
+  const L = await getLive();
+  if (!L) return null;
+  const d = await pj<{ messages: { from: string; type?: string; text?: string; at?: string; read_shop?: boolean }[] }>(
+    L.f,
+    '/api/shop/chat',
+  );
+  const messages: ChatMessage[] = (d.messages || []).map((m) => [
+    m.from === 'shop' ? 'me' : m.from === 'sys' ? 'sys' : 'in',
+    m.type === 'voice' ? 'Ovozli xabar' : m.text || 'Fayl',
+    (m.at || '').slice(11, 16),
+  ]);
+  return { messages, unread: 0 };
+}
+
+/** OsonChat'ga xabar (faqat panel rejimida; aks holda hech narsa qilmaydi). */
+export async function sendChatToPanel(text: string): Promise<boolean> {
+  const L = await getLive();
+  if (!L) return false;
+  await pj(L.f, '/api/shop/chat', { text });
+  return true;
+}
+
+// Panel qoidasi: aksiya narxi qatorda; summa chegirmasi faqat aksiyasiz tovarlarga.
 function computeCheckoutSync(items: Record<number, number>): CheckoutQuote {
   let boxCount = 0;
   let subtotal = 0;
+  let base = 0;
   for (const [idStr, qty] of Object.entries(items)) {
     const prod = MOCK_PRODUCTS[Number(idStr)];
     if (!prod || qty <= 0) continue;
     boxCount += qty;
-    subtotal += prod.box * qty;
+    const line = Math.round(prod.box * qty * (1 - (prod.promoPct || 0) / 100));
+    subtotal += line;
+    if (!prod.promoPct) base += line;
   }
   const nudge = computeBoxDiscountNudge(boxCount, subtotal, BOX_DISCOUNT_TIERS);
   const discountPct = nudge.currentPct;
-  const discountAmount = Math.round((subtotal * discountPct) / 100);
+  const discountAmount = Math.round((base * discountPct) / 100);
   const total = Math.max(0, subtotal - discountAmount);
   return { boxCount, subtotal, discountPct, discountAmount, total };
 }
 
 export async function getSession(): Promise<SessionInfo> {
-  await delay();
+  if (!(await getLive())) await delay();
   return { ...mockSession };
 }
 
 export async function getShop(): Promise<ShopInfo> {
-  await delay();
+  if (!(await getLive())) await delay();
   return { ...MOCK_SHOP };
 }
 
 export async function getProducts(): Promise<Product[]> {
-  await delay();
+  if (!(await getLive())) await delay();
   return MOCK_PRODUCTS.map((p) => ({ ...p }));
 }
 
@@ -506,6 +696,31 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
     'X-Telegram-Init-Data': getTelegramInitData(),
   };
   void headers;
+
+  const L = await getLive();
+  if (L) {
+    const items = Object.entries(payload.items)
+      .filter(([, qty]) => qty > 0)
+      .map(([idStr, qty]) => ({ product_id: L.toPanel.get(Number(idStr)), blocks: qty }))
+      .filter((x) => x.product_id);
+    const body = { items, pin: payload.pin, comment: payload.comment.trim() };
+    let d: { order: PanelOrder };
+    try {
+      d = await pj(L.f, '/api/shop/order', body);
+    } catch (e) {
+      // Panelda PIN hali yaratilmagan bo'lsa — kiritilgan PIN bilan yaratib, qayta yuboramiz
+      if (!/PIN yarating/i.test((e as Error).message)) throw e;
+      await pj(L.f, '/api/shop/pin', { pin: payload.pin });
+      d = await pj(L.f, '/api/shop/order', body);
+    }
+    const created = mapPanelOrder(d.order, L);
+    mockSession = {
+      ...mockSession,
+      monthTotal: mockSession.monthTotal + created.totalSum,
+      ordersCount: mockSession.ordersCount + 1,
+    };
+    return { ...created, deliveryDay: payload.deliveryDay, deliverySlot: payload.deliverySlot };
+  }
 
   await delay();
 
@@ -556,6 +771,11 @@ export async function placeOrder(payload: PlaceOrderPayload): Promise<OrderRecor
 }
 
 export async function getOrders(): Promise<OrderRecord[]> {
+  const L = await getLive();
+  if (L) {
+    const d = await pj<{ orders: PanelOrder[] }>(L.f, '/api/shop/orders');
+    return d.orders.map((o) => mapPanelOrder(o, L));
+  }
   await delay();
   return mockOrders.map((o) => ({ ...o, items: [...o.items] }));
 }
@@ -575,12 +795,28 @@ export async function getRefillPredictions(shelf: ShelfItem[]): Promise<RefillPr
 }
 
 export async function getOrder(id: number): Promise<OrderRecord | null> {
+  const L = await getLive();
+  if (L) {
+    try {
+      const d = await pj<{ order: PanelOrder }>(L.f, `/api/shop/orders/${id}`);
+      return mapPanelOrder(d.order, L);
+    } catch {
+      return null;
+    }
+  }
   await delay();
   const found = mockOrders.find((o) => o.id === id);
   return found ? { ...found, items: [...found.items] } : null;
 }
 
 export async function cancelOrder(id: number, reason: string): Promise<OrderRecord> {
+  if (await getLive()) {
+    // Panelda do'konchi o'zi bekor qilmaydi — so'rov operatorga OsonChat orqali boradi
+    await sendChatToPanel(
+      `Buyurtma №${id} ni bekor qilishni so'rayman. Sabab: ${reason.trim() || "ko'rsatilmagan"}`,
+    );
+    throw new Error("Bekor qilish so'rovi operatorga yuborildi. Operator tasdiqlagach buyurtma bekor bo'ladi.");
+  }
   await delay();
   const cleanReason = reason.trim() || 'Mijoz tomonidan bekor qilindi';
   let updated: OrderRecord | null = null;

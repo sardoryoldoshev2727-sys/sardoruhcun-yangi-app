@@ -19,6 +19,8 @@ import {
   getSession as apiGetSession,
   getShop as apiGetShop,
   placeOrder as apiPlaceOrder,
+  sendChatToPanel,
+  getPanelChat,
   saveShelfPrice as apiSaveShelfPrice,
   submitRating as apiSubmitRating,
   type PlaceOrderPayload,
@@ -356,6 +358,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     initTelegramApp();
     void loadAllData();
   }, [loadAllData]);
+
+  // Panel ichida: OsonChat tarixini (operator javoblari bilan) paneldan olib turamiz
+  useEffect(() => {
+    let alive = true;
+    let lastLen = -1;
+    const pull = async () => {
+      try {
+        const res = await getPanelChat();
+        if (!alive || !res) return;
+        const lastIn = res.messages.filter((m) => m[0] === 'in').length;
+        if (lastLen >= 0 && lastIn > lastLen && pageRef.current !== 'chat') setUnreadChat((c) => c + (lastIn - lastLen));
+        if (lastLen < 0) setUnreadChat(0);
+        lastLen = lastIn;
+        setChat(res.messages.length ? res.messages : DEFAULT_CHAT_SEED);
+      } catch {
+        /* tarmoq xatosi — keyingi safar */
+      }
+    };
+    void pull();
+    const id = window.setInterval(pull, 8000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, []);
 
   // Recompute refill predictions via src/api.ts when shelf or orders change
   useEffect(() => {
@@ -1033,7 +1060,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const now = new Date();
       const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       setChat((prev) => [...prev, ['me', text, hm]]);
-      window.setTimeout(() => {
+      // Panel ichida — xabar OsonChat'ga boradi, operator panelda javob beradi
+      void sendChatToPanel(text).then((sent) => {
+        if (sent) return;
+        window.setTimeout(() => {
         setChat((prev) => [
           ...prev,
           ['in', 'Qabul qildim, Dilnoza opa! Hozir tekshirib javob beraman.', hm],
@@ -1049,7 +1079,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             actionPage: 'chat',
           });
         }
-      }, 1400);
+        }, 1400);
+      });
     },
     [showToast],
   );
