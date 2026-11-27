@@ -305,7 +305,7 @@ export const DEFAULT_NOTIFS_SEED: NotificationItem[] = [
 
 export const DEFAULT_CHAT_SEED: ChatMessage[] = [
   ['sys', 'Bugun'],
-  ['in', 'Assalomu alaykum, Dilnoza opa! Men Madina, sizning shaxsiy operatoringizman.', '09:02'],
+  ['in', 'Assalomu alaykum, Dilnoza opa. Men Madina, sizning shaxsiy operatoringizman.', '09:02'],
   ['in', "Buyurtmangiz #2481 yo'lda, 14:00–17:00 orasida yetadi.", '13:06'],
 ];
 

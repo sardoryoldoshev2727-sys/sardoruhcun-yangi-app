@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { Check, Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { Check, Heart, Minus, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
 import type { Product, ShelfItem } from '../types';
@@ -15,81 +14,34 @@ import {
   shortName,
 } from '../utils/catalog';
 import { ProductVisual } from './ProductVisual';
+import { GreenAddControl } from './V4Primitives';
 
 interface StepperProps {
   product: Product;
-  compact?: boolean;
 }
 
-export const CartStepper: React.FC<StepperProps> = ({ product, compact = false }) => {
+export const CartStepper: React.FC<StepperProps> = ({ product }) => {
   const { cart, t, updateQty, setSheet } = useStore();
   const qty = cart[product.id] || 0;
 
   if (product.out) {
     return (
-      <button
-        type="button"
-        disabled
-        aria-disabled="true"
-        className={`inline-flex items-center justify-center rounded-xl bg-[#EEF0F3] dark:bg-zinc-800 border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-400 font-semibold text-sm cursor-not-allowed ${
-          compact ? 'w-full min-h-[44px] px-2' : 'min-h-[44px] px-4'
-        }`}
-      >
-        <span className="truncate">{t.notifyWhenBack}</span>
-      </button>
-    );
-  }
-
-  if (qty === 0) {
-    return (
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          updateQty(product.id, 1);
-        }}
-        className={`inline-flex items-center justify-center gap-2 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-sm transition-colors duration-150 ${
-          compact ? 'w-full min-h-[44px] px-3' : 'min-h-[44px] px-4 min-w-[120px]'
-        }`}
-      >
-        <ShoppingCart className="w-5 h-5 flex-none" />
-        <span>{t.addToCart}</span>
-      </button>
+      <span className="inline-flex items-center justify-center rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] font-medium text-xs min-h-[36px] px-3">
+        {t.badgeOut}
+      </span>
     );
   }
 
   return (
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center justify-between rounded-full bg-[#9B111E] text-white ${
-        compact ? 'w-full min-h-[44px]' : 'min-h-[44px] min-w-[132px]'
-      }`}
-    >
-      <button
-        type="button"
-        aria-label={t.removeFromCart}
-        onClick={() => updateQty(product.id, -1)}
-        className="w-11 h-11 rounded-l-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
-      >
-        <Minus className="w-5 h-5 stroke-[2.2]" />
-      </button>
-      <button
-        type="button"
-        aria-label={`${qty} ${t.boxUnit}`}
-        onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-        className="min-w-[36px] h-11 px-2 text-center font-bold text-base tabular-nums hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
-      >
-        {qty}
-      </button>
-      <button
-        type="button"
-        aria-label={t.addToCart}
-        onClick={() => updateQty(product.id, 1)}
-        className="w-11 h-11 rounded-r-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors duration-150"
-      >
-        <Plus className="w-5 h-5 stroke-[2.2]" />
-      </button>
-    </div>
+    <GreenAddControl
+      qty={qty}
+      addLabel={t.addToCart}
+      removeLabel={t.removeFromCart}
+      unitLabel={t.boxUnit}
+      onAdd={() => updateQty(product.id, 1)}
+      onRemove={() => updateQty(product.id, -1)}
+      onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
+    />
   );
 };
 
@@ -100,19 +52,19 @@ function renderBadge(product: Product, t: ReturnType<typeof useStore>['t']) {
   switch (badgeType) {
     case 'out':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/90 dark:bg-zinc-800/90 text-[#6B7280] dark:text-zinc-300 text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] text-[11px] font-medium">
           {t.badgeOut}
         </span>
       );
     case 'promo':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#9B111E] text-white text-xs font-bold shadow-xs">
-          {t.badgePromo(product.promoPct || 5)}
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium tabular-nums">
+          −{product.promoPct || 5}%
         </span>
       );
     case 'new':
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#2563EB] text-white text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--ink-fill)] text-[var(--ink-text)] text-[11px] font-medium">
           {t.badgeNew}
         </span>
       );
@@ -160,112 +112,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className={`group h-full bg-white dark:bg-[#1A1C20] rounded-[24px] p-2.5 flex flex-col cursor-pointer card-calm border transition-colors duration-150 ${
-          inCart
-            ? 'border-[#9B111E] dark:border-[#F43F5E]'
-            : 'border-[#E5E7EB] dark:border-zinc-800 hover:border-zinc-300'
-        }`}
+        className="v4-card h-full rounded-[16px] p-2.5 flex flex-col cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)]"
       >
-        {/* Flavor-tinted hero bottle tile (radius 20) with corner badges & morphing + button */}
-        <div className="relative rounded-[20px] overflow-hidden">
+        {/* Single neutral tile + top-left badge + bottom-right signature green + */}
+        <div className="relative rounded-[10px] overflow-hidden">
           <ProductVisual product={product} size="grid" />
 
-          {/* Top-left badge (only isNew / promoPct / out) */}
           {badge && (
-            <div className="absolute top-2 left-2 z-20 pointer-events-none max-w-[68%] truncate">
+            <div className="absolute top-2 left-2 z-20 pointer-events-none max-w-[75%] truncate">
               {badge}
             </div>
           )}
 
-          {/* Top-right favorite toggle (44x44 tap target) */}
-          <button
-            type="button"
-            aria-label={fav ? t.favoriteRemoveLabel : t.favoriteAddLabel}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite(product.id);
-            }}
-            className="absolute top-0.5 right-0.5 z-20 w-11 h-11 flex items-center justify-center rounded-full text-[#6B7280] hover:text-[#9B111E] transition-colors"
-          >
-            <span className="w-8 h-8 rounded-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xs flex items-center justify-center">
-              <Heart
-                className={`w-4 h-4 ${
-                  fav
-                    ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                    : 'text-[#6B7280] dark:text-zinc-300'
-                }`}
-              />
-            </span>
-          </button>
-
-          {/* Bottom-right 40px '+' button that morphs into compact pill stepper (- 2 +) */}
           {!product.out && (
             <div
               className="absolute bottom-2 right-2 z-20"
               onClick={(e) => e.stopPropagation()}
             >
-              <AnimatePresence mode="wait" initial={false}>
-                {qty === 0 ? (
-                  <motion.button
-                    key="add"
-                    type="button"
-                    aria-label={t.addToCart}
-                    initial={{ scale: 0.8, opacity: 0.6 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    onClick={() => updateQty(product.id, 1)}
-                    className="relative w-10 h-10 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] active:scale-95 text-white shadow-md flex items-center justify-center transition-colors duration-150 after:absolute after:-inset-0.5 after:content-['']"
-                  >
-                    <Plus className="w-5 h-5 stroke-[2.4]" />
-                  </motion.button>
-                ) : (
-                  <motion.div
-                    key="stepper"
-                    initial={{ scale: 0.8, opacity: 0.7 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="h-10 rounded-full bg-[#9B111E] text-white shadow-md inline-flex items-center px-0.5"
-                  >
-                    <button
-                      type="button"
-                      aria-label={t.removeFromCart}
-                      onClick={() => updateQty(product.id, -1)}
-                      className="relative w-8 h-10 rounded-l-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
-                    >
-                      <Minus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`${qty} ${t.boxUnit}`}
-                      onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-                      className="relative min-w-[26px] h-10 px-1 text-center font-extrabold text-sm tabular-nums hover:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
-                    >
-                      {qty}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={t.addToCart}
-                      onClick={() => updateQty(product.id, 1)}
-                      className="relative w-8 h-10 rounded-r-full flex items-center justify-center hover:bg-[#7E0E18] active:bg-[#7E0E18] transition-colors after:absolute after:-inset-y-0.5 after:inset-x-0 after:content-['']"
-                    >
-                      <Plus className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <GreenAddControl
+                qty={qty}
+                addLabel={t.addToCart}
+                removeLabel={t.removeFromCart}
+                unitLabel={t.boxUnit}
+                onAdd={() => updateQty(product.id, 1)}
+                onRemove={() => updateQty(product.id, -1)}
+                onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
+              />
             </div>
           )}
         </div>
 
-        {/* Product name (max 2 lines) */}
-        <div className="mt-2.5 px-1 font-bold text-sm leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2.45rem] break-words">
+        {/* Name (max 2 lines, weight 500) */}
+        <div className="mt-2.5 px-0.5 font-medium text-sm leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.45rem] break-words">
           {displayName} {product.vol}
         </div>
 
-        {/* Separate Shelf ('Javonim') pill control under product name (44px tap target) */}
-        <div className="px-1 -my-1 flex items-center">
+        {/* Inline '+ Javonga' / 'Javonda' + small muted heart (44px tap targets) */}
+        <div className="px-0.5 -my-1 flex items-center justify-between gap-1">
           <button
             type="button"
             onClick={(e) => {
@@ -276,46 +159,60 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 addShelfItem(product.id);
               }
             }}
-            className="min-h-[44px] inline-flex items-center text-left focus-visible:outline-none"
+            className="min-h-[44px] inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
-            <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors duration-150 ${
-                onShelf
-                  ? 'bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185]'
-                  : 'border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-300 hover:border-[#9B111E] hover:text-[#9B111E]'
+            {onShelf ? (
+              <span className="inline-flex items-center gap-1 text-[var(--anor-text)]">
+                <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                <span>{t.inShelfPill}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                <span>{t.addToShelfPill}</span>
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            aria-label={fav ? t.favoriteRemoveLabel : t.favoriteAddLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(product.id);
+            }}
+            className="w-11 h-11 -mr-1.5 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] transition-colors"
+          >
+            <Heart
+              className={`w-[18px] h-[18px] ${
+                fav ? 'fill-[var(--anor-text)] text-[var(--anor-text)]' : ''
               }`}
-            >
-              {onShelf ? (
-                <Check className="w-3 h-3 stroke-[2.5] flex-none" />
-              ) : (
-                <Plus className="w-3 h-3 stroke-[2.5] flex-none" />
-              )}
-              <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
-            </span>
+              strokeWidth={1.5}
+            />
           </button>
         </div>
 
-        {/* Small grey pack meta ('1 quti = 9 dona') */}
-        <div className="mt-0.5 px-1 text-xs font-normal text-[#6B7280] dark:text-zinc-400 tabular-nums truncate">
+        {/* Pack meta */}
+        <div className="px-0.5 text-xs font-normal text-[var(--text-muted)] tabular-nums truncate">
           {t.boxMetaLine(product.blk)}
         </div>
 
-        {/* Bold single-line price (with struck-through original on promo items) */}
-        <div className="mt-auto pt-2 px-1 pb-0.5">
+        {/* Price weight 600 tabular single line */}
+        <div className="mt-auto pt-2 px-0.5 pb-0.5">
           {product.out ? (
-            <div className="text-sm font-bold text-[#9B111E] dark:text-[#F87171] whitespace-nowrap">
+            <div className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
               {t.outOfStock}
             </div>
           ) : (
             <div className="flex items-baseline gap-1.5 whitespace-nowrap overflow-hidden">
-              <div className="text-base sm:text-lg font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-base sm:text-[17px] font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                 {formatNumberThin(effectiveBox)}{' '}
-                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+                <span className="text-xs font-normal text-[var(--text-muted)]">
                   so&apos;m
                 </span>
               </div>
               {hasPromo && (
-                <span className="text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap truncate">
+                <span className="text-[11px] font-normal text-[var(--text-muted)] line-through tabular-nums whitespace-nowrap truncate">
                   {formatNumberThin(product.box)}
                 </span>
               )}
@@ -331,8 +228,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const lineNet = Math.round(lineGross * (1 - (product.promoPct || 0) / 100));
 
     return (
-      <div className="relative rounded-[20px] overflow-hidden bg-[#9B111E]">
-        {/* Swipe-to-remove background action */}
+      <div className="relative rounded-[16px] overflow-hidden bg-[var(--anor)]">
+        {/* Swipe-left-to-remove background reveal */}
         <button
           type="button"
           aria-label={t.removeFromCart}
@@ -340,9 +237,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             e.stopPropagation();
             updateQty(product.id, -qty);
           }}
-          className="absolute inset-y-0 right-0 w-20 flex flex-col items-center justify-center gap-1 text-white text-[11px] font-bold"
+          className="absolute inset-y-0 right-0 w-20 flex flex-col items-center justify-center gap-1 text-white text-xs font-medium"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-[18px] h-[18px]" strokeWidth={1.5} />
           <span className="truncate px-1">{t.clearCartBtn}</span>
         </button>
 
@@ -367,7 +264,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           }}
           onTouchEnd={() => {
             if (swipeX <= -48) {
-              setSwipeX(-80);
+              updateQty(product.id, -qty);
+              setSwipeX(0);
             } else {
               setSwipeX(0);
             }
@@ -381,59 +279,75 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             setSheet({ type: 'prod', id: product.id });
           }}
           style={{ transform: `translateX(${swipeX}px)` }}
-          className="relative z-10 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-3 flex items-stretch gap-3 card-calm cursor-pointer transition-transform duration-150 ease-out"
+          className="relative z-10 v4-card rounded-[16px] p-3 flex items-stretch gap-3 cursor-pointer transition-transform duration-150 ease-out"
         >
           <ProductVisual product={product} size="row" />
           <div className="flex-1 min-w-0 flex flex-col justify-between">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
-                    {displayName} {product.vol}
-                  </div>
-                </div>
-                <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
-                  <span>{t.boxMetaLine(product.blk)}</span>
-                  <span>·</span>
-                  {hasPromo ? (
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <span className="line-through text-[#6B7280]">{formatSom(product.box)}</span>
-                      <span className="font-bold text-[#9B111E] dark:text-[#FB7185]">{formatSom(effectiveBox)}</span>
-                    </span>
-                  ) : (
-                    <span>{formatSom(product.box)}</span>
-                  )}
-                </div>
+            <div>
+              <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
+                {displayName} {product.vol}
               </div>
-              <button
-                type="button"
-                aria-label={t.removeFromCart}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQty(product.id, -qty);
-                }}
-                className="w-11 h-11 -mr-1 -mt-1 rounded-xl flex items-center justify-center text-[#9B111E] dark:text-[#F87171] hover:bg-[#FCE8EA] dark:hover:bg-red-950/30 transition-colors flex-none"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              <div className="text-xs text-[var(--text-muted)] mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
+                <span>{t.boxMetaLine(product.blk)}</span>
+                <span>·</span>
+                {hasPromo ? (
+                  <span className="inline-flex items-baseline gap-1.5">
+                    <span className="line-through text-[var(--text-muted)]">{formatSom(product.box)}</span>
+                    <span className="font-medium text-[var(--anor-text)]">{formatSom(effectiveBox)}</span>
+                  </span>
+                ) : (
+                  <span>{formatSom(product.box)}</span>
+                )}
+              </div>
             </div>
+
             <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
               <div>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+                  <span className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                     {formatSom(lineNet)}
                   </span>
                   {hasPromo && (
-                    <span className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap">
+                    <span className="text-xs font-normal text-[var(--text-muted)] line-through tabular-nums whitespace-nowrap">
                       {formatSom(lineGross)}
                     </span>
                   )}
                 </div>
-                <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
+                <div className="text-xs font-normal text-[var(--text-secondary)] tabular-nums">
                   {qty} {t.boxUnit} ({qty * product.blk} {t.pieceUnit})
                 </div>
               </div>
-              <CartStepper product={product} />
+
+              {/* Outline-pill stepper in cart; decrementing 1 -> 0 removes line and shows undo snackbar */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center min-h-[44px] rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1"
+              >
+                <button
+                  type="button"
+                  aria-label={t.removeFromCart}
+                  onClick={() => updateQty(product.id, -1)}
+                  className="w-10 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
+                >
+                  <Minus className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`${qty} ${t.boxUnit}`}
+                  onClick={() => setSheet({ type: 'quickQty', id: product.id })}
+                  className="min-w-[28px] h-11 px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums hover:bg-[var(--bg-raised)] transition-colors"
+                >
+                  {qty}
+                </button>
+                <button
+                  type="button"
+                  aria-label={t.addToCart}
+                  onClick={() => updateQty(product.id, 1)}
+                  className="w-10 h-11 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] transition-colors"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -445,12 +359,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => setSheet({ type: 'prod', id: product.id })}
-      className={`h-full bg-white dark:bg-[#1A1C20] rounded-[20px] p-3 flex items-stretch gap-3 cursor-pointer card-calm border transition-colors duration-150 ${
+      className={`v4-card h-full rounded-[16px] p-3 flex items-stretch gap-3 cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)] ${
         product.out ? 'opacity-70' : ''
-      } ${
-        inCart
-          ? 'border-[#9B111E] dark:border-[#F43F5E]'
-          : 'border-[#E5E7EB] dark:border-zinc-800 hover:border-zinc-300'
       }`}
     >
       <ProductVisual product={product} size="row" />
@@ -459,12 +369,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex items-start justify-between gap-1">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400">
+                <span className="text-xs font-medium text-[var(--text-muted)]">
                   {brand}
                 </span>
                 {renderBadge(product, t)}
               </div>
-              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 mt-1 break-words">
+              <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 mt-1 break-words">
                 {displayName} {product.vol}
               </div>
             </div>
@@ -475,19 +385,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 e.stopPropagation();
                 toggleFavorite(product.id);
               }}
-              className="w-11 h-11 -mr-1 -mt-1 flex items-center justify-center rounded-xl hover:bg-[#FCE8EA] dark:hover:bg-rose-950/40 flex-none"
+              className="w-11 h-11 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] flex-none"
             >
               <Heart
-                className={`w-5 h-5 ${
-                  fav
-                    ? 'fill-[#9B111E] text-[#9B111E] dark:fill-[#FB7185] dark:text-[#FB7185]'
-                    : 'text-[#6B7280] dark:text-zinc-400'
+                className={`w-[18px] h-[18px] ${
+                  fav ? 'fill-[var(--anor-text)] text-[var(--anor-text)]' : ''
                 }`}
+                strokeWidth={1.5}
               />
             </button>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
               onClick={(e) => {
@@ -498,40 +407,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   addShelfItem(product.id);
                 }
               }}
-              className="min-h-[44px] -my-1.5 inline-flex items-center"
+              className="min-h-[44px] -my-1.5 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors duration-150 ${
-                  onShelf
-                    ? 'bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185]'
-                    : 'border border-[#E5E7EB] dark:border-zinc-700 text-[#6B7280] dark:text-zinc-300 hover:border-[#9B111E] hover:text-[#9B111E]'
-                }`}
-              >
-                {onShelf ? (
-                  <Check className="w-3 h-3 stroke-[2.5] flex-none" />
-                ) : (
-                  <Plus className="w-3 h-3 stroke-[2.5] flex-none" />
-                )}
-                <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
-              </span>
+              {onShelf ? (
+                <span className="inline-flex items-center gap-1 text-[var(--anor-text)]">
+                  <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                  <span>{t.inShelfPill}</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                  <span>{t.addToShelfPill}</span>
+                </span>
+              )}
             </button>
-            <span className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
+            <span className="text-xs text-[var(--text-muted)] tabular-nums">
               {t.boxMetaLine(product.blk)} · {pack}
             </span>
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
+        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
           <div>
             <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-              <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                 {formatNumberThin(effectiveBox)}{' '}
-                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+                <span className="text-xs font-normal text-[var(--text-muted)]">
                   so&apos;m
                 </span>
               </div>
               {hasPromo && (
-                <span className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap">
+                <span className="text-xs font-normal text-[var(--text-muted)] line-through tabular-nums whitespace-nowrap">
                   {formatNumberThin(product.box)}
                 </span>
               )}
@@ -539,8 +445,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <div
               className={`text-xs tabular-nums ${
                 inCart
-                  ? 'font-semibold text-[#9B111E] dark:text-[#FB7185]'
-                  : 'font-normal text-[#6B7280] dark:text-zinc-400'
+                  ? 'font-medium text-[var(--success)]'
+                  : 'font-normal text-[var(--text-muted)]'
               }`}
             >
               {inCart ? t.inCartQty(qty) : `${formatSom(product.one)} ${t.perPieceSuffix}`}
@@ -568,53 +474,49 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
 
   const stockColor =
     st.cls === 'crit'
-      ? 'text-[#9B111E] dark:text-[#F87171]'
+      ? 'text-[var(--anor-text)]'
       : st.cls === 'warn'
-        ? 'text-[#D97706] dark:text-[#FBBF24]'
-        : 'text-[#2563EB] dark:text-[#60A5FA]';
+        ? 'text-[var(--warning)]'
+        : 'text-[var(--text-secondary)]';
   const stockBarBg =
     st.cls === 'crit'
-      ? 'bg-[#9B111E]'
+      ? 'bg-[var(--anor)]'
       : st.cls === 'warn'
-        ? 'bg-[#D97706]'
-        : 'bg-[#2563EB]';
+        ? 'bg-[var(--warning)]'
+        : 'bg-[var(--ink-fill)]';
 
   return (
     <div
       onClick={() => {
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`bg-white dark:bg-[#1A1C20] rounded-[20px] p-3 flex items-stretch gap-3 card-calm border transition-colors ${
-        editMode ? '' : 'cursor-pointer'
-      } ${
-        inCart
-          ? 'border-[#9B111E] dark:border-[#F43F5E]'
-          : 'border-[#E5E7EB] dark:border-zinc-800'
+      className={`v4-card rounded-[16px] p-3 flex items-stretch gap-3 transition-colors ${
+        editMode ? '' : 'cursor-pointer hover:border-[var(--border-strong)]'
       }`}
     >
       <ProductVisual product={product} size="row" />
       <div className="flex-1 min-w-0 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
+            <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
               {displayName} {product.vol}
             </div>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-[11px] font-semibold flex-none mt-0.5">
-              <Check className="w-3 h-3 stroke-[2.5]" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium flex-none mt-0.5">
+              <Check className="w-3 h-3" strokeWidth={1.75} />
               <span>{t.inShelfPill}</span>
             </span>
           </div>
-          <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
+          <div className="text-xs text-[var(--text-muted)] mt-1 tabular-nums">
             {t.boxMetaLine(product.blk)} · {formatSom(product.one)}
           </div>
           <div className="mt-2">
-            <div className="flex items-center justify-between gap-2 text-xs font-semibold mb-1">
+            <div className="flex items-center justify-between gap-2 text-xs font-medium mb-1">
               <span className={stockColor}>{st.txt}</span>
-              {st.sub && <span className="text-[#6B7280] dark:text-zinc-400 whitespace-nowrap">{st.sub}</span>}
+              {st.sub && <span className="text-[var(--text-muted)] whitespace-nowrap">{st.sub}</span>}
             </div>
-            <div className="h-2 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-150 ease-out ${stockBarBg}`}
+                className={`h-full rounded-full transition-[width] duration-200 ease-out ${stockBarBg}`}
                 style={{ width: `${st.pct}%` }}
               />
             </div>
@@ -623,47 +525,47 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
 
         <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+            <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
               {formatNumberThin(product.box)}{' '}
-              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+              <span className="text-xs font-normal text-[var(--text-muted)]">
                 so&apos;m
               </span>
             </div>
-            <div className="text-xs font-normal text-[#6B7280] dark:text-zinc-400">
+            <div className={`text-xs ${inCart ? 'font-medium text-[var(--success)]' : 'font-normal text-[var(--text-muted)]'}`}>
               {inCart ? t.inCartQty(cart[id]) : formatSom(product.one) + ' ' + t.perPieceSuffix}
             </div>
           </div>
 
           {editMode ? (
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <div className="inline-flex items-center h-11 rounded-full border border-[#E5E7EB] dark:border-zinc-700 bg-[#F4F5F7] dark:bg-zinc-900">
+              <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)]">
                 <button
                   type="button"
                   aria-label="Kamaytirish"
                   onClick={() => updateShelfUsual(id, -1)}
-                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[#111827] dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                 >
-                  <Minus className="w-5 h-5" />
+                  <Minus className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 </button>
-                <span className="min-w-[28px] text-center font-bold text-sm tabular-nums">
+                <span className="min-w-[28px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
                   {usual}
                 </span>
                 <button
                   type="button"
                   aria-label="Ko'paytirish"
                   onClick={() => updateShelfUsual(id, 1)}
-                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA]"
+                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 </button>
               </div>
               <button
                 type="button"
                 aria-label={t.removeFromCart}
                 onClick={() => removeShelfItem(id)}
-                className="w-11 h-11 rounded-full bg-[#FCE8EA] dark:bg-red-950/40 text-[#9B111E] dark:text-[#F87171] flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center"
               >
-                <X className="w-5 h-5" />
+                <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
             </div>
           ) : (

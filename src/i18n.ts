@@ -31,6 +31,35 @@ export interface Translations {
   greetingDay: (name: string) => string;
   greetingEvening: (name: string) => string;
   nextDeliveryChip: string;
+  velvetCartTitle: (n: number) => string;
+  velvetFillUsual: string;
+  velvetGoCart: string;
+  velvetUnlockHint: (amt: string, pct: number) => string;
+  velvetTierUnlocked: (pct: number) => string;
+  velvetMaxUnlocked: string;
+  cartBarTierStatus: (curPct: number, nextPct: number | null, leftAmt: string) => string;
+  cartStickyTotalLabel: (discountAmt: string | null) => string;
+  moreProductsLink: string;
+  disabledMinOrderReason: (minAmt: string, leftAmt: string) => string;
+  undoLabel: string;
+  removedLineSnack: (name: string) => string;
+  clearedCartSnack: string;
+  removedShelfSnack: (name: string) => string;
+  cancelledOrderSnack: (id: number) => string;
+  openChatLabel: string;
+  trackBtnShort: string;
+  homeBtnShort: string;
+  reportMonthlyDelta: (deltaPct: number) => string;
+  reportMostOrderedTitle: string;
+  reportThisMonth: string;
+  reportLastMonth: string;
+  usualOrderHintTitle: string;
+  usualOrderHintSub: (boxes: number, days: number) => string;
+  inCartShort: string;
+  ratingSavedInline: string;
+  copiedCodeInline: string;
+  issueSentInline: string;
+  pinSavedInline: string;
   statCartLabel: string;
   statCartVal: (n: number) => string;
   statOrderLabel: string;
@@ -344,6 +373,44 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     greetingDay: (name) => `Xayrli kun, ${name}`,
     greetingEvening: (name) => `Xayrli kech, ${name}`,
     nextDeliveryChip: 'Ertaga 9–13',
+    velvetCartTitle: (n) => `Savatda · ${n} quti`,
+    velvetFillUsual: 'Odatdagini solish',
+    velvetGoCart: "Savatga o'tish",
+    velvetUnlockHint: (amt, pct) => `${pct}% gacha yana ${amt}`,
+    velvetTierUnlocked: (pct) => `${pct}% chegirma ochildi`,
+    velvetMaxUnlocked: '10% chegirma faol',
+    cartBarTierStatus: (curPct, nextPct, leftAmt) =>
+      curPct > 0
+        ? nextPct
+          ? `${curPct}% ochildi · ${nextPct}% gacha ${leftAmt}`
+          : `${curPct}% chegirma faol`
+        : nextPct
+          ? `${nextPct}% gacha ${leftAmt}`
+          : 'Chegirma',
+    cartStickyTotalLabel: (discountAmt) =>
+      discountAmt ? `Jami (chegirma −${discountAmt})` : 'Jami',
+    moreProductsLink: 'Yana mahsulot',
+    disabledMinOrderReason: (minAmt, leftAmt) => `Kamida ${minAmt} — yana ${leftAmt}`,
+    undoLabel: 'Qaytarish',
+    removedLineSnack: (name) => `${name} olib tashlandi`,
+    clearedCartSnack: 'Savat tozalandi',
+    removedShelfSnack: (name) => `${name} javondan olindi`,
+    cancelledOrderSnack: (id) => `Buyurtma #${id} bekor qilindi`,
+    openChatLabel: 'Ochish',
+    trackBtnShort: 'Kuzatish',
+    homeBtnShort: 'Bosh sahifaga',
+    reportMonthlyDelta: (deltaPct) =>
+      `${deltaPct >= 0 ? `+${deltaPct}%` : `−${Math.abs(deltaPct)}%`} o'tgan oyga nisbatan`,
+    reportMostOrderedTitle: "Eng ko'p olingan",
+    reportThisMonth: 'Bu oy',
+    reportLastMonth: "O'tgan oy",
+    usualOrderHintTitle: 'Odatdagi buyurtma',
+    usualOrderHintSub: (boxes, days) => `${boxes} quti · har ${days} kunda`,
+    inCartShort: 'Savatda',
+    ratingSavedInline: 'Rahmat, baho saqlandi',
+    copiedCodeInline: 'Kod nusxalandi',
+    issueSentInline: 'Xabar operatorga yuborildi',
+    pinSavedInline: 'Yangi PIN saqlandi',
     statCartLabel: 'Savatda',
     statCartVal: (n) => `${n} quti`,
     statOrderLabel: 'Faol buyurtma',
@@ -508,7 +575,7 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
       `Yana ${amount} (≈ ${boxesNeeded} quti) — ${pct}% chegirma, ≈ ${saved} tejaysiz`,
     discountNudgeMax: (pct) => `Maksimal ${pct}% chegirma faol`,
-    discountTierReachedTitle: (pct) => `${pct}% chegirma faollashdi!`,
+    discountTierReachedTitle: (pct) => `${pct}% chegirma faollashdi`,
     discountTierReachedText: (saved) => `Ushbu buyurtmada ${saved} tejaysiz`,
     clearCartBtn: 'Tozalash',
     continueShopping: "Xaridni davom ettirish",
@@ -561,7 +628,7 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     rateCommentPlaceholder: 'Ixtiyoriy izoh…',
     rateSubmitBtn: 'Yuborish',
     rateSavedToastTitle: 'Baho yuborildi',
-    rateSavedToastText: (stars) => `${stars} yulduz uchun rahmat!`,
+    rateSavedToastText: (stars) => `${stars} yulduz uchun rahmat`,
     pendingSyncBadge: 'Internet kutilmoqda',
     orderDetailTitle: 'Buyurtma tafsilotlari',
     timelineTitle: 'Holat bosqichlari',
@@ -693,6 +760,44 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     greetingDay: (name) => `Добрый день, ${name}`,
     greetingEvening: (name) => `Добрый вечер, ${name}`,
     nextDeliveryChip: 'Завтра 9–13',
+    velvetCartTitle: (n) => `В корзине · ${n} кор.`,
+    velvetFillUsual: 'Обычный набор',
+    velvetGoCart: 'В корзину',
+    velvetUnlockHint: (amt, pct) => `До ${pct}% ещё ${amt}`,
+    velvetTierUnlocked: (pct) => `Открыта скидка ${pct}%`,
+    velvetMaxUnlocked: 'Активна скидка 10%',
+    cartBarTierStatus: (curPct, nextPct, leftAmt) =>
+      curPct > 0
+        ? nextPct
+          ? `${curPct}% открыта · до ${nextPct}% ${leftAmt}`
+          : `Скидка ${curPct}% активна`
+        : nextPct
+          ? `До ${nextPct}% ${leftAmt}`
+          : 'Скидка',
+    cartStickyTotalLabel: (discountAmt) =>
+      discountAmt ? `Итого (скидка −${discountAmt})` : 'Итого',
+    moreProductsLink: 'Ещё товары',
+    disabledMinOrderReason: (minAmt, leftAmt) => `Минимум ${minAmt} — ещё ${leftAmt}`,
+    undoLabel: 'Вернуть',
+    removedLineSnack: (name) => `${name} удалён`,
+    clearedCartSnack: 'Корзина очищена',
+    removedShelfSnack: (name) => `${name} убран с полки`,
+    cancelledOrderSnack: (id) => `Заказ #${id} отменён`,
+    openChatLabel: 'Открыть',
+    trackBtnShort: 'Отследить',
+    homeBtnShort: 'На главную',
+    reportMonthlyDelta: (deltaPct) =>
+      `${deltaPct >= 0 ? `+${deltaPct}%` : `−${Math.abs(deltaPct)}%`} к прошлому месяцу`,
+    reportMostOrderedTitle: 'Самые заказываемые',
+    reportThisMonth: 'Этот месяц',
+    reportLastMonth: 'Прошлый месяц',
+    usualOrderHintTitle: 'Обычный заказ',
+    usualOrderHintSub: (boxes, days) => `${boxes} кор. · каждые ${days} дн.`,
+    inCartShort: 'В корзине',
+    ratingSavedInline: 'Спасибо, оценка сохранена',
+    copiedCodeInline: 'Код скопирован',
+    issueSentInline: 'Сообщение отправлено оператору',
+    pinSavedInline: 'Новый PIN сохранён',
     statCartLabel: 'В корзине',
     statCartVal: (n) => `${n} кор.`,
     statOrderLabel: 'Активный заказ',
@@ -857,7 +962,7 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
       `Ещё ${amount} (≈ ${boxesNeeded} кор.) — скидка ${pct}%, ≈ ${saved} экономии`,
     discountNudgeMax: (pct) => `Активна максимальная скидка ${pct}%`,
-    discountTierReachedTitle: (pct) => `Скидка ${pct}% активирована!`,
+    discountTierReachedTitle: (pct) => `Скидка ${pct}% активирована`,
     discountTierReachedText: (saved) => `Экономия на заказе: ${saved}`,
     clearCartBtn: 'Очистить',
     continueShopping: 'Продолжить покупки',
@@ -910,7 +1015,7 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     rateCommentPlaceholder: 'Необязательный комментарий…',
     rateSubmitBtn: 'Отправить',
     rateSavedToastTitle: 'Оценка отправлена',
-    rateSavedToastText: (stars) => `Спасибо за ${stars} звёзд!`,
+    rateSavedToastText: (stars) => `Спасибо за ${stars} звёзд`,
     pendingSyncBadge: 'Ожидает сеть',
     orderDetailTitle: 'Детали заказа',
     timelineTitle: 'Этапы статуса',
@@ -1023,6 +1128,9 @@ const CAT_RU: Record<string, string> = {
   Hammasi: 'Все',
   Javonim: 'Полка',
   '1 L': '1 Л',
+  '0.33 L': '0.33 Л',
+  Aksiya: 'Акции',
+  Yoqqanlar: 'Избранное',
   '0,9 L': '0,9 Л',
   '0,5 L': '0,5 Л',
   Gazli: 'Газ.',

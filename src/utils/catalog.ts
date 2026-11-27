@@ -23,14 +23,47 @@ export const CATEGORIES = [
   'Aloe vera',
 ];
 
+export const CATALOG_CHIPS = [
+  'Hammasi',
+  'Javonim',
+  '1 L',
+  '0.33 L',
+  'Aksiya',
+  'Yoqqanlar',
+] as const;
+
+export function matchesCatalogChip(
+  p: Product,
+  chip: string,
+  inShelf: (id: number) => boolean,
+  isFavorite: (id: number) => boolean,
+): boolean {
+  if (chip === 'Hammasi') return true;
+  if (chip === 'Javonim') return inShelf(p.id);
+  if (chip === 'Aksiya') return Boolean(p.promoPct && p.promoPct > 0);
+  if (chip === 'Yoqqanlar') return isFavorite(p.id);
+  if (chip === '1 L') return p.vol === '1 L' || p.cat === '1 L';
+  if (chip === '0.33 L') {
+    const v = p.vol.toLowerCase();
+    return (
+      v.includes('0.33') ||
+      v.includes('0,33') ||
+      v.includes('300') ||
+      v.includes('0,25') ||
+      v.includes('0.25') ||
+      v.includes('0,5')
+    );
+  }
+  return p.cat === chip || p.vol === chip;
+}
+
 export const QUICK_HOME_CATEGORIES = [
   'Hammasi',
   'Javonim',
   '1 L',
-  '0,9 L',
-  '0,5 L',
-  'Gazli',
-  'Bolalar uchun',
+  '0.33 L',
+  'Aksiya',
+  'Yoqqanlar',
 ];
 
 export const TIERS: [number, number][] = [

@@ -228,3 +228,18 @@ export interface PaymentRecord {
   amount: number;
   method: string;
 }
+
+export type NavDirection = 'forward' | 'back' | 'tab';
+
+export interface UndoSnackbarItem {
+  id: number;
+  message: string;
+  undoLabel?: string;
+  onUndo: () => void;
+}
+
+export interface OperatorBannerItem {
+  id: number;
+  name: string;
+  message: string;
+}

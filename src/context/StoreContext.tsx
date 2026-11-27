@@ -26,7 +26,7 @@ import {
   type PlaceOrderPayload,
 } from '../api';
 import { TRANSLATIONS, type Translations } from '../i18n';
-import { getTelegramColorScheme, initTelegramApp, triggerHaptic } from '../telegram';
+import { getTelegramColorScheme, initTelegramApp, syncTelegramTheme, triggerHaptic } from '../telegram';
 import type {
   BoxDiscountNudge,
   BoxDiscountTier,
@@ -35,7 +35,9 @@ import type {
   CheckoutQuote,
   Lang,
   MonthlyReportData,
+  NavDirection,
   NotificationItem,
+  OperatorBannerItem,
   OrderRating,
   OrderRecord,
   PaymentRecord,
@@ -48,8 +50,9 @@ import type {
   SubPageId,
   TabId,
   ToastItem,
+  UndoSnackbarItem,
 } from '../types';
-import { computeBoxDiscountNudge, formatSom, shortName } from '../utils/catalog';
+import { computeBoxDiscountNudge, shortName } from '../utils/catalog';
 
 const STORAGE_KEY = 'lal-v3';
 const OFFLINE_QUEUE_KEY = 'lal-offline-queue-v1';
@@ -165,7 +168,9 @@ interface StoreContextValue {
   session: SessionInfo | null;
   monthTotal: number;
   lastOrderId: number | null;
+  lastPlacedOrder: OrderRecord | null;
   selectedOrderId: number | null;
+  navDirection: NavDirection;
   unreadChat: number;
   cart: Record<number, number>;
   checkoutQuote: CheckoutQuote;
@@ -188,6 +193,10 @@ interface StoreContextValue {
   chat: ChatMessage[];
   notifs: NotificationItem[];
   toast: ToastItem | null;
+  undoSnackbar: UndoSnackbarItem | null;
+  dismissUndoSnackbar: () => void;
+  operatorBanner: OperatorBannerItem | null;
+  dismissOperatorBanner: () => void;
   bumpKey: number;
   cartCount: number;
   cartSubtotal: number;
@@ -261,9 +270,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [lang, setLang] = useState<Lang>(initial.lang);
   const [largeText, setLargeText] = useState<boolean>(initial.largeText);
-  const [darkMode, setDarkMode] = useState<boolean>(
-    initial.theme ? initial.theme === 'dark' : tgScheme === 'dark',
-  );
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (initial.theme) return initial.theme === 'dark';
+    if (tgScheme) return tgScheme === 'dark';
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
   const [themeExplicit, setThemeExplicit] = useState<boolean>(Boolean(initial.theme));
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true,
@@ -280,7 +294,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [monthTotal, setMonthTotal] = useState<number>(820000);
   const [lastOrderId, setLastOrderId] = useState<number | null>(2481);
+  const [lastPlacedOrder, setLastPlacedOrder] = useState<OrderRecord | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(2481);
+  const [navDirection, setNavDirection] = useState<NavDirection>('tab');
   const [unreadChat, setUnreadChat] = useState<number>(2);
 
   const [cart, setCart] = useState<Record<number, number>>(initial.cart);
@@ -313,10 +329,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [notifs, setNotifs] = useState<NotificationItem[]>(DEFAULT_NOTIFS_SEED);
 
   const [toast, setToast] = useState<ToastItem | null>(null);
+  const [undoSnackbar, setUndoSnackbar] = useState<UndoSnackbarItem | null>(null);
+  const [operatorBanner, setOperatorBanner] = useState<OperatorBannerItem | null>(null);
   const [bumpKey, setBumpKey] = useState<number>(0);
 
   const toastTimerRef = useRef<number | null>(null);
-  const addToastCooldownRef = useRef<number>(0);
+  const undoTimerRef = useRef<number | null>(null);
+  const operatorTimerRef = useRef<number | null>(null);
+  const cartRef = useRef<Record<number, number>>(cart);
+  cartRef.current = cart;
+  const shelfRef = useRef<ShelfItem[]>(shelf);
+  shelfRef.current = shelf;
+  const ordersRef = useRef<OrderRecord[]>(orders);
+  ordersRef.current = orders;
   const pageRef = useRef<SubPageId>(page);
   pageRef.current = page;
   // Navigatsiya tarixi: «Orqaga» foydalanuvchi qayerdan kelgan bo'lsa, o'sha joyga qaytaradi
@@ -333,6 +358,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const prevDiscountPctRef = useRef<number | null>(null);
   const userMutatedCartRef = useRef<boolean>(false);
   const promptedRatingIdsRef = useRef<Set<number>>(new Set());
+  const prevChatCountRef = useRef<number>(DEFAULT_CHAT_SEED.length);
   const t = TRANSLATIONS[lang];
 
   const dismissToast = useCallback(() => {
@@ -352,6 +378,47 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setToast(null);
       toastTimerRef.current = null;
     }, 3200);
+  }, []);
+
+  const dismissUndoSnackbar = useCallback(() => {
+    if (undoTimerRef.current) {
+      window.clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+    setUndoSnackbar(null);
+  }, []);
+
+  const showUndoSnackbar = useCallback(
+    (message: string, onUndo: () => void, undoLabel?: string) => {
+      if (undoTimerRef.current) {
+        window.clearTimeout(undoTimerRef.current);
+      }
+      setUndoSnackbar({ id: Date.now(), message, undoLabel, onUndo });
+      undoTimerRef.current = window.setTimeout(() => {
+        setUndoSnackbar(null);
+        undoTimerRef.current = null;
+      }, 4000);
+    },
+    [],
+  );
+
+  const dismissOperatorBanner = useCallback(() => {
+    if (operatorTimerRef.current) {
+      window.clearTimeout(operatorTimerRef.current);
+      operatorTimerRef.current = null;
+    }
+    setOperatorBanner(null);
+  }, []);
+
+  const showOperatorBanner = useCallback((name: string, message: string) => {
+    if (operatorTimerRef.current) {
+      window.clearTimeout(operatorTimerRef.current);
+    }
+    setOperatorBanner({ id: Date.now(), name, message });
+    operatorTimerRef.current = window.setTimeout(() => {
+      setOperatorBanner(null);
+      operatorTimerRef.current = null;
+    }, 6500);
   }, []);
 
   const loadAllData = useCallback(async () => {
@@ -506,11 +573,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [lang, showToast]);
 
-  // Apply dark mode + large text classes on <html>
+  // Apply dark mode + large text classes on <html> & sync Telegram chrome
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) root.classList.add('dark');
     else root.classList.remove('dark');
+    syncTelegramTheme(darkMode);
   }, [darkMode]);
 
   useEffect(() => {
@@ -537,7 +605,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [cart, darkMode, themeExplicit, shelf, favorites, autoOrder, lang, largeText]);
 
-  // Refresh checkout quote via api.ts whenever cart changes & show tier-reached toast
+  // Refresh checkout quote via api.ts whenever cart changes (inline tier feedback only)
   useEffect(() => {
     let active = true;
     const keys = Object.keys(cart);
@@ -566,12 +634,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ) {
           userMutatedCartRef.current = false;
           triggerHaptic('success');
-          showToast({
-            icon: 'check',
-            title: TRANSLATIONS[lang].discountTierReachedTitle(quote.discountPct),
-            text: TRANSLATIONS[lang].discountTierReachedText(formatSom(quote.discountAmount)),
-            tone: 'ok',
-          });
         }
         prevDiscountPctRef.current = quote.discountPct;
         setCheckoutQuote(quote);
@@ -583,7 +645,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       active = false;
     };
-  }, [cart, lang, showToast]);
+  }, [cart]);
+
+  // Calm Operator Chat Card when new incoming operator message arrives outside chat view
+  useEffect(() => {
+    if (chat.length > prevChatCountRef.current) {
+      const latest = chat[chat.length - 1];
+      if (latest && latest[0] === 'in' && pageRef.current !== 'chat') {
+        showOperatorBanner(shop?.operatorName || 'Madina', latest[1]);
+      }
+    }
+    prevChatCountRef.current = chat.length;
+  }, [chat, shop?.operatorName, showOperatorBanner]);
 
   // Scheduled operator message preview (7s after open)
   useEffect(() => {
@@ -594,21 +667,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...prev,
         [
           'in',
-          "Dilnoza opa, ertaga Anor 1 L ga aksiya bor — 10 quti olsangiz 1 quti sovg'a!",
+          "Dilnoza opa, ertaga Anor 1 L ga aksiya bor — 10 quti olsangiz 1 quti sovg'a.",
           '13:20',
         ],
       ]);
-      showToast({
-        icon: 'chat',
-        title: 'Operator Madina',
-        text: 'Ertaga Anor 1 L ga aksiya bor…',
-        tone: 'blue',
-        actionTab: 'me',
-        actionPage: 'chat',
-      });
     }, 7000);
     return () => window.clearTimeout(timer);
-  }, [showToast]);
+  }, []);
 
   const productsById = useMemo(() => {
     const map: Record<number, Product> = {};
@@ -689,20 +754,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const goTab = useCallback((nextTab: TabId, nextPage: SubPageId = null, opts?: { reset?: boolean }) => {
     if (opts?.reset) navStackRef.current = [];
     else pushNav(nextTab, nextPage);
+    setNavDirection(nextPage ? 'forward' : 'tab');
     setTab(nextTab);
     setPage(nextPage);
     setSheet(null);
     setEditShelf(false);
     if (nextPage === 'chat') {
       setUnreadChat(0);
+      dismissOperatorBanner();
     }
     if (nextPage === 'notif') {
       setNotifs((prev) => prev.map((n) => [n[0], n[1], n[2], n[3], 0]));
     }
-  }, []);
+  }, [dismissOperatorBanner]);
 
   const goBack = useCallback(() => {
     const prev = navStackRef.current.pop();
+    setNavDirection('back');
     setSheet(null);
     setEditShelf(false);
     if (prev) {
@@ -722,18 +790,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     pushNav(tabRef.current, p);
+    setNavDirection('forward');
     setPage(p);
     setSheet(null);
     if (p === 'chat') {
       setUnreadChat(0);
+      dismissOperatorBanner();
     }
     if (p === 'notif') {
       setNotifs((prev) => prev.map((n) => [n[0], n[1], n[2], n[3], 0]));
     }
-  }, []);
+  }, [dismissOperatorBanner, goBack]);
 
   const openOrderDetail = useCallback((orderId: number) => {
     pushNav('ord', 'orderDetail');
+    setNavDirection('forward');
     setSelectedOrderId(orderId);
     setTab('ord');
     setPage('orderDetail');
@@ -742,54 +813,76 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateQty = useCallback(
     (id: number, delta: number) => {
+      const current = cartRef.current[id] || 0;
+      if (delta < 0 && current === 0) return;
+      const nextVal = Math.max(0, current + delta);
       triggerHaptic(delta > 0 ? 'add' : 'remove');
       if (delta > 0) userMutatedCartRef.current = true;
       setCart((prev) => {
-        const current = prev[id] || 0;
-        if (delta < 0 && current === 0) return prev;
-        const nextVal = Math.max(0, current + delta);
-        if (delta > 0 && current === 0 && Date.now() - addToastCooldownRef.current > 1200) {
-          addToastCooldownRef.current = Date.now();
-          const p = productsById[id];
-          if (p) {
-            window.setTimeout(() => {
-              showToast({
-                icon: 'check',
-                title: lang === 'ru' ? 'Добавлено в корзину' : "Savatga qo'shildi",
-                text: `${lang === 'ru' && p.nameRu ? p.nameRu : p.name} · ${p.vol}`,
-                tone: 'ok',
-              });
-            }, 0);
-          }
-        }
+        const cur = prev[id] || 0;
+        const val = Math.max(0, cur + delta);
         const next = { ...prev };
-        if (nextVal === 0) {
+        if (val === 0) {
           delete next[id];
         } else {
-          next[id] = nextVal;
+          next[id] = val;
         }
         return next;
       });
       setBumpKey((k) => k + 1);
+
+      if (current > 0 && nextVal === 0) {
+        const p = productsById[id];
+        const prodTitle = p
+          ? `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`
+          : '';
+        showUndoSnackbar(
+          TRANSLATIONS[lang].removedLineSnack(prodTitle),
+          () => {
+            setCart((prev) => ({ ...prev, [id]: current }));
+            setBumpKey((k) => k + 1);
+          },
+          TRANSLATIONS[lang].undoLabel,
+        );
+      }
     },
-    [lang, productsById, showToast],
+    [lang, productsById, showUndoSnackbar],
   );
 
-  const setExactQty = useCallback((id: number, qty: number) => {
-    const clean = Math.max(0, Math.min(999, Math.round(qty)));
-    triggerHaptic(clean > 0 ? 'add' : 'remove');
-    if (clean > 0) userMutatedCartRef.current = true;
-    setCart((prev) => {
-      const next = { ...prev };
-      if (clean === 0) {
-        delete next[id];
-      } else {
-        next[id] = clean;
+  const setExactQty = useCallback(
+    (id: number, qty: number) => {
+      const current = cartRef.current[id] || 0;
+      const clean = Math.max(0, Math.min(999, Math.round(qty)));
+      triggerHaptic(clean > 0 ? 'add' : 'remove');
+      if (clean > 0) userMutatedCartRef.current = true;
+      setCart((prev) => {
+        const next = { ...prev };
+        if (clean === 0) {
+          delete next[id];
+        } else {
+          next[id] = clean;
+        }
+        return next;
+      });
+      setBumpKey((k) => k + 1);
+
+      if (current > 0 && clean === 0) {
+        const p = productsById[id];
+        const prodTitle = p
+          ? `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`
+          : '';
+        showUndoSnackbar(
+          TRANSLATIONS[lang].removedLineSnack(prodTitle),
+          () => {
+            setCart((prev) => ({ ...prev, [id]: current }));
+            setBumpKey((k) => k + 1);
+          },
+          TRANSLATIONS[lang].undoLabel,
+        );
       }
-      return next;
-    });
-    setBumpKey((k) => k + 1);
-  }, []);
+    },
+    [lang, productsById, showUndoSnackbar],
+  );
 
   const resetCatalogFilters = useCallback(() => {
     setCat('Hammasi');
@@ -805,28 +898,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!p) return;
       triggerHaptic('add');
       setFavorites((prev) => {
-        const exists = prev.includes(id);
-        window.setTimeout(() => {
-          showToast({
-            icon: 'heart',
-            title: exists
-              ? lang === 'ru'
-                ? 'Убрано из избранного'
-                : 'Yoqqanlardan olindi'
-              : lang === 'ru'
-                ? 'Добавлено в избранное'
-                : "Yoqqanlarga qo'shildi",
-            text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
-            tone: exists ? 'red' : 'ok',
-          });
-        }, 0);
-        if (exists) {
+        if (prev.includes(id)) {
           return prev.filter((x) => x !== id);
         }
         return [id, ...prev];
       });
     },
-    [lang, productsById, showToast],
+    [productsById],
   );
 
   const updateShelfUsual = useCallback((id: number, delta: number) => {
@@ -842,48 +920,45 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const removeShelfItem = useCallback(
     (id: number) => {
       const p = productsById[id];
+      const existingIndex = shelfRef.current.findIndex((item) => item[0] === id);
+      const removedItem = existingIndex >= 0 ? shelfRef.current[existingIndex] : null;
       setShelf((prev) => prev.filter((item) => item[0] !== id));
-      if (p) {
-        triggerHaptic('remove');
-        window.setTimeout(() => {
-          showToast({
-            icon: 'info',
-            title: lang === 'ru' ? 'Убрано с полки' : 'Javondan olindi',
-            text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
-            tone: 'red',
-          });
-        }, 0);
+      triggerHaptic('remove');
+      if (removedItem) {
+        const prodTitle = p
+          ? `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`
+          : '';
+        showUndoSnackbar(
+          TRANSLATIONS[lang].removedShelfSnack(prodTitle),
+          () => {
+            setShelf((prev) => {
+              if (prev.some((x) => x[0] === id)) return prev;
+              const copy = [...prev];
+              copy.splice(Math.min(existingIndex, copy.length), 0, removedItem);
+              return copy;
+            });
+          },
+          TRANSLATIONS[lang].undoLabel,
+        );
       }
     },
-    [lang, productsById, showToast],
+    [lang, productsById, showUndoSnackbar],
   );
 
   const addShelfItem = useCallback(
     (id: number) => {
-      const p = productsById[id];
       setShelf((prev) => {
         if (prev.some((x) => x[0] === id)) return prev;
-        if (p) {
-          triggerHaptic('add');
-          window.setTimeout(() => {
-            showToast({
-              icon: 'check',
-              title: lang === 'ru' ? 'Добавлено на полку' : "Javonga qo'shildi",
-              text: `${shortName(lang === 'ru' && p.nameRu ? p.nameRu : p.name)} ${p.vol}`,
-              tone: 'ok',
-            });
-          }, 0);
-        }
+        triggerHaptic('add');
         return [...prev, [id, 2, 7, 0]];
       });
     },
-    [lang, productsById, showToast],
+    [],
   );
 
   const fillShelfToCart = useCallback(
     (onlyLow: boolean) => {
       userMutatedCartRef.current = true;
-      let added = 0;
       setCart((prev) => {
         const next = { ...prev };
         shelf.forEach((s) => {
@@ -894,7 +969,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (!onlyLow || left <= 3) {
             if (!next[s[0]]) {
               next[s[0]] = pred ? pred.usualBoxes : s[1];
-              added++;
             }
           }
         });
@@ -902,57 +976,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       triggerHaptic('add');
       setBumpKey((k) => k + 1);
-      window.setTimeout(() => {
-        showToast({
-          icon: 'cart',
-          title: added
-            ? lang === 'ru'
-              ? `${added} поз. добавлено в корзину`
-              : `${added} ta mahsulot savatga qo'shildi`
-            : lang === 'ru'
-              ? 'Все товары уже в корзине'
-              : 'Hammasi savatda bor',
-          text: lang === 'ru' ? 'В обычном количестве' : 'Odatdagi miqdorda',
-          tone: 'ok',
-        });
-      }, 0);
     },
-    [lang, productsById, refillById, shelf, showToast],
+    [productsById, refillById, shelf],
   );
 
   const addRefillDueToCart = useCallback(() => {
     if (refillDueItems.length === 0) return;
     userMutatedCartRef.current = true;
-    let added = 0;
     setCart((prev) => {
       const next = { ...prev };
       for (const item of refillDueItems) {
         const prod = productsById[item.productId];
         if (!prod || prod.out) continue;
-        if (!next[item.productId]) {
-          next[item.productId] = item.usualBoxes;
-          added++;
-        } else {
-          next[item.productId] += item.usualBoxes;
-          added++;
-        }
+        next[item.productId] = (next[item.productId] || 0) + item.usualBoxes;
       }
       return next;
     });
     triggerHaptic('add');
     setBumpKey((k) => k + 1);
-    window.setTimeout(() => {
-      showToast({
-        icon: 'check',
-        title:
-          lang === 'ru'
-            ? `${added} поз. добавлено в корзину`
-            : `${added} ta mahsulot savatga qo'shildi`,
-        text: lang === 'ru' ? 'В обычном количестве' : 'Odatdagi miqdorda',
-        tone: 'ok',
-      });
-    }, 0);
-  }, [lang, productsById, refillDueItems, showToast]);
+  }, [productsById, refillDueItems]);
 
   const updateShelfPrice = useCallback((productId: number, shelfPrice: number) => {
     const clean = Math.max(500, Math.round(shelfPrice));
@@ -964,16 +1006,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     async (orderId: number, stars: number, chips: string[], comment: string) => {
       const saved = await apiSubmitRating({ orderId, stars, chips, comment });
       setRatings((prev) => ({ ...prev, [orderId]: saved }));
-      setSheet(null);
       triggerHaptic('success');
-      showToast({
-        icon: 'star',
-        title: TRANSLATIONS[lang].rateSavedToastTitle,
-        text: TRANSLATIONS[lang].rateSavedToastText(saved.stars),
-        tone: 'ok',
-      });
     },
-    [lang, showToast],
+    [],
   );
 
   const fetchReportMonths = useCallback(() => apiGetAvailableReportMonths(), []);
@@ -994,6 +1029,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       triggerHaptic('add');
       setBumpKey((k) => k + 1);
+      setNavDirection('tab');
       setTab('cart');
       setPage(null);
     },
@@ -1004,38 +1040,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const lastValid = orders.find((o) => o.status !== 'Bekor qilindi') || orders[0];
     if (!lastValid) return;
     repeatOrderToCart(lastValid.items.map((it) => ({ productId: it.productId, qty: it.qty })));
-    showToast({
-      icon: 'repeat',
-      title: lang === 'ru' ? `Заказ #${lastValid.id} повторен` : `#${lastValid.id} savatga qo'shildi`,
-      text: lang === 'ru' ? 'Проверьте количество и оформите' : 'Miqdorni tekshirib buyurtma bering',
-      tone: 'ok',
-    });
-  }, [lang, orders, repeatOrderToCart, showToast]);
+  }, [orders, repeatOrderToCart]);
 
   const clearCart = useCallback(() => {
+    const prevSnapshot = { ...cartRef.current };
+    const hasItems = Object.keys(prevSnapshot).length > 0;
     triggerHaptic('remove');
     prevDiscountPctRef.current = 0;
     userMutatedCartRef.current = false;
     setCart({});
     setSheet(null);
-  }, []);
+    if (hasItems) {
+      showUndoSnackbar(
+        TRANSLATIONS[lang].clearedCartSnack,
+        () => {
+          setCart(prevSnapshot);
+          setBumpKey((k) => k + 1);
+        },
+        TRANSLATIONS[lang].undoLabel,
+      );
+    }
+  }, [lang, showUndoSnackbar]);
 
   const toggleAutoOrder = useCallback(() => {
-    setAutoOrder((prev) => {
-      const next = !prev;
-      if (next) {
-        window.setTimeout(() => {
-          showToast({
-            icon: 'repeat',
-            title: lang === 'ru' ? 'Автозаказ включён' : 'Avto-buyurtma yoqildi',
-            text: lang === 'ru' ? 'Уведомление придёт в понедельник утром' : 'Dushanba ertalab xabar keladi',
-            tone: 'blue',
-          });
-        }, 0);
-      }
-      return next;
-    });
-  }, [lang, showToast]);
+    setAutoOrder((prev) => !prev);
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setThemeExplicit(true);
@@ -1063,6 +1092,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         triggerHaptic('success');
         setOrders((prev) => [created, ...prev]);
         setLastOrderId(created.id);
+        setLastPlacedOrder(created);
         setSelectedOrderId(created.id);
         setMonthTotal((m) => m + created.subtotal);
         prevDiscountPctRef.current = 0;
@@ -1070,6 +1100,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCart({});
         setNote('');
         setSheet(null);
+        setNavDirection('forward');
         setTab('ord');
         setOrderSeg(0);
         setPage('success');
@@ -1079,12 +1110,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ['road', `#${created.id} tasdiqlandi`, 'Operator Madina tasdiqladi', 'Hozir', 1],
             ...prev,
           ]);
-          showToast({
-            icon: 'check',
-            title: `#${created.id} tasdiqlandi`,
-            text: 'Operator Madina · omborga yuborildi',
-            tone: 'ok',
-          });
         }, 4000);
       } catch (err) {
         if (err instanceof Error && err.message === 'OFFLINE') {
@@ -1114,6 +1139,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           triggerHaptic('error');
           setOrders((prev) => [offlineOrder, ...prev]);
           setLastOrderId(offlineId);
+          setLastPlacedOrder(offlineOrder);
           setSelectedOrderId(offlineId);
           prevDiscountPctRef.current = 0;
           userMutatedCartRef.current = false;
@@ -1153,18 +1179,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const cancelOrder = useCallback(
     async (id: number, reason: string) => {
+      const priorOrder = ordersRef.current.find((o) => o.id === id) || null;
       const updated = await apiCancelOrder(id, reason);
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
       setSheet(null);
       triggerHaptic('remove');
-      showToast({
-        icon: 'info',
-        title: lang === 'ru' ? `Заказ #${id} отменён` : `#${id} bekor qilindi`,
-        text: updated.cancelReason || '',
-        tone: 'red',
-      });
+      showUndoSnackbar(
+        TRANSLATIONS[lang].cancelledOrderSnack(id),
+        () => {
+          if (priorOrder) {
+            setOrders((prev) => prev.map((o) => (o.id === id ? priorOrder : o)));
+          }
+        },
+        TRANSLATIONS[lang].undoLabel,
+      );
     },
-    [lang, showToast],
+    [lang, showUndoSnackbar],
   );
 
   const confirmOrderHandover = useCallback(
@@ -1172,12 +1202,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const updated = await apiConfirmHandover(id);
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
       triggerHaptic('success');
-      showToast({
-        icon: 'check',
-        title: t.handoverConfirmedToast,
-        text: `#${id}`,
-        tone: 'ok',
-      });
       if (!ratings[id] && !promptedRatingIdsRef.current.has(id)) {
         promptedRatingIdsRef.current.add(id);
         window.setTimeout(() => {
@@ -1185,7 +1209,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }, 350);
       }
     },
-    [ratings, showToast, t.handoverConfirmedToast],
+    [ratings],
   );
 
   const sendChatMessage = useCallback(
@@ -1199,25 +1223,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       void sendChatToPanel(text).then((sent) => {
         if (sent) return;
         window.setTimeout(() => {
-        setChat((prev) => [
-          ...prev,
-          ['in', 'Qabul qildim, Dilnoza opa! Hozir tekshirib javob beraman.', hm],
-        ]);
-        if (pageRef.current !== 'chat') {
-          setUnreadChat((c) => c + 1);
-          showToast({
-            icon: 'chat',
-            title: 'Operator Madina',
-            text: 'Qabul qildim, hozir tekshirib…',
-            tone: 'blue',
-            actionTab: 'me',
-            actionPage: 'chat',
-          });
-        }
+          setChat((prev) => [
+            ...prev,
+            ['in', 'Qabul qildim, Dilnoza opa. Hozir tekshirib javob beraman.', hm],
+          ]);
+          if (pageRef.current !== 'chat') {
+            setUnreadChat((c) => c + 1);
+          }
         }, 1400);
       });
     },
-    [showToast],
+    [],
   );
 
   const value: StoreContextValue = {
@@ -1254,7 +1270,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     session,
     monthTotal,
     lastOrderId,
+    lastPlacedOrder,
     selectedOrderId,
+    navDirection,
     unreadChat,
     cart,
     checkoutQuote,
@@ -1277,6 +1295,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     chat,
     notifs,
     toast,
+    undoSnackbar,
+    dismissUndoSnackbar,
+    operatorBanner,
+    dismissOperatorBanner,
     bumpKey,
     cartCount,
     cartSubtotal,

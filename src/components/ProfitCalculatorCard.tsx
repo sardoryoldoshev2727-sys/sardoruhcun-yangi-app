@@ -54,32 +54,32 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
   const positiveMargin = metrics.marginOne >= 0;
 
   return (
-    <section className="bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 space-y-3">
+    <section className="bg-[var(--bg-raised)] border border-[var(--border-hairline)] rounded-[14px] p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-8 h-8 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
-            <Calculator className="w-5 h-5" />
+          <span className="w-8 h-8 rounded-[10px] bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center flex-none">
+            <Calculator className="w-[18px] h-[18px]" strokeWidth={1.5} />
           </span>
-          <h4 className="text-sm font-bold text-[#111827] dark:text-white truncate">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)] truncate">
             {t.profitCalcTitle}
           </h4>
         </div>
-        <span className="px-2 py-1 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-xs font-semibold text-[#6B7280] dark:text-zinc-300 tabular-nums whitespace-nowrap">
+        <span className="px-2.5 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
           {t.markupSliderHint}
         </span>
       </div>
 
       {/* Buy price reference */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3">
-          <div className="text-xs text-[#6B7280] dark:text-zinc-400">{t.buyPerBottleLabel}</div>
-          <div className="text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap mt-1">
+        <div className="v4-card rounded-[10px] p-3">
+          <div className="text-xs text-[var(--text-muted)]">{t.buyPerBottleLabel}</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap mt-1">
             {formatSom(metrics.buyOne)}
           </div>
         </div>
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3">
-          <div className="text-xs text-[#6B7280] dark:text-zinc-400">{t.buyPerBoxLabel}</div>
-          <div className="text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap mt-1">
+        <div className="v4-card rounded-[10px] p-3">
+          <div className="text-xs text-[var(--text-muted)]">{t.buyPerBoxLabel}</div>
+          <div className="text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap mt-1">
             {formatSom(metrics.buyBox)}
           </div>
         </div>
@@ -87,19 +87,19 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
 
       {/* Shelf price input */}
       <div>
-        <label className="block text-xs font-semibold text-[#6B7280] dark:text-zinc-400 mb-1">
+        <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
           {t.shelfPriceLabel}
         </label>
-        <div className="flex items-center gap-2 min-h-[44px] px-3 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 focus-within:border-[#9B111E]">
+        <div className="flex items-center gap-2 min-h-[44px] px-3 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] focus-within:border-[var(--anor)]">
           <input
             type="text"
             inputMode="numeric"
             value={inputVal}
             onChange={(e) => handlePriceInput(e.target.value)}
             aria-label={t.shelfPriceLabel}
-            className="flex-1 min-w-0 bg-transparent text-base font-bold text-[#111827] dark:text-white outline-none tabular-nums"
+            className="flex-1 min-w-0 bg-transparent text-base font-semibold text-[var(--text-primary)] outline-none tabular-nums"
           />
-          <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400 whitespace-nowrap">
+          <span className="text-xs font-medium text-[var(--text-muted)] whitespace-nowrap">
             so&apos;m
           </span>
         </div>
@@ -108,16 +108,16 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
       {/* 10–40% Markup slider */}
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2 text-xs">
-          <span className="font-semibold text-[#6B7280] dark:text-zinc-400">
+          <span className="font-medium text-[var(--text-secondary)]">
             {t.markupPctLabel}:{' '}
-            <strong className="text-[#9B111E] dark:text-[#FB7185] font-bold tabular-nums">
+            <strong className="text-[var(--anor-text)] font-semibold tabular-nums">
               {metrics.markupPct}%
             </strong>
           </span>
           <button
             type="button"
             onClick={applySuggested}
-            className="min-h-[44px] px-2 text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] hover:underline whitespace-nowrap"
+            className="min-h-[44px] px-2 text-xs font-medium text-[var(--anor-text)] hover:underline whitespace-nowrap"
           >
             {t.suggestedRoundedHint(formatSom(recommendedPrice))}
           </button>
@@ -134,7 +134,7 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
             className="calm-slider w-full cursor-pointer"
           />
         </div>
-        <div className="flex justify-between text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
+        <div className="flex justify-between text-xs text-[var(--text-muted)] tabular-nums">
           <span>10%</span>
           <span>20–25%</span>
           <span>40%</span>
@@ -143,15 +143,13 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
 
       {/* Live margins & Monthly profit */}
       <div className={`grid ${compact ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3">
-          <div className="text-xs text-[#6B7280] dark:text-zinc-400 truncate">
+        <div className="v4-card rounded-[10px] p-3">
+          <div className="text-xs text-[var(--text-muted)] truncate">
             {t.marginPerBottleLabel}
           </div>
           <div
-            className={`text-sm font-bold tabular-nums whitespace-nowrap mt-1 ${
-              positiveMargin
-                ? 'text-[#16A34A] dark:text-[#4ADE80]'
-                : 'text-[#9B111E] dark:text-[#FB7185]'
+            className={`text-sm font-semibold tabular-nums whitespace-nowrap mt-1 ${
+              positiveMargin ? 'text-[var(--success)]' : 'text-[var(--error)]'
             }`}
           >
             {positiveMargin ? '+' : ''}
@@ -159,15 +157,13 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3">
-          <div className="text-xs text-[#6B7280] dark:text-zinc-400 truncate">
+        <div className="v4-card rounded-[10px] p-3">
+          <div className="text-xs text-[var(--text-muted)] truncate">
             {t.marginPerBoxLabel}
           </div>
           <div
-            className={`text-sm font-bold tabular-nums whitespace-nowrap mt-1 ${
-              positiveMargin
-                ? 'text-[#16A34A] dark:text-[#4ADE80]'
-                : 'text-[#9B111E] dark:text-[#FB7185]'
+            className={`text-sm font-semibold tabular-nums whitespace-nowrap mt-1 ${
+              positiveMargin ? 'text-[var(--success)]' : 'text-[var(--error)]'
             }`}
           >
             {positiveMargin ? '+' : ''}
@@ -176,11 +172,11 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
         </div>
 
         {!compact && (
-          <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3">
-            <div className="text-xs text-[#6B7280] dark:text-zinc-400 truncate">
+          <div className="v4-card rounded-[10px] p-3">
+            <div className="text-xs text-[var(--text-muted)] truncate">
               {t.markupPctLabel}
             </div>
-            <div className="text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap mt-1">
+            <div className="text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap mt-1">
               {metrics.markupPct}%
             </div>
           </div>
@@ -188,15 +184,13 @@ export const ProfitCalculatorCard: React.FC<ProfitCalculatorCardProps> = ({
       </div>
 
       {/* Monthly estimate */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-3 flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400 break-words">
+      <div className="v4-card rounded-[10px] p-3 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-[var(--text-secondary)] break-words">
           {t.monthlyProfitEstLabel(metrics.monthlyAvgBoxes)}
         </span>
         <strong
-          className={`text-base font-bold tabular-nums whitespace-nowrap flex-none ${
-            metrics.monthlyProfit >= 0
-              ? 'text-[#16A34A] dark:text-[#4ADE80]'
-              : 'text-[#9B111E] dark:text-[#FB7185]'
+          className={`text-base font-semibold tabular-nums whitespace-nowrap flex-none ${
+            metrics.monthlyProfit >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'
           }`}
         >
           {metrics.monthlyProfit >= 0 ? '+' : ''}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import {
   ArrowLeft,
@@ -15,15 +15,18 @@ import {
   Home,
   Info,
   LayoutGrid,
+  List,
   Lock,
   MessageCircle,
   Minus,
+  Moon,
   Phone,
   Plus,
   Repeat,
   Search,
   ShoppingCart,
   Star,
+  Sun,
   Tag,
   Trash2,
   User,
@@ -33,16 +36,17 @@ import {
 import { useStore } from '../context/StoreContext';
 import { LOGO } from '../api';
 import { getCategoryLabel, getProductName } from '../i18n';
-import { syncTelegramBackButton } from '../telegram';
+import { syncTelegramBackButton, triggerHaptic } from '../telegram';
 import type { TabId, ToastItem } from '../types';
 import {
-  CATEGORIES,
+  CATALOG_CHIPS,
   formatSom,
-  getCategoryCircleColor,
   getPromoBoxPrice,
 } from '../utils/catalog';
 import { HomeView } from '../views/HomeView';
 import { ListRowsSkeleton } from './Skeletons';
+import { PillButton, TweenSom } from './V4Primitives';
+import { SheetsAndModals } from './SheetsAndModals';
 
 // Sahifalar kerak bo'lganda yuklanadi (ilova tezroq ochiladi)
 const lazyNamed = <T extends Record<string, any>>(load: () => Promise<T>, name: keyof T) =>
@@ -65,32 +69,32 @@ const NotifView = lazyNamed(loadProfile, 'NotifView');
 const ProfileView = lazyNamed(loadProfile, 'ProfileView');
 const ProfitCalculatorView = lazyNamed(loadProfile, 'ProfitCalculatorView');
 const ShopView = lazyNamed(loadProfile, 'ShopView');
-import { SheetsAndModals } from './SheetsAndModals';
 
 function ToastIcon({ icon }: { icon: ToastItem['icon'] }) {
+  const cls = 'w-[18px] h-[18px]';
   switch (icon) {
     case 'cart':
-      return <ShoppingCart className="w-5 h-5" />;
+      return <ShoppingCart className={cls} strokeWidth={1.5} />;
     case 'bell':
-      return <Bell className="w-5 h-5" />;
+      return <Bell className={cls} strokeWidth={1.5} />;
     case 'chat':
-      return <MessageCircle className="w-5 h-5" />;
+      return <MessageCircle className={cls} strokeWidth={1.5} />;
     case 'heart':
-      return <Heart className="w-5 h-5" />;
+      return <Heart className={cls} strokeWidth={1.5} />;
     case 'lock':
-      return <Lock className="w-5 h-5" />;
+      return <Lock className={cls} strokeWidth={1.5} />;
     case 'phone':
-      return <Phone className="w-5 h-5" />;
+      return <Phone className={cls} strokeWidth={1.5} />;
     case 'globe':
-      return <Globe className="w-5 h-5" />;
+      return <Globe className={cls} strokeWidth={1.5} />;
     case 'info':
-      return <Info className="w-5 h-5" />;
+      return <Info className={cls} strokeWidth={1.5} />;
     case 'repeat':
-      return <Repeat className="w-5 h-5" />;
+      return <Repeat className={cls} strokeWidth={1.5} />;
     case 'star':
-      return <Star className="w-5 h-5" />;
+      return <Star className={cls} strokeWidth={1.5} />;
     default:
-      return <Check className="w-5 h-5" />;
+      return <Check className={cls} strokeWidth={1.5} />;
   }
 }
 
@@ -99,6 +103,8 @@ export const AppShell: React.FC = () => {
     tab,
     page,
     cat,
+    viewMode,
+    navDirection,
     cart,
     products,
     productsById,
@@ -112,15 +118,24 @@ export const AppShell: React.FC = () => {
     selectedOrderId,
     shop,
     session,
+    darkMode,
     isOnline,
+    loadError,
+    retryLoad,
     lang,
     t,
     toast,
+    undoSnackbar,
+    dismissUndoSnackbar,
+    operatorBanner,
+    dismissOperatorBanner,
     goTab,
     openPage,
     setCat,
+    setViewMode,
     setSearchQuery,
     setSheet,
+    toggleTheme,
     updateQty,
     dismissToast,
   } = useStore();
@@ -137,6 +152,12 @@ export const AppShell: React.FC = () => {
     }
     prevCartCountRef.current = cartCount;
   }, [cartCount]);
+
+  useEffect(() => {
+    if (loadError) {
+      triggerHaptic('error');
+    }
+  }, [loadError]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -164,7 +185,15 @@ export const AppShell: React.FC = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const mobileNavItems: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const todayDateLabel = useMemo(() => {
+    const d = new Date();
+    const uzMonths = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+    const ruMonths = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const list = lang === 'ru' ? ruMonths : uzMonths;
+    return `${d.getDate()} ${list[d.getMonth()]}`;
+  }, [lang]);
+
+  const mobileNavItems: { id: TabId; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
     { id: 'home', label: t.navHome, icon: Home },
     { id: 'cat', label: t.navCatalog, icon: LayoutGrid },
     { id: 'promo', label: t.navPromo, icon: Tag },
@@ -172,9 +201,9 @@ export const AppShell: React.FC = () => {
     { id: 'ord', label: t.navOrders, icon: ClipboardList },
   ];
 
-  const desktopNavItems: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const desktopNavItems = [
     ...mobileNavItems,
-    { id: 'me', label: t.navProfile, icon: User },
+    { id: 'me' as TabId, label: t.navProfile, icon: User },
   ];
 
   const showCatalogStrip = !page && tab === 'cat';
@@ -193,86 +222,125 @@ export const AppShell: React.FC = () => {
       )
     : t.discountNudgeMax(discountNudge.currentPct);
 
+  const floatingCartTierText = t.cartBarTierStatus(
+    discountPct,
+    discountNudge.nextTier?.pct ?? null,
+    formatSom(discountNudge.amountNeeded),
+  );
+
+  const themeToggleBtn = (
+    <button
+      type="button"
+      aria-label={t.darkModeTitle}
+      onClick={toggleTheme}
+      className="w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center flex-none transition-colors"
+    >
+      {darkMode ? (
+        <Sun className="w-[18px] h-[18px]" strokeWidth={1.5} />
+      ) : (
+        <Moon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+      )}
+    </button>
+  );
+
+  const headerBackBtn = (
+    <button
+      type="button"
+      aria-label={t.backLabel}
+      onClick={() => openPage(null)}
+      className="w-11 h-11 -ml-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none transition-colors"
+    >
+      <ArrowLeft className="w-[18px] h-[18px]" strokeWidth={1.5} />
+    </button>
+  );
+
+  const headerCartBtn = (
+    <button
+      type="button"
+      aria-label={t.cartLabel}
+      onClick={() => goTab('cart')}
+      className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none transition-colors"
+    >
+      <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={1.5} />
+      {cartCount > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
+          {cartCount}
+        </span>
+      )}
+    </button>
+  );
+
+  const deliveryHeaderChip = (
+    <span
+      title={t.nextDeliveryChip}
+      className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] text-[11px] font-medium inline-flex items-center gap-1 whitespace-nowrap select-none"
+    >
+      <Clock className="w-3.5 h-3.5 flex-none text-[var(--text-muted)]" strokeWidth={1.5} />
+      <span>{t.nextDeliveryChip}</span>
+    </span>
+  );
+
   const renderTopBar = () => {
     if (page === 'notif') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 text-base font-bold truncate">{t.notifTitle}</h1>
+          {headerBackBtn}
+          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{t.notifTitle}</h1>
+          {themeToggleBtn}
         </>
       );
     }
     if (page === 'track') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold leading-tight truncate">
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.orderNumberPrefix}{selectedOrderId || 2481}
             </h1>
-            <small className="block text-xs text-white/90 tabular-nums">
+            <small className="block text-xs text-[var(--text-secondary)] tabular-nums">
               {t.driverRouteLabel}
             </small>
           </div>
+          {themeToggleBtn}
         </>
       );
     }
     if (page === 'orderDetail') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 text-base font-bold truncate">
+          {headerBackBtn}
+          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">
             {t.orderDetailTitle} #{selectedOrderId}
           </h1>
+          {themeToggleBtn}
         </>
       );
     }
     if (page === 'success') {
-      return <h1 className="flex-1 text-base font-bold">{t.successTitle}</h1>;
+      return (
+        <>
+          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)]">{t.successTitle}</h1>
+          {themeToggleBtn}
+        </>
+      );
     }
     if (page === 'chat') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <span className="w-10 h-10 rounded-full bg-white/20 font-bold text-sm flex items-center justify-center flex-none">
+          {headerBackBtn}
+          <span className="w-9 h-9 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] font-semibold text-sm flex items-center justify-center flex-none">
             M
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold leading-tight truncate">
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
               {shop?.operatorName || 'Madina'}
             </h1>
-            <small className="block text-xs text-white/90">
+            <small className="block text-xs text-[var(--success)]">
               {t.operatorOnline(shop?.operatorName || 'Madina')}
             </small>
           </div>
+          {themeToggleBtn}
         </>
       );
     }
@@ -294,63 +362,28 @@ export const AppShell: React.FC = () => {
       };
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 text-base font-bold truncate">{titles[page]}</h1>
+          {headerBackBtn}
+          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{titles[page]}</h1>
+          {themeToggleBtn}
         </>
       );
     }
 
-    const deliveryHeaderChip = (
-      // Faqat ma'lumot: keyingi yetkazish vaqti (bosilganda hech qayerga olib ketmaydi)
-      <span
-        title={t.nextDeliveryChip}
-        className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-white/15 text-white text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap select-none"
-      >
-        <Clock className="w-3.5 h-3.5 flex-none" />
-        <span>{t.nextDeliveryChip}</span>
-      </span>
-    );
-
     if (tab === 'cat') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold leading-tight truncate">
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.navCatalog}
             </h1>
-            <small className="block text-[11px] text-white/90 truncate">
+            <small className="block text-[11px] text-[var(--text-muted)] truncate">
               {products.length} {t.productsInBoxMeta}
             </small>
           </div>
           {deliveryHeaderChip}
-          <button
-            type="button"
-            aria-label={t.cartLabel}
-            onClick={() => goTab('cart')}
-            className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          {themeToggleBtn}
+          {headerCartBtn}
         </>
       );
     }
@@ -358,29 +391,11 @@ export const AppShell: React.FC = () => {
     if (tab === 'promo') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.promoTitle}</h1>
+          {headerBackBtn}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.promoTitle}</h1>
           {deliveryHeaderChip}
-          <button
-            type="button"
-            aria-label={t.cartLabel}
-            onClick={() => goTab('cart')}
-            className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          {themeToggleBtn}
+          {headerCartBtn}
         </>
       );
     }
@@ -388,33 +403,17 @@ export const AppShell: React.FC = () => {
     if (tab === 'cart') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold leading-tight truncate">{t.cartTitle}</h1>
+            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">{t.cartTitle}</h1>
             {cartCount > 0 && (
-              <small className="block text-[11px] text-white/90 tabular-nums">
+              <small className="block text-[11px] text-[var(--text-muted)] tabular-nums">
                 {cartCount} {t.boxUnit}
               </small>
             )}
           </div>
           {deliveryHeaderChip}
-          {cartCount > 0 && (
-            <button
-              type="button"
-              aria-label={t.clearLabel}
-              onClick={() => setSheet({ type: 'confirmClear' })}
-              className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          )}
+          {themeToggleBtn}
         </>
       );
     }
@@ -422,21 +421,10 @@ export const AppShell: React.FC = () => {
     if (tab === 'ord') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.ordersTitle}</h1>
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.ordersTitle}</h1>
           {deliveryHeaderChip}
-          <button
-            type="button"
-            aria-label={t.cartLabel}
-            onClick={() => goTab('cart')}
-            className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          {themeToggleBtn}
+          {headerCartBtn}
         </>
       );
     }
@@ -444,25 +432,18 @@ export const AppShell: React.FC = () => {
     if (tab === 'me') {
       return (
         <>
-          <button
-            type="button"
-            aria-label={t.backLabel}
-            onClick={() => openPage(null)}
-            className="w-11 h-11 -ml-1 rounded-xl bg-white/15 flex items-center justify-center flex-none"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.profileTitle}</h1>
-          {deliveryHeaderChip}
+          {headerBackBtn}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] truncate">{t.profileTitle}</h1>
+          {themeToggleBtn}
           <button
             type="button"
             aria-label={t.notifLabel}
             onClick={() => openPage('notif')}
-            className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
+            className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
             {unreadNotifCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
                 {unreadNotifCount}
               </span>
             )}
@@ -471,32 +452,34 @@ export const AppShell: React.FC = () => {
       );
     }
 
-    // Default: Home top bar
+    // Home top bar: store · Termiz · date, sun/moon toggle, bell + count, profile shortcut
     return (
       <>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
           <img
             src={LOGO}
             alt="Lal Anaar"
-            className="w-9 h-9 rounded-xl bg-white object-contain p-1 flex-none"
+            className="w-9 h-9 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] object-contain p-1 flex-none"
           />
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-bold leading-tight truncate">{t.appName}</h1>
-            <small className="block text-[11px] text-white/90 truncate">
-              {session?.userName || 'Dilnoza'} · {shop?.name || "«Baraka»"}
+            <h1 className="text-sm sm:text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
+              {t.appName}
+            </h1>
+            <small className="block text-[11px] text-[var(--text-secondary)] truncate">
+              {shop?.name || "«Baraka» do'koni"} · Termiz · {todayDateLabel}
             </small>
           </div>
         </div>
-        {deliveryHeaderChip}
+        {themeToggleBtn}
         <button
           type="button"
           aria-label={t.notifLabel}
           onClick={() => openPage('notif')}
-          className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none"
+          className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
           {unreadNotifCount > 0 && (
-            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
               {unreadNotifCount}
             </span>
           )}
@@ -505,11 +488,11 @@ export const AppShell: React.FC = () => {
           type="button"
           aria-label={t.profileLabel}
           onClick={() => goTab('me')}
-          className="relative w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center flex-none md:hidden"
+          className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none md:hidden"
         >
-          <User className="w-5 h-5" />
+          <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
           {unreadChat > 0 && (
-            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-[#9B111E] text-xs font-bold flex items-center justify-center tabular-nums">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
               {unreadChat}
             </span>
           )}
@@ -547,33 +530,42 @@ export const AppShell: React.FC = () => {
     }
   };
 
+  const pageTransitionProps =
+    navDirection === 'forward'
+      ? { initial: { opacity: 0, x: 16 }, animate: { opacity: 1, x: 0 }, duration: 0.3 }
+      : navDirection === 'back'
+        ? { initial: { opacity: 0, x: -16 }, animate: { opacity: 1, x: 0 }, duration: 0.3 }
+        : { initial: { opacity: 0 }, animate: { opacity: 1 }, duration: 0.2 };
+
   const toastToneClass =
     toast?.tone === 'warn'
-      ? 'bg-[#D97706]'
+      ? 'bg-[var(--warning)]'
       : toast?.tone === 'red'
-        ? 'bg-[#9B111E]'
-        : toast?.tone === 'blue'
-          ? 'bg-[#1F2937]'
-          : 'bg-[#16A34A]';
+        ? 'bg-[var(--error)]'
+        : 'bg-[var(--snackbar-bg)]';
+
+  const overlayBottomOffset = showFloatingCartPill
+    ? 'bottom-[calc(140px+env(safe-area-inset-bottom))] md:bottom-20'
+    : 'bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4';
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-[100dvh] bg-[#E5E7EB] dark:bg-[#090A0C] md:p-4 flex justify-center overflow-x-hidden">
-        <div className="relative w-full max-w-7xl h-[100dvh] md:h-[calc(100dvh-2rem)] app-surface md:rounded-xl md:border md:border-[#E5E7EB] dark:md:border-zinc-800 flex overflow-hidden">
+      <div className="min-h-[100dvh] bg-[var(--bg-app)] md:p-4 flex justify-center overflow-x-hidden">
+        <div className="relative w-full max-w-7xl h-[100dvh] md:h-[calc(100dvh-2rem)] bg-[var(--bg-app)] md:rounded-[20px] md:border md:border-[var(--border-hairline)] flex overflow-hidden">
           {/* Desktop Left Navigation Rail */}
-          <aside className="hidden md:flex flex-col w-60 flex-none bg-white dark:bg-[#1A1C20] border-r border-[#E5E7EB] dark:border-zinc-800 p-4 justify-between">
+          <aside className="hidden md:flex flex-col w-60 flex-none bg-[var(--bg-card)] border-r border-[var(--border-hairline)] p-4 justify-between">
             <div>
-              <div className="flex items-center gap-3 px-2 pb-4 mb-3 border-b border-[#E5E7EB] dark:border-zinc-800">
+              <div className="flex items-center gap-3 px-2 pb-4 mb-3 border-b border-[var(--border-hairline)]">
                 <img
                   src={LOGO}
                   alt="Lal Anaar"
-                  className="w-10 h-10 rounded-xl bg-white border border-[#E5E7EB] p-1 object-contain"
+                  className="w-10 h-10 rounded-[12px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] p-1 object-contain"
                 />
                 <div className="min-w-0">
-                  <div className="font-bold text-base text-[#9B111E] dark:text-[#FB7185] leading-tight">
+                  <div className="font-semibold text-base text-[var(--anor-text)] leading-tight">
                     {t.appName}
                   </div>
-                  <div className="text-xs text-[#6B7280] dark:text-zinc-400 truncate">
+                  <div className="text-xs text-[var(--text-muted)] truncate">
                     {shop?.name || "«Baraka» do'koni"} · Termiz
                   </div>
                 </div>
@@ -588,16 +580,16 @@ export const AppShell: React.FC = () => {
                       key={id}
                       type="button"
                       onClick={() => goTab(id, null, { reset: true })}
-                      className={`w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold transition-colors duration-150 ${
+                      className={`w-full flex items-center gap-3 px-3 min-h-[44px] rounded-full text-sm transition-colors duration-150 ${
                         active
-                          ? 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] font-bold'
-                          : 'text-[#6B7280] dark:text-zinc-300 hover:bg-[#F4F5F7] dark:hover:bg-zinc-800/70'
+                          ? 'bg-[var(--anor-soft)] text-[var(--anor-text)] font-semibold'
+                          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-raised)] font-medium'
                       }`}
                     >
-                      <Icon className="w-5 h-5 flex-none" />
+                      <Icon className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
                       <span className="flex-1 text-left truncate">{label}</span>
                       {badge > 0 && (
-                        <span className="min-w-[20px] h-5 px-2 rounded-full bg-[#9B111E] text-white text-xs font-bold flex items-center justify-center tabular-nums">
+                        <span className="min-w-[20px] h-5 px-2 rounded-full bg-[var(--anor)] text-white text-xs font-semibold flex items-center justify-center tabular-nums">
                           {badge}
                         </span>
                       )}
@@ -607,87 +599,107 @@ export const AppShell: React.FC = () => {
               </nav>
             </div>
 
-            <div className="rounded-xl p-4 bg-[#FCE8EA] dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#9B111E] dark:text-[#FB7185]">
-                <Droplet className="w-5 h-5" />
+            <div className="rounded-[14px] p-4 bg-[var(--bg-raised)] border border-[var(--border-hairline)]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--anor-text)]">
+                <Droplet className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 <span>{session?.tierName || 'Kumush'}</span>
               </div>
-              <div className="text-xl font-bold mt-1 text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+              <div className="text-xl font-semibold mt-1 text-[var(--text-primary)] tabular-nums whitespace-nowrap">
                 {formatSom(monthTotal)}
               </div>
-              <div className="text-xs text-[#6B7280] dark:text-zinc-400">{t.monthPurchaseLabel}</div>
+              <div className="text-xs text-[var(--text-muted)]">{t.monthPurchaseLabel}</div>
             </div>
           </aside>
 
           {/* Center Main Column */}
           <div className="relative flex-1 min-w-0 flex flex-col overflow-hidden">
-            {/* Offline Error Banner */}
-            {!isOnline && (
+            {/* Offline or Load Error Banner (light red + Retry) */}
+            {(!isOnline || loadError) && (
               <div
                 role="status"
-                className="bg-[#9B111E] text-white px-4 py-2 text-xs font-semibold flex items-center gap-2 flex-none z-30"
+                className="bg-[var(--error-soft)] text-[var(--error)] border-b border-[var(--border-hairline)] px-4 py-2 text-xs font-medium flex items-center justify-between gap-2 flex-none z-30"
               >
-                <WifiOff className="w-5 h-5 flex-none" />
-                <span className="leading-snug">{t.offlineBanner}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <WifiOff className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
+                  <span className="leading-snug truncate">
+                    {loadError ? t.loadErrorTitle : t.offlineBanner}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void retryLoad()}
+                  className="min-h-[36px] px-3 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--error)] text-xs font-semibold whitespace-nowrap flex-none"
+                >
+                  {t.retryBtn}
+                </button>
               </div>
             )}
 
-            {/* Top Brand Bordeaux Header */}
-            <header className="h-14 px-2.5 sm:px-3 bg-[#9B111E] text-white flex items-center gap-1.5 sm:gap-2 flex-none z-20">
+            {/* Calm Neutral V4 Header */}
+            <header className="h-14 px-2.5 sm:px-3 bg-[var(--bg-app)] border-b border-[var(--border-hairline)] flex items-center gap-1.5 sm:gap-2 flex-none z-20">
               {renderTopBar()}
             </header>
 
-            {/* Compact Sticky Search & Category Filter Bar on Catalog */}
+            {/* STRICT 2-ROW Catalog Control Strip */}
             {showCatalogStrip && (
-              <div className="bg-white dark:bg-[#1A1C20] border-b border-[#E5E7EB] dark:border-zinc-800 px-3 py-3 flex-none z-10">
-                <div className="flex items-center gap-2 min-h-[44px] px-3.5 rounded-full bg-[#F4F5F7] dark:bg-[#121316] border border-[#E5E7EB] dark:border-zinc-700 focus-within:border-[#9B111E]">
-                  <Search className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185] flex-none" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t.searchPlaceholder}
-                    className="flex-1 min-w-0 bg-transparent text-sm text-[#111827] dark:text-zinc-100 placeholder:text-[#6B7280] outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      aria-label={t.clearLabel}
-                      onClick={() => setSearchQuery('')}
-                      className="w-11 h-11 -mr-2 flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  )}
+              <div className="bg-[var(--bg-app)] border-b border-[var(--border-hairline)] px-3 py-2.5 flex-none z-10">
+                {/* Row 1: Search bar + inline view-mode toggle */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 min-h-[44px] px-3.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] focus-within:border-[var(--anor)]">
+                    <Search className="w-[18px] h-[18px] text-[var(--text-muted)] flex-none" strokeWidth={1.5} />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t.searchPlaceholder}
+                      className="flex-1 min-w-0 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        aria-label={t.clearLabel}
+                        onClick={() => setSearchQuery('')}
+                        className="w-11 h-11 -mr-2 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      >
+                        <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={viewMode === 'grid' ? t.listMode : t.gridMode}
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'row' : 'grid')}
+                    className="w-11 h-11 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center justify-center flex-none"
+                  >
+                    {viewMode === 'grid' ? (
+                      <List className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                    ) : (
+                      <LayoutGrid className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                    )}
+                  </button>
                 </div>
+
+                {/* Row 2: 6 single-level filter chips (selected = ink fill) */}
                 <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2 -mx-3 px-3">
-                  {CATEGORIES.map((c) => {
+                  {CATALOG_CHIPS.map((c) => {
                     const active = c === cat;
-                    const circleColor = getCategoryCircleColor(c);
                     return (
                       <button
                         key={c}
                         type="button"
                         onClick={() => setCat(c)}
-                        className={`flex-none min-h-[44px] px-3.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap border inline-flex items-center gap-2 transition-colors duration-150 ${
+                        className={`flex-none min-h-[40px] px-3.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap border inline-flex items-center gap-1.5 transition-colors duration-150 ${
                           active
-                            ? 'bg-[#9B111E] text-white border-[#9B111E]'
-                            : 'bg-white dark:bg-[#1A1C20] text-[#111827] dark:text-zinc-300 border-[#E5E7EB] dark:border-zinc-700'
+                            ? 'bg-[var(--ink-fill)] text-[var(--ink-text)] border-[var(--ink-fill)]'
+                            : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-hairline)]'
                         }`}
                       >
-                        {c === 'Javonim' ? (
-                          <BookmarkCheck
-                            className={`w-3.5 h-3.5 flex-none ${
-                              active ? 'text-white' : 'text-[#9B111E] dark:text-[#FB7185]'
-                            }`}
-                          />
-                        ) : (
-                          <span
-                            className="w-2.5 h-2.5 rounded-full flex-none"
-                            style={{ backgroundColor: active ? '#FFFFFF' : circleColor }}
-                            aria-hidden="true"
-                          />
+                        {c === 'Javonim' && (
+                          <BookmarkCheck className="w-3.5 h-3.5 flex-none" strokeWidth={1.5} />
+                        )}
+                        {c === 'Yoqqanlar' && (
+                          <Heart className="w-3.5 h-3.5 flex-none" strokeWidth={1.5} />
                         )}
                         <span>{getCategoryLabel(c, lang)}</span>
                       </button>
@@ -703,15 +715,20 @@ export const AppShell: React.FC = () => {
               onScroll={handleScroll}
               className={`flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-3 md:px-6 pt-4 ${
                 showFloatingCartPill
-                  ? 'pb-[calc(164px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
-                  : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-8'
+                  ? 'pb-[calc(168px+env(safe-area-inset-bottom))] md:pb-24 xl:pb-8'
+                  : tab === 'cart'
+                    ? 'pb-[calc(176px+env(safe-area-inset-bottom))] md:pb-28'
+                    : 'pb-[calc(92px+env(safe-area-inset-bottom))] md:pb-8'
               }`}
             >
               <motion.div
                 key={`${tab}-${page || 'root'}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
+                initial={pageTransitionProps.initial}
+                animate={pageTransitionProps.animate}
+                transition={{
+                  duration: pageTransitionProps.duration,
+                  ease: [0.05, 0.7, 0.1, 1],
+                }}
               >
                 <React.Suspense fallback={<div className="p-4"><ListRowsSkeleton count={4} /></div>}>
                   {renderPageContent()}
@@ -719,25 +736,27 @@ export const AppShell: React.FC = () => {
               </motion.div>
             </main>
 
-            {/* Floating Scroll-to-Top Button */}
-            <button
-              type="button"
-              aria-label={t.scrollToTop}
-              onClick={scrollToTop}
-              className={`absolute right-3 ${
-                showFloatingCartPill
-                  ? 'bottom-[calc(146px+env(safe-area-inset-bottom))] md:bottom-24 xl:bottom-6'
-                  : 'bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-6'
-              } w-11 h-11 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#9B111E] dark:text-[#FB7185] shadow-md flex items-center justify-center z-20 transition-opacity duration-150 ${
-                showToTop
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none'
-              }`}
-            >
-              <ArrowUp className="w-5 h-5" />
-            </button>
+            {/* Floating Scroll-to-Top Button (hidden on Cart page) */}
+            {tab !== 'cart' && (
+              <button
+                type="button"
+                aria-label={t.scrollToTop}
+                onClick={scrollToTop}
+                className={`absolute right-3 ${
+                  showFloatingCartPill
+                    ? 'bottom-[calc(146px+env(safe-area-inset-bottom))] md:bottom-24 xl:bottom-6'
+                    : 'bottom-[calc(80px+env(safe-area-inset-bottom))] md:bottom-6'
+                } w-11 h-11 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center z-20 transition-opacity duration-150 ${
+                  showToTop
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                <ArrowUp className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              </button>
+            )}
 
-            {/* Floating Cart Pill (16px above bottom nav, height 56px, radius 999, bordeaux, hidden on cart page) */}
+            {/* Floating Anor Cart Bar (mobile/tablet on Home/Catalog/Promo) */}
             <AnimatePresence>
               {showFloatingCartPill && (
                 <motion.div
@@ -745,61 +764,119 @@ export const AppShell: React.FC = () => {
                   initial={{ y: 20, opacity: 0, scale: 0.96 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   exit={{ y: 20, opacity: 0, scale: 0.96 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="xl:hidden absolute left-3 right-3 bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-4 z-20 flex justify-center pointer-events-none"
+                  transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                  className="xl:hidden absolute left-3 right-3 bottom-[calc(74px+env(safe-area-inset-bottom))] md:bottom-4 z-20 flex justify-center pointer-events-none"
                 >
                   <motion.button
                     key={pillBumpKey}
                     type="button"
                     initial={pillBumpKey > 0 ? { scale: 1 } : false}
-                    animate={pillBumpKey > 0 ? { scale: [1, 1.045, 1] } : { scale: 1 }}
-                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    animate={pillBumpKey > 0 ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
                     onClick={() => goTab('cart')}
-                    className="pointer-events-auto w-full max-w-md h-14 px-3.5 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white pill-float-shadow flex items-center gap-3 transition-colors duration-150"
+                    className="pointer-events-auto w-full max-w-md h-14 px-3.5 rounded-full bg-[var(--anor)] hover:bg-[var(--anor-pressed)] active:bg-[var(--anor-pressed)] text-white flex items-center gap-3 transition-colors duration-150"
                   >
-                    {/* Count badge with rolling number */}
-                    <span className="min-w-[30px] h-7 px-2 rounded-full bg-white text-[#9B111E] text-xs font-extrabold flex items-center justify-center tabular-nums overflow-hidden flex-none">
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        <motion.span
-                          key={cartCount}
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          transition={{ duration: 0.16, ease: 'easeOut' }}
-                        >
-                          {cartCount}
-                        </motion.span>
-                      </AnimatePresence>
+                    <span className="min-w-[28px] h-7 px-2 rounded-full bg-white text-[#9B111E] text-xs font-semibold flex items-center justify-center tabular-nums flex-none">
+                      {cartCount}
                     </span>
 
-                    {/* Bold tabular total + thin discount progress line inside */}
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm sm:text-base font-extrabold text-white tabular-nums leading-tight whitespace-nowrap truncate">
-                        {formatSom(discountedTotal)}
+                      <div className="text-sm sm:text-base font-semibold text-white leading-tight whitespace-nowrap truncate">
+                        <TweenSom value={discountedTotal} />
                       </div>
-                      <div
-                        className="mt-1 h-1 w-full rounded-full bg-white/25 overflow-hidden"
-                        aria-hidden="true"
-                      >
-                        <div
-                          className="h-full rounded-full bg-white transition-all duration-200 ease-out"
-                          style={{ width: `${Math.max(8, discountNudge.progressPct)}%` }}
-                        />
+                      <div className="text-[11px] text-white/85 leading-tight truncate tabular-nums">
+                        {floatingCartTierText}
                       </div>
                     </div>
 
-                    {/* 'Savat' + arrow */}
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-white whitespace-nowrap flex-none pl-1">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white whitespace-nowrap flex-none pl-1">
                       <span>{t.cartLabel}</span>
-                      <ArrowRight className="w-5 h-5" />
+                      <ArrowRight className="w-[18px] h-[18px]" strokeWidth={1.5} />
                     </span>
                   </motion.button>
                 </motion.div>
               )}
             </AnimatePresence>
 
+            {/* Calm Operator Chat Card above bottom nav / floating cart bar */}
+            <AnimatePresence>
+              {operatorBanner && page !== 'chat' && !undoSnackbar && (
+                <motion.div
+                  key={operatorBanner.id}
+                  initial={{ y: 14, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 14, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                  className={`absolute left-3 right-3 ${overlayBottomOffset} z-25 flex justify-center pointer-events-none`}
+                >
+                  <div className="pointer-events-auto w-full max-w-md v4-card rounded-[16px] p-3 flex items-center gap-3">
+                    <span className="w-9 h-9 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] font-semibold text-sm flex items-center justify-center flex-none">
+                      {operatorBanner.name.charAt(0).toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                        {operatorBanner.name}
+                      </div>
+                      <div className="text-xs text-[var(--text-secondary)] truncate">
+                        {operatorBanner.message}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissOperatorBanner();
+                        goTab('me', 'chat');
+                      }}
+                      className="min-h-[36px] px-3 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold whitespace-nowrap flex-none"
+                    >
+                      {t.openChatLabel}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t.closeLabel}
+                      onClick={dismissOperatorBanner}
+                      className="w-9 h-9 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center justify-center flex-none"
+                    >
+                      <X className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Dark Undo Snackbar (1 at a time, 4s) */}
+            <AnimatePresence>
+              {undoSnackbar && (
+                <motion.div
+                  key={undoSnackbar.id}
+                  initial={{ y: 16, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 16, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+                  className={`absolute left-3 right-3 ${overlayBottomOffset} z-35 flex justify-center pointer-events-none`}
+                >
+                  <div className="pointer-events-auto w-full max-w-md rounded-full bg-[var(--snackbar-bg)] text-[var(--snackbar-text)] px-4 py-2.5 min-h-[48px] flex items-center gap-3">
+                    <Check className="w-[18px] h-[18px] text-[var(--snackbar-text)] flex-none" strokeWidth={1.75} />
+                    <span className="flex-1 text-xs sm:text-sm font-medium truncate">
+                      {undoSnackbar.message}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        undoSnackbar.onUndo();
+                        dismissUndoSnackbar();
+                      }}
+                      className="min-h-[36px] px-3 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold whitespace-nowrap flex-none"
+                    >
+                      {undoSnackbar.undoLabel || t.undoLabel}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Mobile 5-Tab Bottom Navigation */}
-            <nav className="md:hidden absolute left-0 right-0 bottom-0 min-h-[60px] bg-white dark:bg-[#1A1C20] border-t border-[#E5E7EB] dark:border-zinc-800 grid grid-cols-5 z-30 pb-[env(safe-area-inset-bottom)]">
+            <nav className="md:hidden absolute left-0 right-0 bottom-0 min-h-[60px] bg-[var(--bg-card)] border-t border-[var(--border-hairline)] grid grid-cols-5 z-30 pb-[env(safe-area-inset-bottom)]">
               {mobileNavItems.map(({ id, label, icon: Icon }) => {
                 const active = tab === id;
                 const badge = id === 'cart' ? cartCount : 0;
@@ -810,17 +887,17 @@ export const AppShell: React.FC = () => {
                     onClick={() => goTab(id, null, { reset: true })}
                     className={`relative min-h-[56px] flex flex-col items-center justify-center gap-1 px-1 text-xs transition-colors duration-150 ${
                       active
-                        ? 'text-[#9B111E] dark:text-[#FB7185] font-bold'
-                        : 'text-[#6B7280] dark:text-zinc-400 font-normal'
+                        ? 'text-[var(--anor-text)] font-medium'
+                        : 'text-[var(--text-muted)] font-normal'
                     }`}
                   >
                     {active && (
-                      <span className="absolute top-0 w-8 h-[2.5px] rounded-b bg-[#9B111E] dark:bg-[#FB7185]" />
+                      <span className="absolute top-0 w-8 h-[2.5px] rounded-b bg-[var(--anor)]" />
                     )}
-                    <Icon className="w-5 h-5 flex-none" />
+                    <Icon className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
                     <span className="truncate max-w-full leading-none">{label}</span>
                     {badge > 0 && (
-                      <span className="absolute top-1 left-[calc(50%+6px)] min-w-[18px] h-[18px] px-1 rounded-full bg-[#9B111E] text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-[#1A1C20] tabular-nums">
+                      <span className="absolute top-1 left-[calc(50%+6px)] min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center border-2 border-[var(--bg-card)] tabular-nums">
                         {badge}
                       </span>
                     )}
@@ -829,7 +906,7 @@ export const AppShell: React.FC = () => {
               })}
             </nav>
 
-            {/* Toast Notification */}
+            {/* Fallback Toast (offline sync only) */}
             <AnimatePresence>
               {toast && (
                 <motion.button
@@ -847,13 +924,13 @@ export const AppShell: React.FC = () => {
                       openPage(toast.actionPage);
                     }
                   }}
-                  className={`absolute left-3 right-3 top-16 z-40 flex items-center gap-3 px-4 py-3 rounded-xl text-white text-left ${toastToneClass}`}
+                  className={`absolute left-3 right-3 top-16 z-40 flex items-center gap-3 px-4 py-3 rounded-[16px] text-white text-left ${toastToneClass}`}
                 >
-                  <span className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-none">
+                  <span className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-none">
                     <ToastIcon icon={toast.icon} />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <strong className="block text-sm font-bold leading-tight truncate">
+                    <strong className="block text-sm font-semibold leading-tight truncate">
                       {toast.title}
                     </strong>
                     <span className="block text-xs opacity-90 truncate">{toast.text}</span>
@@ -865,19 +942,19 @@ export const AppShell: React.FC = () => {
 
           {/* Desktop Right Live Cart Summary Rail */}
           {!page && (tab === 'home' || tab === 'cat' || tab === 'promo') && (
-            <aside className="hidden xl:flex flex-col w-80 flex-none bg-white dark:bg-[#1A1C20] border-l border-[#E5E7EB] dark:border-zinc-800 p-4 justify-between">
+            <aside className="hidden xl:flex flex-col w-80 flex-none bg-[var(--bg-card)] border-l border-[var(--border-hairline)] p-4 justify-between">
               <div className="min-h-0 flex-1 flex flex-col">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E5E7EB] dark:border-zinc-800">
-                  <h2 className="text-base font-bold text-[#111827] dark:text-white">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--border-hairline)]">
+                  <h2 className="text-base font-semibold text-[var(--text-primary)]">
                     {t.currentCart}
                   </h2>
-                  <span className="px-2 py-1 rounded-full bg-[#FCE8EA] dark:bg-rose-950/60 text-[#9B111E] dark:text-[#FB7185] text-xs font-bold tabular-nums">
+                  <span className="px-2.5 py-1 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold tabular-nums">
                     {cartCount} {t.boxUnit}
                   </span>
                 </div>
 
                 {cartIds.length === 0 ? (
-                  <div className="my-auto text-center py-8 text-[#6B7280] dark:text-zinc-400 text-sm">
+                  <div className="my-auto text-center py-8 text-[var(--text-muted)] text-sm">
                     {t.addProductsHint}
                   </div>
                 ) : (
@@ -891,14 +968,14 @@ export const AppShell: React.FC = () => {
                       return (
                         <div
                           key={id}
-                          className="p-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900/70 border border-[#E5E7EB] dark:border-zinc-800 space-y-2"
+                          className="p-3 rounded-[14px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] space-y-2"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <div className="text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
+                              <div className="text-sm font-medium text-[var(--text-primary)] truncate">
                                 {getProductName(p, lang)} {p.vol}
                               </div>
-                              <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap flex items-center gap-1.5">
+                              <div className="text-xs text-[var(--text-muted)] tabular-nums whitespace-nowrap flex items-center gap-1.5">
                                 <span>
                                   {formatSom(unitBox)}/{t.boxUnit}
                                 </span>
@@ -913,25 +990,25 @@ export const AppShell: React.FC = () => {
                               type="button"
                               aria-label={t.removeFromCart}
                               onClick={() => updateQty(id, -q)}
-                              className="w-11 h-11 -mr-1 -mt-1 rounded-xl flex items-center justify-center text-[#6B7280] hover:text-[#9B111E] flex-none"
+                              className="w-11 h-11 -mr-1 -mt-1 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--error)] flex-none"
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <Trash2 className="w-[18px] h-[18px]" strokeWidth={1.5} />
                             </button>
                           </div>
                           <div className="flex items-center justify-between gap-2">
-                            <div className="inline-flex items-center h-11 rounded-xl bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700">
+                            <div className="inline-flex items-center h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-strong)]">
                               <button
                                 type="button"
                                 aria-label={t.removeFromCart}
                                 onClick={() => updateQty(id, -1)}
-                                className="w-11 h-11 rounded-l-xl flex items-center justify-center text-[#111827] dark:text-zinc-300 hover:bg-[#F4F5F7]"
+                                className="w-10 h-10 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                               >
-                                <Minus className="w-5 h-5" />
+                                <Minus className="w-4 h-4" strokeWidth={1.5} />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setSheet({ type: 'quickQty', id })}
-                                className="min-w-[32px] h-11 px-1 text-center text-sm font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums"
+                                className="min-w-[30px] h-10 px-1 text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums"
                               >
                                 {q}
                               </button>
@@ -939,12 +1016,12 @@ export const AppShell: React.FC = () => {
                                 type="button"
                                 aria-label={t.addToCart}
                                 onClick={() => updateQty(id, 1)}
-                                className="w-11 h-11 rounded-r-xl flex items-center justify-center text-[#9B111E] dark:text-[#FB7185] hover:bg-[#FCE8EA]"
+                                className="w-10 h-10 rounded-r-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                               >
-                                <Plus className="w-5 h-5" />
+                                <Plus className="w-4 h-4" strokeWidth={1.5} />
                               </button>
                             </div>
-                            <strong className="text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+                            <strong className="text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
                               {formatSom(unitBox * q)}
                             </strong>
                           </div>
@@ -955,16 +1032,16 @@ export const AppShell: React.FC = () => {
                 )}
               </div>
 
-              <div className="pt-3 mt-3 border-t border-[#E5E7EB] dark:border-zinc-800 space-y-2">
+              <div className="pt-3 mt-3 border-t border-[var(--border-hairline)] space-y-2.5">
                 {cartCount > 0 && (
-                  <div className="p-3 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 space-y-2">
-                    <div className="text-xs font-semibold text-[#111827] dark:text-zinc-200 break-words">
+                  <div className="p-3 rounded-[14px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] space-y-2">
+                    <div className="text-xs font-medium text-[var(--text-primary)] break-words">
                       {nudgeLineText}
                     </div>
-                    <div className="h-2 w-full rounded-full bg-[#E5E7EB] dark:bg-zinc-800 overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full bg-[var(--border-hairline)] overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-200 ease-out ${
-                          discountNudge.nextTier ? 'bg-[#9B111E]' : 'bg-[#16A34A]'
+                        className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                          discountNudge.nextTier ? 'bg-[var(--anor)]' : 'bg-[var(--success)]'
                         }`}
                         style={{ width: `${discountNudge.progressPct}%` }}
                       />
@@ -972,28 +1049,29 @@ export const AppShell: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex justify-between text-xs text-[#6B7280] dark:text-zinc-400">
+                <div className="flex justify-between text-xs text-[var(--text-secondary)]">
                   <span>{t.discountLine(discountPct)}</span>
-                  <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+                  <span className="font-semibold text-[var(--success)] tabular-nums whitespace-nowrap">
                     −{formatSom(discountAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-bold text-[#111827] dark:text-zinc-200">
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
                     {t.totalToPayShort}
                   </span>
-                  <strong className="text-xl font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
-                    {formatSom(discountedTotal)}
+                  <strong className="text-xl font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
+                    <TweenSom value={discountedTotal} />
                   </strong>
                 </div>
-                <button
-                  type="button"
+                <PillButton
+                  level="primary"
+                  size="lg"
+                  fullWidth
                   onClick={() => goTab(cartCount > 0 ? 'cart' : 'cat')}
-                  className="w-full min-h-[48px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={1.5} />
                   <span>{cartCount > 0 ? t.goToCartBtn : t.chooseProductsBtn}</span>
-                </button>
+                </PillButton>
               </div>
             </aside>
           )}

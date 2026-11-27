@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getBottleShape, getFlavorColor, getFlavorTint } from '../utils/catalog';
+import { getBottleShape, getFlavorColor } from '../utils/catalog';
 import type { Product } from '../types';
 
 interface ProductVisualProps {
@@ -56,7 +56,6 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   size = 'row',
 }) => {
   const color = getFlavorColor(product);
-  const tint = getFlavorTint(product);
   const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
@@ -76,7 +75,7 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
         onLoad={(e) => {
           if (e.currentTarget.naturalWidth === 0) setImgFailed(true);
         }}
-        className={`${imgClass} mix-blend-multiply dark:mix-blend-normal dark:rounded-xl`}
+        className={`${imgClass} mix-blend-multiply dark:mix-blend-normal dark:rounded-[10px]`}
       />
     ) : (
       <BottleSvg product={product} color={color} className={svgClass} />
@@ -84,9 +83,9 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'hero') {
     return (
-      <div className="relative flex items-center justify-center w-28 h-36 sm:w-36 sm:h-44 flex-none">
+      <div className="relative flex items-center justify-center w-24 h-28 sm:w-28 sm:h-32 flex-none">
         <div
-          className="absolute bottom-1 w-20 h-3.5 rounded-full bg-black/30 blur-[6px]"
+          className="absolute bottom-1 w-16 h-3 rounded-full bg-black/20 blur-[5px]"
           aria-hidden="true"
         />
         {showPhoto ? (
@@ -98,13 +97,13 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
             onLoad={(e) => {
               if (e.currentTarget.naturalWidth === 0) setImgFailed(true);
             }}
-            className="relative z-10 max-h-full max-w-full object-contain rounded-xl drop-shadow-[0_12px_16px_rgba(0,0,0,0.32)]"
+            className="relative z-10 max-h-full max-w-full object-contain rounded-[10px]"
           />
         ) : (
           <BottleSvg
             product={product}
-            color="#FFFFFF"
-            className="relative z-10 h-[94%] w-auto drop-shadow-[0_12px_16px_rgba(0,0,0,0.28)]"
+            color={color}
+            className="relative z-10 h-[92%] w-auto"
           />
         )}
       </div>
@@ -113,12 +112,9 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'mini') {
     return (
-      <div
-        className="relative flex-none w-12 h-14 rounded-xl flex items-center justify-center p-1.5 overflow-hidden dark:bg-zinc-900"
-        style={{ backgroundColor: tint }}
-      >
+      <div className="relative flex-none w-12 h-14 rounded-[10px] bg-[var(--bg-tile)] flex items-center justify-center p-1.5 overflow-hidden">
         <div
-          className="absolute bottom-1 w-7 h-1.5 rounded-full bg-black/10 blur-[2px]"
+          className="absolute bottom-1 w-7 h-1.5 rounded-full bg-black/10 dark:bg-black/30 blur-[2px]"
           aria-hidden="true"
         />
         {renderBottle('relative z-10 max-w-full max-h-full object-contain', 'relative z-10 w-7 h-10')}
@@ -128,12 +124,9 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
 
   if (size === 'large') {
     return (
-      <div
-        className="relative h-56 rounded-[20px] flex items-center justify-center p-5 overflow-hidden dark:bg-zinc-900"
-        style={{ backgroundColor: tint }}
-      >
+      <div className="relative h-52 rounded-[14px] bg-[var(--bg-tile)] flex items-center justify-center p-5 overflow-hidden">
         <div
-          className="absolute bottom-4 w-28 h-4 rounded-full bg-black/12 blur-[5px]"
+          className="absolute bottom-4 w-28 h-4 rounded-full bg-black/10 dark:bg-black/35 blur-[5px]"
           aria-hidden="true"
         />
         {renderBottle(
@@ -147,18 +140,17 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   if (size === 'grid') {
     return (
       <div
-        className={`relative w-full h-40 sm:h-44 rounded-[20px] flex items-center justify-center px-3 pt-5 pb-4 overflow-hidden dark:bg-zinc-900 ${
+        className={`relative w-full h-40 sm:h-44 rounded-[10px] bg-[var(--bg-tile)] flex items-center justify-center px-3 pt-5 pb-4 overflow-hidden ${
           product.out ? 'opacity-55' : ''
         }`}
-        style={{ backgroundColor: tint }}
       >
         <div
-          className="absolute bottom-3 w-20 h-3 rounded-full bg-black/10 blur-[4px]"
+          className="absolute bottom-3 w-20 h-3 rounded-full bg-black/10 dark:bg-black/35 blur-[4px]"
           aria-hidden="true"
         />
         {renderBottle(
-          'relative z-10 max-h-full max-w-[74%] object-contain transition-transform duration-200 ease-out group-hover:scale-[1.03]',
-          'relative z-10 w-16 h-28 flex-none transition-transform duration-200 ease-out group-hover:scale-[1.03]',
+          'relative z-10 max-h-full max-w-[74%] object-contain',
+          'relative z-10 w-16 h-28 flex-none',
         )}
       </div>
     );
@@ -167,13 +159,12 @@ export const ProductVisual: React.FC<ProductVisualProps> = ({
   // compact 'row'
   return (
     <div
-      className={`relative flex-none w-[92px] h-[104px] rounded-[20px] flex items-center justify-center p-2.5 overflow-hidden dark:bg-zinc-900 ${
+      className={`relative flex-none w-[88px] h-[100px] rounded-[10px] bg-[var(--bg-tile)] flex items-center justify-center p-2.5 overflow-hidden ${
         product.out ? 'opacity-55' : ''
       }`}
-      style={{ backgroundColor: tint }}
     >
       <div
-        className="absolute bottom-2 w-12 h-2 rounded-full bg-black/10 blur-[3px]"
+        className="absolute bottom-2 w-12 h-2 rounded-full bg-black/10 dark:bg-black/35 blur-[3px]"
         aria-hidden="true"
       />
       {renderBottle(

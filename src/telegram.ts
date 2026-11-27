@@ -46,13 +46,24 @@ export function getTelegramWebApp(): TelegramWebAppInstance | null {
   return window.Telegram?.WebApp ?? null;
 }
 
+export function syncTelegramTheme(isDark: boolean): void {
+  const tg = getTelegramWebApp();
+  if (!tg) return;
+  const bg = isDark ? '#141415' : '#FAFAFA';
+  try {
+    tg.setHeaderColor?.(bg);
+    tg.setBackgroundColor?.(bg);
+  } catch {
+    // Ignore errors when outside Telegram container
+  }
+}
+
 export function initTelegramApp(): void {
   const tg = getTelegramWebApp();
   if (!tg) return;
   try {
     tg.ready?.();
     tg.expand?.();
-    tg.setHeaderColor?.('#9B111E');
   } catch {
     // Ignore errors when outside Telegram container
   }

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
@@ -8,6 +9,8 @@
 
   html {
     font-size: 16px;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
   }
 
   html.large-text {
@@ -17,16 +20,11 @@
   html,
   body {
     font-family: var(--font-sans);
-    background-color: #F4F5F7;
-    color: #111827;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  html.dark body {
-    background-color: #121316;
-    color: #F3F4F6;
   }
 
   button:focus-visible,
@@ -34,7 +32,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 2px solid #9B111E;
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
 }
@@ -51,37 +49,8 @@
   display: none;
 }
 
-.vertical-flavor {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-
 .app-surface {
-  background-color: #F4F5F7;
-}
-
-.dark .app-surface {
-  background-color: #121316;
-}
-
-.card-calm {
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06);
-}
-
-.dark .card-calm {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
-.pill-float-shadow {
-  box-shadow:
-    0 12px 28px -6px rgba(155, 17, 30, 0.38),
-    0 4px 12px -2px rgba(17, 24, 39, 0.16);
-}
-
-.dark .pill-float-shadow {
-  box-shadow:
-    0 12px 28px -6px rgba(0, 0, 0, 0.65),
-    0 4px 12px -2px rgba(155, 17, 30, 0.35);
+  background-color: var(--bg-app);
 }
 
 @keyframes skeletonShimmer {
@@ -94,13 +63,7 @@
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(90deg, #eef0f3 25%, #f8f9fb 50%, #eef0f3 75%);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.4s ease-in-out infinite;
-}
-
-.dark .skeleton-shimmer {
-  background: linear-gradient(90deg, #27272a 25%, #323238 50%, #27272a 75%);
+  background: linear-gradient(90deg, var(--skeleton-a) 25%, var(--skeleton-b) 50%, var(--skeleton-a) 75%);
   background-size: 200% 100%;
   animation: skeletonShimmer 1.4s ease-in-out infinite;
 }
@@ -111,11 +74,8 @@ input[type='range'].calm-slider {
   appearance: none;
   height: 6px;
   border-radius: 999px;
-  background: #E5E7EB;
-}
-
-html.dark input[type='range'].calm-slider {
-  background: #27272A;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hairline);
 }
 
 input[type='range'].calm-slider::-webkit-slider-thumb {
@@ -124,9 +84,8 @@ input[type='range'].calm-slider::-webkit-slider-thumb {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: #9B111E;
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.18);
+  background: var(--anor);
+  border: 2px solid var(--bg-card);
   cursor: pointer;
 }
 
@@ -134,31 +93,9 @@ input[type='range'].calm-slider::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: #9B111E;
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.18);
+  background: var(--anor);
+  border: 2px solid var(--bg-card);
   cursor: pointer;
-}
-
-@keyframes heroSheen {
-  0%,
-  15% {
-    transform: translateX(-140%) skewX(-22deg);
-  }
-  55%,
-  100% {
-    transform: translateX(260%) skewX(-22deg);
-  }
-}
-
-.hero-sheen {
-  background: linear-gradient(
-    110deg,
-    rgba(255, 255, 255, 0) 20%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
-  animation: heroSheen 6.5s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
