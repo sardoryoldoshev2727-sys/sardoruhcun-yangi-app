@@ -142,6 +142,13 @@ export interface TopProductStat {
   estimatedProfit: number;
 }
 
+export interface CategoryBreakdownStat {
+  label: string;
+  boxes: number;
+  pct: number;
+  color: string;
+}
+
 export interface MonthlyReportData {
   monthKey: string;
   monthLabel: string;
@@ -159,6 +166,7 @@ export interface MonthlyReportData {
   profitDeltaPct: number;
   weeklyBars: WeeklyReportBar[];
   topProducts: TopProductStat[];
+  categoryBreakdown?: CategoryBreakdownStat[];
 }
 
 /** [type, title, subtitle, timeLabel, unreadFlag] */

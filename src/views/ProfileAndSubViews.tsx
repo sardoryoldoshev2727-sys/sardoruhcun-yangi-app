@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Award,
   BarChart3,
   Bell,
   Calculator,
@@ -11,6 +12,7 @@ import {
   Lock,
   MessageCircle,
   Moon,
+  Package,
   Phone,
   Send,
   Share2,
@@ -29,7 +31,7 @@ import { ListRowsSkeleton, ReportSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
-import type { MonthlyReportData } from '../types';
+import type { CategoryBreakdownStat, MonthlyReportData } from '../types';
 import { formatSom } from '../utils/catalog';
 
 export const ProfileView: React.FC = () => {
@@ -51,63 +53,60 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      {/* Crisp white hero card */}
-      <div className="rounded-xl p-4 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 card-calm">
-        <div className="flex items-center gap-3">
-          <span className="w-12 h-12 rounded-full bg-[#9B111E] text-white font-bold text-xl flex items-center justify-center flex-none">
-            {(session?.userName || 'D')[0]}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xl font-bold text-[#111827] dark:text-white leading-tight">
-                {session?.userName || 'Dilnoza'}
-              </h3>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] text-xs font-semibold">
-                <Droplet className="w-4 h-4" />
-                <span>{session?.tierName || 'Kumush'}</span>
-              </span>
-            </div>
-            <small className="block text-xs text-[#6B7280] dark:text-zinc-400 truncate mt-1">
-              {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
-            </small>
-            <div className="mt-3 flex items-center gap-2 text-xs text-[#6B7280] dark:text-zinc-400">
-              <div className="flex-1 h-2 rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#9B111E] dark:bg-[#F43F5E] transition-all duration-150 ease-out"
-                  style={{ width: `${Math.min(100, Math.round((monthTotal / 2000000) * 100))}%` }}
-                />
-              </div>
-              <span className="font-semibold text-[#111827] dark:text-zinc-200 tabular-nums whitespace-nowrap">
-                2 mln
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* Bank-card style loyalty card (purely informational, no discount promise) */}
+      <div className="relative rounded-[24px] p-5 bg-gradient-to-br from-[#9B111E] to-[#6E0B15] text-white overflow-hidden shadow-[0_12px_28px_-8px_rgba(155,17,30,0.42)]">
+        <div
+          className="absolute -right-10 -top-10 w-36 h-36 rounded-full bg-white/10 pointer-events-none"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute right-8 -bottom-12 w-28 h-28 rounded-full bg-white/5 pointer-events-none"
+          aria-hidden="true"
+        />
 
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 p-3">
-            <strong className="block text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
-              {(monthTotal / 1e6).toFixed(2).replace('.', ',')} mln
-            </strong>
-            <span className="text-xs text-[#6B7280] dark:text-zinc-400">{t.monthPurchaseLabel}</span>
+        <div className="relative z-10 space-y-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">
+              {t.loyaltyCardLabel}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold">
+              <Award className="w-3.5 h-3.5" />
+              <span>{session?.tierName || 'Kumush'}</span>
+            </span>
           </div>
-          <div className="rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 p-3">
-            <strong className="block text-sm font-bold text-[#111827] dark:text-white tabular-nums">
-              {session?.ordersCount ?? 14}
-            </strong>
-            <span className="text-xs text-[#6B7280] dark:text-zinc-400">{t.ordersCountLabel}</span>
+
+          <div className="space-y-1">
+            <div className="text-xs font-medium text-white/80">
+              {t.monthPurchaseLabel}
+            </div>
+            <div className="text-[30px] sm:text-[34px] font-extrabold leading-none tracking-tight tabular-nums whitespace-nowrap">
+              {formatSom(monthTotal)}
+            </div>
           </div>
-          <div className="rounded-xl bg-[#ECFDF5] dark:bg-emerald-950/30 p-3">
-            <strong className="block text-sm font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
-              {formatSom(monthTotal * 0.05).replace(" so'm", '')}
-            </strong>
-            <span className="text-xs text-[#16A34A] dark:text-[#4ADE80]">{t.savedLabel}</span>
+
+          <div className="pt-3 border-t border-white/15 flex items-center justify-between gap-2 text-xs">
+            <div className="min-w-0">
+              <div className="font-bold text-white truncate">
+                {shop?.name || "«Baraka» do'koni"}
+              </div>
+              <div className="text-white/75 truncate">
+                {session?.userName || 'Dilnoza'} · {shop?.address || 'Termiz, Alpomish 14'}
+              </div>
+            </div>
+            <div className="text-right flex-none tabular-nums">
+              <div className="font-bold text-white">{session?.ordersCount ?? 14}</div>
+              <div className="text-white/75">{t.ordersCountLabel}</div>
+            </div>
           </div>
         </div>
       </div>
 
+      <p className="text-[11px] text-[#6B7280] dark:text-zinc-400 px-1">
+        {t.loyaltyInfoNote}
+      </p>
+
       {/* Business Tools: Profit Calculator & Monthly Report */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         <button
           type="button"
           onClick={() => openPage('profit')}
@@ -132,7 +131,7 @@ export const ProfileView: React.FC = () => {
           onClick={() => openPage('report')}
           className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F4F5F7] dark:hover:bg-zinc-900/50 transition-colors duration-150"
         >
-          <span className="w-10 h-10 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] flex items-center justify-center flex-none">
+          <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
             <BarChart3 className="w-5 h-5" />
           </span>
           <div className="flex-1 min-w-0">
@@ -148,13 +147,13 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Support */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         <button
           type="button"
           onClick={() => openPage('chat')}
           className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F4F5F7] dark:hover:bg-zinc-900/50"
         >
-          <span className="w-10 h-10 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] flex items-center justify-center flex-none">
+          <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
             <MessageCircle className="w-5 h-5" />
           </span>
           <div className="flex-1 min-w-0">
@@ -190,7 +189,7 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Store & Finance */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         <button
           type="button"
           onClick={() => openPage('shop')}
@@ -238,10 +237,10 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Preferences */}
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         {/* Language Switch */}
         <div className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3">
-          <span className="w-10 h-10 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] flex items-center justify-center flex-none">
+          <span className="w-10 h-10 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#6B7280] dark:text-zinc-300 flex items-center justify-center flex-none">
             <Globe className="w-5 h-5" />
           </span>
           <div className="flex-1 font-semibold text-sm text-[#111827] dark:text-zinc-100">
@@ -387,7 +386,7 @@ export const ProfitCalculatorView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-3">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
         <label
           htmlFor="profit-prod-select"
           className="block text-xs font-bold uppercase tracking-wide text-[#6B7280] dark:text-zinc-400"
@@ -421,6 +420,88 @@ export const ProfitCalculatorView: React.FC = () => {
       </div>
 
       <ProfitCalculatorCard product={selectedProduct} />
+    </div>
+  );
+};
+
+const CategoryDonutChart: React.FC<{
+  slices: CategoryBreakdownStat[];
+  totalBoxes: number;
+  boxUnit: string;
+}> = ({ slices, totalBoxes, boxUnit }) => {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  let offsetAccumulator = 0;
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center gap-4">
+      <div className="relative w-32 h-32 flex-none">
+        <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90" aria-hidden="true">
+          <circle
+            cx="60"
+            cy="60"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            className="text-[#EEF0F3] dark:text-zinc-800"
+            strokeWidth="16"
+          />
+          {slices.map((slice) => {
+            const len = (slice.pct / 100) * circumference;
+            const gap = slices.length > 1 ? 2.5 : 0;
+            const dash = Math.max(0, len - gap);
+            const dashOffset = -offsetAccumulator;
+            offsetAccumulator += len;
+            return (
+              <circle
+                key={slice.label}
+                cx="60"
+                cy="60"
+                r={radius}
+                fill="none"
+                stroke={slice.color}
+                strokeWidth="16"
+                strokeLinecap="butt"
+                strokeDasharray={`${dash} ${circumference}`}
+                strokeDashoffset={dashOffset}
+              />
+            );
+          })}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+          <span className="text-xl font-extrabold text-[#111827] dark:text-white leading-none tabular-nums">
+            {totalBoxes}
+          </span>
+          <span className="text-[11px] font-semibold text-[#6B7280] dark:text-zinc-400 mt-0.5">
+            {boxUnit}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 w-full space-y-2">
+        {slices.map((slice) => (
+          <div key={slice.label} className="flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                className="w-3 h-3 rounded-full flex-none"
+                style={{ backgroundColor: slice.color }}
+                aria-hidden="true"
+              />
+              <span className="font-semibold text-[#111827] dark:text-zinc-200 truncate">
+                {slice.label}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 tabular-nums whitespace-nowrap">
+              <span className="text-[#6B7280] dark:text-zinc-400">
+                {slice.boxes} {boxUnit}
+              </span>
+              <span className="font-bold text-[#111827] dark:text-white w-8 text-right">
+                {slice.pct}%
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -481,8 +562,33 @@ export const MonthlyReportView: React.FC = () => {
   }
 
   const maxWeeklyAmount = Math.max(1, ...report.weeklyBars.map((w) => w.amount));
+  const topProductsSlice = report.topProducts.slice(0, 5);
+  const maxTopBoxes = Math.max(1, ...topProductsSlice.map((tp) => tp.boxes));
+  const categorySlices: CategoryBreakdownStat[] = report.categoryBreakdown || [
+    { label: '1 L', boxes: 28, pct: 54, color: '#9B111E' },
+    { label: '0,9 L', boxes: 9, pct: 17, color: '#EA580C' },
+    { label: '0,5 L', boxes: 7, pct: 13, color: '#D97706' },
+    { label: 'Gazli', boxes: 5, pct: 10, color: '#6D2856' },
+    { label: 'Boshqalar', boxes: 3, pct: 6, color: '#059669' },
+  ];
 
-  const renderDelta = (pct: number) => {
+  const renderDeltaChip = (pct: number) => {
+    const up = pct >= 0;
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold tabular-nums ${
+          up
+            ? 'bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#16A34A] dark:text-[#4ADE80]'
+            : 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185]'
+        }`}
+      >
+        {up ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+        <span>{up ? `+${pct}%` : `-${Math.abs(pct)}%`}</span>
+      </span>
+    );
+  };
+
+  const renderDeltaInline = (pct: number) => {
     const up = pct >= 0;
     return (
       <span
@@ -496,9 +602,15 @@ export const MonthlyReportView: React.FC = () => {
     );
   };
 
+  const formatCompactAmount = (amt: number) => {
+    if (amt >= 1000000) {
+      return `${(amt / 1000000).toFixed(1).replace('.', ',')}M`;
+    }
+    return `${Math.round(amt / 1000)}k`;
+  };
+
   const handleShareTelegram = async () => {
-    const topLines = report.topProducts
-      .slice(0, 5)
+    const topLines = topProductsSlice
       .map((tp, idx) => {
         const p = productsById[tp.productId];
         const name = p ? `${getProductName(p, lang)} ${p.vol}` : `#${tp.productId}`;
@@ -545,6 +657,8 @@ export const MonthlyReportView: React.FC = () => {
     });
   };
 
+  const avgPerBox = Math.round(report.totalSpent / Math.max(1, report.totalBoxes));
+
   return (
     <div className="space-y-4">
       {/* Month Switcher */}
@@ -568,85 +682,138 @@ export const MonthlyReportView: React.FC = () => {
         })}
       </div>
 
-      {/* Hero Big Bold Total Spent (28-32px) + Secondary KPIs */}
+      {/* Top Hero Card: 36px month total + delta chip */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[24px] p-5 card-calm space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs sm:text-[13px] font-semibold text-[#6B7280] dark:text-zinc-400">
+            {t.reportSpentLabel} · {report.monthLabel}
+          </span>
+          {renderDeltaChip(report.spentDeltaPct)}
+        </div>
+        <div className="text-[32px] sm:text-[36px] font-extrabold leading-none tracking-tight text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+          {formatSom(report.totalSpent)}
+        </div>
+        <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
+          {t.reportComparePrev}: {formatSom(report.prevSpent)}
+        </div>
+      </section>
+
+      {/* KPI Tiles in a 2x2 grid with 20px icons */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1.5">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs sm:text-[13px] font-semibold text-[#6B7280] dark:text-zinc-400">
-              {t.reportSpentLabel}
+            <span className="w-9 h-9 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+              <Package className="w-5 h-5" />
             </span>
-            <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-              {renderDelta(report.spentDeltaPct)}
-              <span className="truncate">{t.reportComparePrev}</span>
+            {renderDeltaInline(report.boxesDeltaPct)}
+          </div>
+          <div>
+            <div className="text-lg sm:text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+              {report.totalBoxes} {t.boxUnit}
+            </div>
+            <div className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 truncate">
+              {t.reportBoxesLabel}
             </div>
           </div>
-          <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
-            {formatSom(report.totalSpent)}
-          </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1">
-          <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-            {t.reportBoxesLabel}
-          </div>
-          <div className="text-lg sm:text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
-            {report.totalBoxes} {t.boxUnit}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-            {renderDelta(report.boxesDeltaPct)}
-            <span className="truncate">{t.reportComparePrev}</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1">
-          <div className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-            {t.reportSavedLabel}
-          </div>
-          <div className="text-lg sm:text-xl font-extrabold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
-            {formatSom(report.savedByDiscounts)}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-            {renderDelta(report.savedDeltaPct)}
-            <span className="truncate">{t.reportComparePrev}</span>
-          </div>
-        </div>
-
-        <div className="col-span-2 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-1.5">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs sm:text-[13px] font-semibold text-[#6B7280] dark:text-zinc-400">
+            <span className="w-9 h-9 rounded-xl bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#16A34A] dark:text-[#4ADE80] flex items-center justify-center flex-none">
+              <Sparkles className="w-5 h-5" />
+            </span>
+            {renderDeltaInline(report.savedDeltaPct)}
+          </div>
+          <div>
+            <div className="text-lg sm:text-xl font-extrabold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+              {formatCompactAmount(report.savedByDiscounts)}
+            </div>
+            <div className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 truncate">
+              {t.reportSavedLabel}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="w-9 h-9 rounded-xl bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#16A34A] dark:text-[#4ADE80] flex items-center justify-center flex-none">
+              <Wallet className="w-5 h-5" />
+            </span>
+            {renderDeltaInline(report.profitDeltaPct)}
+          </div>
+          <div>
+            <div className="text-lg sm:text-xl font-extrabold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+              {formatCompactAmount(report.estimatedProfit)}
+            </div>
+            <div className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 truncate">
               {t.reportProfitLabel}
-            </span>
-            <div className="flex items-center gap-1 text-xs text-[#6B7280] dark:text-zinc-400">
-              {renderDelta(report.profitDeltaPct)}
-              <span className="truncate">{t.reportComparePrev}</span>
             </div>
           </div>
-          <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
-            {formatSom(report.estimatedProfit)}
+        </div>
+
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="w-9 h-9 rounded-xl bg-[#F4F5F7] dark:bg-zinc-800 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
+              <BarChart3 className="w-5 h-5" />
+            </span>
+            <span className="text-[11px] font-semibold text-[#6B7280] dark:text-zinc-400">
+              1 {t.boxUnit}
+            </span>
+          </div>
+          <div>
+            <div className="text-lg sm:text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+              {formatCompactAmount(avgPerBox)}
+            </div>
+            <div className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 truncate">
+              {t.buyPerBoxLabel}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Weekly Bar Chart */}
-      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-3">
-        <h3 className="text-base font-bold text-[#111827] dark:text-white">
-          {t.reportWeeklyTitle}
-        </h3>
-        <div className="grid grid-cols-4 gap-3 items-end h-36 pt-4">
+      {/* Weekly Bar Chart: soft #F3D6DA bars, highest week #9B111E, value labels & rounded tops */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-base font-bold text-[#111827] dark:text-white">
+            {t.reportWeeklyTitle}
+          </h3>
+          <span className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185]">
+            {t.reportPeakWeekLabel}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-4 gap-3 items-end h-44 pt-4">
           {report.weeklyBars.map((bar) => {
-            const heightPct = Math.max(16, Math.round((bar.amount / maxWeeklyAmount) * 100));
+            const heightPct = Math.max(18, Math.round((bar.amount / maxWeeklyAmount) * 100));
+            const isHighest = bar.amount === maxWeeklyAmount;
             return (
-              <div key={bar.label} className="h-full flex flex-col items-center justify-end gap-1">
-                <span className="text-xs font-bold text-[#111827] dark:text-zinc-200 tabular-nums whitespace-nowrap">
-                  {bar.boxes} {t.boxUnit}
+              <div key={bar.label} className="h-full flex flex-col items-center justify-end gap-1.5">
+                <span
+                  className={`text-xs font-bold tabular-nums whitespace-nowrap ${
+                    isHighest
+                      ? 'text-[#9B111E] dark:text-[#FB7185]'
+                      : 'text-[#6B7280] dark:text-zinc-300'
+                  }`}
+                >
+                  {formatCompactAmount(bar.amount)}
                 </span>
                 <div className="w-full flex-1 flex items-end">
                   <div
-                    className="w-full rounded-xl bg-[#9B111E] dark:bg-[#F43F5E] transition-all duration-200 ease-out"
+                    className={`w-full rounded-t-xl rounded-b-sm transition-all duration-200 ease-out ${
+                      isHighest
+                        ? 'bg-[#9B111E] dark:bg-[#F43F5E]'
+                        : 'bg-[#F3D6DA] dark:bg-rose-950/70'
+                    }`}
                     style={{ height: `${heightPct}%` }}
                   />
                 </div>
-                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400 whitespace-nowrap">
+                <span
+                  className={`text-xs whitespace-nowrap ${
+                    isHighest
+                      ? 'font-bold text-[#111827] dark:text-white'
+                      : 'font-semibold text-[#6B7280] dark:text-zinc-400'
+                  }`}
+                >
                   {bar.label}
                 </span>
               </div>
@@ -655,12 +822,24 @@ export const MonthlyReportView: React.FC = () => {
         </div>
       </section>
 
-      {/* Top 5 Products */}
-      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm space-y-3">
+      {/* Categories Donut Chart */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
+        <h3 className="text-base font-bold text-[#111827] dark:text-white">
+          {t.reportCategoriesTitle}
+        </h3>
+        <CategoryDonutChart
+          slices={categorySlices}
+          totalBoxes={report.totalBoxes}
+          boxUnit={t.boxUnit}
+        />
+      </section>
+
+      {/* Top 5 Products with bottle thumbnails and thin share bar */}
+      <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
         <h3 className="text-base font-bold text-[#111827] dark:text-white">
           {t.reportTopProductsTitle}
         </h3>
-        {report.topProducts.length === 0 ? (
+        {topProductsSlice.length === 0 ? (
           <EmptyState
             icon={<BarChart3 className="w-5 h-5" />}
             title={t.emptyOrdersTitle}
@@ -669,25 +848,39 @@ export const MonthlyReportView: React.FC = () => {
           />
         ) : (
           <div className="divide-y divide-[#E5E7EB] dark:divide-zinc-800">
-            {report.topProducts.slice(0, 5).map((tp, idx) => {
+            {topProductsSlice.map((tp, idx) => {
               const prod = productsById[tp.productId];
+              const sharePct = Math.max(8, Math.round((tp.boxes / maxTopBoxes) * 100));
               return (
-                <div key={tp.productId} className="py-3 first:pt-1 last:pb-1 flex items-center gap-3">
-                  <span className="w-6 text-xs font-bold text-[#6B7280] dark:text-zinc-400 tabular-nums flex-none">
-                    #{idx + 1}
-                  </span>
-                  {prod && <ProductVisual product={prod} size="mini" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
-                      {prod ? `${getProductName(prod, lang)} ${prod.vol}` : `#${tp.productId}`}
+                <div key={tp.productId} className="py-3 first:pt-1 last:pb-1 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-xs font-bold text-[#6B7280] dark:text-zinc-400 tabular-nums flex-none">
+                      #{idx + 1}
+                    </span>
+                    {prod && <ProductVisual product={prod} size="mini" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
+                        {prod ? `${getProductName(prod, lang)} ${prod.vol}` : `#${tp.productId}`}
+                      </div>
+                      <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
+                        {tp.boxes} {t.boxUnit} · {formatSom(tp.spent)}
+                      </div>
                     </div>
-                    <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums">
-                      {tp.boxes} {t.boxUnit} · {formatSom(tp.spent)}
+                    <div className="text-right flex-none">
+                      <div className="text-xs font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+                        +{formatSom(tp.estimatedProfit)}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right flex-none">
-                    <div className="text-xs font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
-                      +{formatSom(tp.estimatedProfit)}
+                  {/* Thin share bar */}
+                  <div className="pl-9">
+                    <div className="h-1.5 w-full rounded-full bg-[#EEF0F3] dark:bg-zinc-800 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-200 ease-out ${
+                          idx === 0 ? 'bg-[#9B111E] dark:bg-[#F43F5E]' : 'bg-[#F3D6DA] dark:bg-rose-900'
+                        }`}
+                        style={{ width: `${sharePct}%` }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -701,7 +894,7 @@ export const MonthlyReportView: React.FC = () => {
       <button
         type="button"
         onClick={() => void handleShareTelegram()}
-        className="w-full min-h-[48px] rounded-xl bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
+        className="w-full min-h-[48px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
       >
         <Share2 className="w-5 h-5" />
         <span>{t.reportShareBtn} (Telegram)</span>
@@ -825,7 +1018,7 @@ export const ShopView: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl px-4 py-1 divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] px-4 py-1 divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-center justify-between gap-2 py-3 text-sm">
             <span className="text-[#6B7280] dark:text-zinc-400">{k}</span>
@@ -841,7 +1034,7 @@ export const ShopView: React.FC = () => {
       <button
         type="button"
         onClick={() => openPage('chat')}
-        className="w-full min-h-[44px] rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-base inline-flex items-center justify-center gap-2"
+        className="w-full min-h-[44px] rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white font-semibold text-base inline-flex items-center justify-center gap-2 transition-colors duration-150"
       >
         <MessageCircle className="w-5 h-5" />
         <span>{t.writeOperatorBtn}</span>
@@ -866,13 +1059,13 @@ export const FinanceView: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm">
           <strong className="block text-xl font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
             0 so&apos;m
           </strong>
           <span className="text-xs text-[#6B7280] dark:text-zinc-400">{t.noDebtLabel}</span>
         </div>
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm">
           <strong className="block text-xl font-bold text-[#9B111E] dark:text-[#FB7185] tabular-nums whitespace-nowrap">
             {formatSom(monthTotal)}
           </strong>
@@ -894,7 +1087,7 @@ export const FinanceView: React.FC = () => {
             onAction={() => goTab('cat')}
           />
         ) : (
-          <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl px-4 py-1 divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+          <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] px-4 py-1 divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
             {payments.map((p) => (
               <div key={p.id} className="flex items-center justify-between gap-2 py-3 text-sm">
                 <div>
@@ -917,7 +1110,7 @@ export const FinanceView: React.FC = () => {
 export const AboutView: React.FC = () => {
   return (
     <div className="space-y-4">
-      <div className="h-36 rounded-xl bg-[#9B111E] flex items-center justify-center">
+      <div className="h-36 rounded-[20px] bg-[#9B111E] flex items-center justify-center">
         <img src={LOGO} alt="Lal Anaar" className="w-20 h-20 rounded-xl bg-white p-2" />
       </div>
 
@@ -936,7 +1129,7 @@ export const AboutView: React.FC = () => {
         ].map(([num, label]) => (
           <div
             key={label}
-            className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-4 card-calm"
+            className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm"
           >
             <strong className="block text-xl font-bold text-[#9B111E] dark:text-[#FB7185]">
               {num}
@@ -948,7 +1141,7 @@ export const AboutView: React.FC = () => {
 
       <section>
         <h2 className="text-base font-bold text-[#111827] dark:text-white mb-2">Sifat</h2>
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="w-11 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] text-xs font-bold flex items-center justify-center flex-none">
               ISO
@@ -980,14 +1173,14 @@ export const AboutView: React.FC = () => {
 
       <section>
         <h2 className="text-base font-bold text-[#111827] dark:text-white mb-2">Aloqa</h2>
-        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+        <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
           <a
             href="https://t.me/Lal_Anaar_Rasmiy_Kanal"
             target="_blank"
             rel="noopener noreferrer"
             className="min-h-[56px] flex items-center gap-3 px-4 py-3 hover:bg-[#F4F5F7] dark:hover:bg-zinc-900/50"
           >
-            <span className="w-10 h-10 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] flex items-center justify-center flex-none">
+            <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
               <Send className="w-5 h-5" />
             </span>
             <div className="flex-1 min-w-0">
@@ -1036,7 +1229,7 @@ export const NotifView: React.FC = () => {
         };
       case 'chat':
         return {
-          cls: 'bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA]',
+          cls: 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185]',
           el: <MessageCircle className="w-5 h-5" />,
         };
       case 'seed':
@@ -1070,7 +1263,7 @@ export const NotifView: React.FC = () => {
 
   return (
     <div>
-      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
+      <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] overflow-hidden divide-y divide-[#E5E7EB] dark:divide-zinc-800 card-calm">
         {notifs.map((n, idx) => {
           const ic = iconFor(n[0]);
           return (

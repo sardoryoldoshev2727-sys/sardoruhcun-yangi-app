@@ -298,7 +298,7 @@ export const DEFAULT_SHELF_SEED: ShelfItem[] = [
 export const DEFAULT_NOTIFS_SEED: NotificationItem[] = [
   ['road', "Buyurtma #2481 yo'lda", 'Haydovchi Akmal · 14:00–17:00', '13:05', 1],
   ['chat', 'Operator Madina yozdi', "Buyurtmangiz yo'lda…", '13:06', 1],
-  ['seed', "Chegirmaga 180 000 so'm qoldi", 'Bu oy 7% olishingiz mumkin', 'Kecha', 0],
+  ['seed', "Chegirmaga 180 000 so'm qoldi", "Buyurtmada 7% chegirma olishingiz mumkin", 'Kecha', 0],
   ['low', 'Anor sharbati 1 L tugayapti', 'Odatda har 7 kunda olasiz', 'Kecha', 0],
   ['new', "Yangi: Olxo'ri sharbati 1 L", 'Katalogda mavjud', '20-noy', 0],
 ];
@@ -389,6 +389,13 @@ const MOCK_MONTHLY_REPORTS: Record<string, MonthlyReportData> = {
       { productId: 13, boxes: 3, spent: 375759, estimatedProfit: 83241 },
       { productId: 21, boxes: 2, spent: 151992, estimatedProfit: 40008 },
     ],
+    categoryBreakdown: [
+      { label: '1 L', boxes: 28, pct: 54, color: '#9B111E' },
+      { label: '0,9 L', boxes: 9, pct: 17, color: '#EA580C' },
+      { label: '0,5 L', boxes: 7, pct: 13, color: '#D97706' },
+      { label: 'Gazli', boxes: 5, pct: 10, color: '#6D2856' },
+      { label: 'Boshqalar', boxes: 3, pct: 6, color: '#059669' },
+    ],
   },
   '2026-10': {
     monthKey: '2026-10',
@@ -418,6 +425,13 @@ const MOCK_MONTHLY_REPORTS: Record<string, MonthlyReportData> = {
       { productId: 21, boxes: 6, spent: 455976, estimatedProfit: 120024 },
       { productId: 17, boxes: 6, spent: 270000, estimatedProfit: 60000 },
     ],
+    categoryBreakdown: [
+      { label: '1 L', boxes: 24, pct: 52, color: '#9B111E' },
+      { label: '0,9 L', boxes: 8, pct: 17, color: '#EA580C' },
+      { label: '0,5 L', boxes: 6, pct: 13, color: '#D97706' },
+      { label: 'Gazli', boxes: 5, pct: 11, color: '#6D2856' },
+      { label: 'Boshqalar', boxes: 3, pct: 7, color: '#059669' },
+    ],
   },
   '2026-09': {
     monthKey: '2026-09',
@@ -446,6 +460,13 @@ const MOCK_MONTHLY_REPORTS: Record<string, MonthlyReportData> = {
       { productId: 7, boxes: 8, spent: 1003680, estimatedProfit: 220320 },
       { productId: 0, boxes: 6, spent: 765396, estimatedProfit: 153204 },
       { productId: 21, boxes: 6, spent: 455976, estimatedProfit: 120024 },
+    ],
+    categoryBreakdown: [
+      { label: '1 L', boxes: 26, pct: 54, color: '#9B111E' },
+      { label: '0,9 L', boxes: 9, pct: 19, color: '#EA580C' },
+      { label: '0,5 L', boxes: 6, pct: 13, color: '#D97706' },
+      { label: 'Gazli', boxes: 4, pct: 8, color: '#6D2856' },
+      { label: 'Boshqalar', boxes: 3, pct: 6, color: '#059669' },
     ],
   },
 };
@@ -910,6 +931,7 @@ export async function getMonthlyReport(monthKey: string): Promise<MonthlyReportD
     ...found,
     weeklyBars: found.weeklyBars.map((w) => ({ ...w })),
     topProducts: found.topProducts.map((p) => ({ ...p })),
+    categoryBreakdown: found.categoryBreakdown?.map((c) => ({ ...c })),
   };
 }
 

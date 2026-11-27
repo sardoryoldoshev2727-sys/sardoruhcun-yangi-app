@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Heart, Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -10,6 +10,7 @@ import {
   getBrandName,
   getPackType,
   getProductBadge,
+  getPromoBoxPrice,
   getStockInfo,
   shortName,
 } from '../utils/catalog';
@@ -136,6 +137,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const brand = getBrandName(product);
   const pack = getPackType(product);
   const displayName = getProductName(product, lang);
+  const hasPromo = Boolean(product.promoPct && product.promoPct > 0);
+  const effectiveBox = getPromoBoxPrice(product);
+
+  const [swipeX, setSwipeX] = useState(0);
+  const touchOriginRef = useRef<{ x: number; y: number; swiping: boolean } | null>(null);
 
   if (mode === 'grid') {
     const badge = renderBadge(product, t);
@@ -252,18 +258,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {t.boxMetaLine(product.blk)}
         </div>
 
-        {/* Bold single-line price */}
+        {/* Bold single-line price (with struck-through original on promo items) */}
         <div className="mt-auto pt-2 px-1 pb-0.5">
           {product.out ? (
             <div className="text-sm font-bold text-[#9B111E] dark:text-[#F87171] whitespace-nowrap">
               {t.outOfStock}
             </div>
           ) : (
-            <div className="text-base sm:text-lg font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
-              {formatNumberThin(product.box)}{' '}
-              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-                so&apos;m
-              </span>
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap overflow-hidden">
+              <div className="text-base sm:text-lg font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+                {formatNumberThin(effectiveBox)}{' '}
+                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+                  so&apos;m
+                </span>
+              </div>
+              {hasPromo && (
+                <span className="text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap truncate">
+                  {formatNumberThin(product.box)}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -272,44 +285,114 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   }
 
   if (mode === 'cart') {
+    const lineGross = product.box * qty;
+    const lineNet = Math.round(lineGross * (1 - (product.promoPct || 0) / 100));
+
     return (
-      <div
-        onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-3 flex items-stretch gap-3 card-calm cursor-pointer"
-      >
-        <ProductVisual product={product} size="row" />
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
-                {displayName} {product.vol}
+      <div className="relative rounded-[20px] overflow-hidden bg-[#9B111E]">
+        {/* Swipe-to-remove background action */}
+        <button
+          type="button"
+          aria-label={t.removeFromCart}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateQty(product.id, -qty);
+          }}
+          className="absolute inset-y-0 right-0 w-20 flex flex-col items-center justify-center gap-1 text-white text-[11px] font-bold"
+        >
+          <Trash2 className="w-5 h-5" />
+          <span className="truncate px-1">{t.clearCartBtn}</span>
+        </button>
+
+        <div
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            touchOriginRef.current = { x: touch.clientX, y: touch.clientY, swiping: false };
+          }}
+          onTouchMove={(e) => {
+            const origin = touchOriginRef.current;
+            const touch = e.touches[0];
+            if (!origin || !touch) return;
+            const dx = touch.clientX - origin.x;
+            const dy = touch.clientY - origin.y;
+            if (!origin.swiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+              origin.swiping = true;
+            }
+            if (origin.swiping) {
+              setSwipeX(Math.max(-80, Math.min(0, dx)));
+            }
+          }}
+          onTouchEnd={() => {
+            if (swipeX <= -48) {
+              setSwipeX(-80);
+            } else {
+              setSwipeX(0);
+            }
+            touchOriginRef.current = null;
+          }}
+          onClick={() => {
+            if (swipeX < -10) {
+              setSwipeX(0);
+              return;
+            }
+            setSheet({ type: 'prod', id: product.id });
+          }}
+          style={{ transform: `translateX(${swipeX}px)` }}
+          className="relative z-10 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-3 flex items-stretch gap-3 card-calm cursor-pointer transition-transform duration-150 ease-out"
+        >
+          <ProductVisual product={product} size="row" />
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="font-bold text-base leading-snug text-[#111827] dark:text-zinc-100 line-clamp-2 break-words">
+                    {displayName} {product.vol}
+                  </div>
+                </div>
+                <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
+                  <span>{t.boxMetaLine(product.blk)}</span>
+                  <span>·</span>
+                  {hasPromo ? (
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <span className="line-through text-[#6B7280]">{formatSom(product.box)}</span>
+                      <span className="font-bold text-[#9B111E] dark:text-[#FB7185]">{formatSom(effectiveBox)}</span>
+                    </span>
+                  ) : (
+                    <span>{formatSom(product.box)}</span>
+                  )}
+                </div>
               </div>
-              <div className="text-xs text-[#6B7280] dark:text-zinc-400 mt-1 tabular-nums">
-                {t.boxMetaLine(product.blk)} · {formatSom(product.box)}
-              </div>
+              <button
+                type="button"
+                aria-label={t.removeFromCart}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQty(product.id, -qty);
+                }}
+                className="w-11 h-11 -mr-1 -mt-1 rounded-xl flex items-center justify-center text-[#9B111E] dark:text-[#F87171] hover:bg-[#FCE8EA] dark:hover:bg-red-950/30 transition-colors flex-none"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label={t.removeFromCart}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateQty(product.id, -qty);
-              }}
-              className="w-11 h-11 -mr-1 -mt-1 rounded-xl flex items-center justify-center text-[#9B111E] dark:text-[#F87171] hover:bg-[#FCE8EA] dark:hover:bg-red-950/30 transition-colors flex-none"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
-            <div>
-              <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
-                {formatSom(product.box * qty)}
+            <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
+              <div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+                    {formatSom(lineNet)}
+                  </span>
+                  {hasPromo && (
+                    <span className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap">
+                      {formatSom(lineGross)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
+                  {qty} {t.boxUnit} ({qty * product.blk} {t.pieceUnit})
+                </div>
               </div>
-              <div className="text-xs font-semibold text-[#9B111E] dark:text-[#FB7185] tabular-nums">
-                {qty} {t.boxUnit} ({qty * product.blk} {t.pieceUnit})
-              </div>
+              <CartStepper product={product} />
             </div>
-            <CartStepper product={product} />
           </div>
         </div>
       </div>
@@ -369,11 +452,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
-            <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
-              {formatNumberThin(product.box)}{' '}
-              <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
-                so&apos;m
-              </span>
+            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+              <div className="text-base sm:text-xl font-extrabold text-[#111827] dark:text-white leading-tight tabular-nums whitespace-nowrap">
+                {formatNumberThin(effectiveBox)}{' '}
+                <span className="text-xs font-semibold text-[#6B7280] dark:text-zinc-400">
+                  so&apos;m
+                </span>
+              </div>
+              {hasPromo && (
+                <span className="text-xs font-medium text-[#6B7280] dark:text-zinc-400 line-through tabular-nums whitespace-nowrap">
+                  {formatNumberThin(product.box)}
+                </span>
+              )}
             </div>
             <div
               className={`text-xs tabular-nums ${

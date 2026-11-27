@@ -395,3 +395,46 @@ export function getStockInfo(
     sub: '',
   };
 }
+
+export function getPromoBoxPrice(p: Product): number {
+  if (!p.promoPct || p.promoPct <= 0) return p.box;
+  return Math.round(p.box * (1 - p.promoPct / 100));
+}
+
+export function computeCartPromoBreakdown(
+  cart: Record<number, number>,
+  productsById: Record<number, Product>,
+): { grossSubtotal: number; promoSavings: number; netSubtotal: number } {
+  let grossSubtotal = 0;
+  let netSubtotal = 0;
+  for (const [idStr, qty] of Object.entries(cart)) {
+    const prod = productsById[Number(idStr)];
+    if (!prod || qty <= 0) continue;
+    const grossLine = prod.box * qty;
+    const netLine = Math.round(grossLine * (1 - (prod.promoPct || 0) / 100));
+    grossSubtotal += grossLine;
+    netSubtotal += netLine;
+  }
+  return {
+    grossSubtotal,
+    promoSavings: Math.max(0, grossSubtotal - netSubtotal),
+    netSubtotal,
+  };
+}
+
+export function getLastDeliveredBuyAgainItems(
+  orders: OrderRecord[],
+  productsById: Record<number, Product>,
+): { product: Product; qty: number }[] {
+  const delivered = orders.find((o) => o.status === 'Yetkazildi' && o.items.length > 0);
+  if (!delivered) return [];
+  const list: { product: Product; qty: number }[] = [];
+  for (const item of delivered.items) {
+    const prod = productsById[item.productId];
+    if (prod && !prod.out) {
+      list.push({ product: prod, qty: Math.max(1, item.qty) });
+    }
+  }
+  return list;
+}
+

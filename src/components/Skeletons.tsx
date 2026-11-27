@@ -126,3 +126,43 @@ export const ListRowsSkeleton: React.FC<{ count?: number }> = ({ count = 4 }) =>
     ))}
   </div>
 );
+
+export const HorizontalStripSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) => (
+  <div className="flex gap-3 overflow-hidden" aria-busy="true">
+    {Array.from({ length: count }, (_, idx) => (
+      <div
+        key={idx}
+        className="w-40 flex-none bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-2.5 space-y-2"
+      >
+        <div className="h-24 w-full rounded-[16px] skeleton-shimmer" />
+        <div className="h-3.5 w-4/5 rounded-lg skeleton-shimmer" />
+        <div className="h-4 w-20 rounded-lg skeleton-shimmer" />
+      </div>
+    ))}
+  </div>
+);
+
+export const CouponStripSkeleton: React.FC<{ count?: number }> = ({ count = 2 }) => (
+  <div className="flex gap-3 overflow-hidden" aria-busy="true">
+    {Array.from({ length: count }, (_, idx) => (
+      <div
+        key={idx}
+        className="w-[264px] flex-none bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 space-y-3"
+      >
+        <div className="flex justify-between items-center">
+          <div className="h-7 w-16 rounded-lg skeleton-shimmer" />
+          <div className="h-5 w-20 rounded-full skeleton-shimmer" />
+        </div>
+        <div className="flex gap-3 items-center">
+          <div className="w-16 h-20 rounded-[16px] skeleton-shimmer flex-none" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-full rounded-lg skeleton-shimmer" />
+            <div className="h-3 w-20 rounded-lg skeleton-shimmer" />
+            <div className="h-5 w-24 rounded-lg skeleton-shimmer" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+

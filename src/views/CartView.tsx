@@ -1,11 +1,11 @@
 import React from 'react';
-import { Calendar, Clock, Lock, Pencil, Repeat, ShoppingCart, Sparkles, Tag, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Lock, Pencil, ShoppingCart, Sparkles, Tag, Trash2 } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
 import { CartSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getSlotLabel } from '../i18n';
-import { DAYS, SLOTS, formatSom } from '../utils/catalog';
+import { DAYS, SLOTS, computeCartPromoBreakdown, formatSom } from '../utils/catalog';
 
 export const CartView: React.FC = () => {
   const {
@@ -47,29 +47,26 @@ export const CartView: React.FC = () => {
 
   if (ids.length === 0) {
     return (
-      <div className="max-w-sm mx-auto space-y-3">
+      <div className="max-w-sm mx-auto pt-2">
         <EmptyState
           variant="cart"
-          title={`${t.emptyCartTitle} · ${t.emptyCartSub}`}
+          title={t.emptyCartTitle}
+          subtitle={t.emptyCartSub}
           actionLabel={t.addUsualOrder}
           onAction={() => {
             fillShelfToCart(false);
             goTab('cart');
           }}
+          secondaryActionLabel={t.goToCatalog}
+          onSecondaryAction={() => goTab('cat')}
         />
-        <button
-          type="button"
-          onClick={() => goTab('cat')}
-          className="w-full min-h-[44px] px-4 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-sm inline-flex items-center justify-center gap-2 card-calm"
-        >
-          <Repeat className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185]" />
-          <span>{t.goToCatalog}</span>
-        </button>
       </div>
     );
   }
 
-  const { boxCount, subtotal, discountPct, discountAmount, total } = checkoutQuote;
+  const { boxCount, discountPct, discountAmount, total } = checkoutQuote;
+  const { grossSubtotal, promoSavings } = computeCartPromoBreakdown(cart, productsById);
+  const totalSavings = promoSavings + discountAmount;
 
   const nudgeLineText = discountNudge.nextTier
     ? t.discountNudgeLine(
@@ -82,9 +79,19 @@ export const CartView: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-4 items-start">
-      {/* Left Column: Discount Nudge Progress + Savings Line + Cart Items */}
+      {/* Left Column: Green Savings Ribbon + Discount Ladder + Cart Items */}
       <div className="space-y-3">
-        {/* Discount Nudge card (never blocks checkout) */}
+        {/* Blinkit-style top green savings ribbon */}
+        {totalSavings > 0 && (
+          <div className="rounded-[20px] px-4 py-3 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2.5 text-sm font-bold text-[#16A34A] dark:text-[#4ADE80]">
+            <Sparkles className="w-5 h-5 flex-none" />
+            <span className="tabular-nums">
+              {t.savingsRibbon(formatSom(totalSavings))}
+            </span>
+          </div>
+        )}
+
+        {/* Discount ladder progress card (never blocks checkout) */}
         <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -114,15 +121,6 @@ export const CartView: React.FC = () => {
           </div>
         </div>
 
-        {discountPct > 0 && (
-          <div className="rounded-[20px] px-4 py-3 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 flex items-center gap-2 text-sm font-semibold text-[#16A34A] dark:text-[#4ADE80]">
-            <Sparkles className="w-5 h-5 flex-none" />
-            <span className="tabular-nums">
-              {t.discountSavingsLine(discountPct, formatSom(discountAmount))}
-            </span>
-          </div>
-        )}
-
         <div className="space-y-3">
           {ids.map((id) => {
             const p = productsById[id];
@@ -150,7 +148,7 @@ export const CartView: React.FC = () => {
         </div>
       </div>
 
-      {/* Right Column: Schedule + Receipt summary */}
+      {/* Right Column: Schedule + Sticky Blinkit-style Bill Summary */}
       <div className="space-y-4 lg:sticky lg:top-0">
         <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
           <h2 className="text-base font-bold text-[#111827] dark:text-white flex items-center gap-2">
@@ -205,35 +203,56 @@ export const CartView: React.FC = () => {
           </div>
         </section>
 
-        <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-2.5 text-[13px]">
+        {/* Blinkit-style Bill Summary Card */}
+        <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[24px] p-4 card-calm space-y-2.5 text-[13px]">
           <h2 className="text-base font-bold text-[#111827] dark:text-white">
             {t.orderSummaryTitle}
           </h2>
+
           <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
-            <span>{t.productsCountLine(boxCount)}</span>
+            <span>{t.billProductsGross(boxCount)}</span>
             <span className="font-semibold tabular-nums whitespace-nowrap text-[#111827] dark:text-white">
-              {formatSom(subtotal)}
+              {formatSom(grossSubtotal)}
             </span>
           </div>
+
+          {promoSavings > 0 && (
+            <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
+              <span>{t.billPromoDiscount}</span>
+              <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+                −{formatSom(promoSavings)}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
-            <span>{t.discountLine(discountPct)}</span>
-            <span className="font-bold text-[#16A34A] dark:text-[#4ADE80] tabular-nums whitespace-nowrap">
+            <span>{t.billOrderDiscount(discountPct)}</span>
+            <span
+              className={`font-bold tabular-nums whitespace-nowrap ${
+                discountAmount > 0
+                  ? 'text-[#16A34A] dark:text-[#4ADE80]'
+                  : 'text-[#6B7280] dark:text-zinc-400'
+              }`}
+            >
               −{formatSom(discountAmount)}
             </span>
           </div>
+
           <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
             <span>{t.deliveryLabel}</span>
-            <span className="font-semibold text-[#111827] dark:text-zinc-100">{t.freeLabel}</span>
+            <span className="font-bold text-[#16A34A] dark:text-[#4ADE80]">{t.freeLabel}</span>
           </div>
+
           <div className="flex justify-between text-[#6B7280] dark:text-zinc-400">
             <span>{t.paymentTypeLabel}</span>
             <span>{t.paymentMethodsValue}</span>
           </div>
+
           <div className="pt-3 mt-1 border-t border-dashed border-[#E5E7EB] dark:border-zinc-700 space-y-1">
             <span className="block text-xs font-medium text-[#6B7280] dark:text-zinc-400">
               {t.totalDueLabel}
             </span>
-            <div className="text-[28px] sm:text-[32px] font-extrabold leading-none tracking-tight tabular-nums whitespace-nowrap text-[#9B111E] dark:text-[#FB7185]">
+            <div className="text-[32px] font-extrabold leading-none tracking-tight tabular-nums whitespace-nowrap text-[#9B111E] dark:text-[#FB7185]">
               {formatSom(total)}
             </div>
           </div>

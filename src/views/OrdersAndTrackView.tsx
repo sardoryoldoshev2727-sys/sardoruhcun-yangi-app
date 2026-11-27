@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Check,
   CheckCircle2,
@@ -10,36 +10,34 @@ import {
   MessageCircle,
   Package,
   Phone,
+  Plus,
+  RefreshCw,
   Repeat,
   Star,
   Truck,
   XCircle,
 } from 'lucide-react';
 import { ProductVisual } from '../components/ProductVisual';
-import { OrdersSkeleton } from '../components/Skeletons';
+import { HorizontalStripSkeleton, OrdersSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getProductName, getSlotLabel, getStatusLabel } from '../i18n';
 import type { OrderStatus } from '../types';
-import { formatSom } from '../utils/catalog';
+import { formatNumberThin, formatSom, getLastDeliveredBuyAgainItems, getPromoBoxPrice } from '../utils/catalog';
 
 function statusMeta(status: OrderStatus) {
   switch (status) {
+    case 'Yuborildi':
+    case 'Tasdiqlandi':
     case "Yo'lda":
       return {
         cls: 'bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185]',
-        icon: <Truck className="w-4 h-4" />,
+        icon: status === "Yo'lda" ? <Truck className="w-4 h-4" /> : <Clock className="w-4 h-4" />,
       };
     case 'Yetkazildi':
       return {
-        cls: 'bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA]',
+        cls: 'bg-[#ECFDF5] dark:bg-emerald-950/40 text-[#16A34A] dark:text-[#4ADE80]',
         icon: <CheckCircle2 className="w-4 h-4" />,
-      };
-    case 'Yuborildi':
-    case 'Tasdiqlandi':
-      return {
-        cls: 'bg-amber-50 dark:bg-amber-950/40 text-[#D97706] dark:text-[#FBBF24]',
-        icon: <Clock className="w-4 h-4" />,
       };
     default:
       return {
@@ -63,6 +61,82 @@ function getFiveStepIndex(status: OrderStatus): number {
       return -1;
   }
 }
+
+const MiniHorizontalSteps: React.FC<{
+  status: OrderStatus;
+  labels: string[];
+}> = ({ status, labels }) => {
+  const activeIdx = getFiveStepIndex(status);
+  const allDone = status === 'Yetkazildi';
+  const isCancelled = status === 'Bekor qilindi';
+
+  if (isCancelled) {
+    return (
+      <div className="mb-3 px-2.5 py-1.5 rounded-xl bg-[#F4F5F7] dark:bg-zinc-900 text-[11px] font-medium text-[#6B7280] dark:text-zinc-400 flex items-center gap-1.5">
+        <XCircle className="w-3.5 h-3.5 flex-none" />
+        <span className="truncate">{getStatusLabel(status, 'uz')}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3 pt-1">
+      <div className="grid grid-cols-5 gap-1 items-start">
+        {labels.slice(0, 5).map((label, idx) => {
+          const isDone = allDone ? idx <= activeIdx : idx < activeIdx;
+          const isActive = !allDone && idx === activeIdx;
+          const activeColor = allDone
+            ? 'bg-[#16A34A] border-[#16A34A] text-white'
+            : 'bg-[#9B111E] border-[#9B111E] text-white';
+
+          return (
+            <div key={label} className="relative flex flex-col items-center">
+              {/* Connector line to next step */}
+              {idx < 4 && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-2 left-1/2 w-full h-0.5 ${
+                    isDone
+                      ? allDone
+                        ? 'bg-[#16A34A]'
+                        : 'bg-[#9B111E]'
+                      : 'bg-[#E5E7EB] dark:bg-zinc-700'
+                  }`}
+                />
+              )}
+              <span
+                className={`relative z-10 w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                  isDone || isActive
+                    ? activeColor
+                    : 'bg-white dark:bg-[#1A1C20] border-[#D1D5DB] dark:border-zinc-700'
+                } ${isActive ? 'ring-2 ring-[#9B111E]/25 dark:ring-[#FB7185]/30' : ''}`}
+              >
+                {isDone ? (
+                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                ) : isActive ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                ) : null}
+              </span>
+              <span
+                className={`mt-1 text-[10px] leading-tight text-center w-full truncate ${
+                  isActive
+                    ? 'font-bold text-[#9B111E] dark:text-[#FB7185]'
+                    : isDone
+                      ? allDone
+                        ? 'font-semibold text-[#16A34A] dark:text-[#4ADE80]'
+                        : 'font-semibold text-[#111827] dark:text-zinc-200'
+                      : 'font-medium text-[#6B7280] dark:text-zinc-500'
+                }`}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const VerticalOrderTimeline: React.FC<{
   status: OrderStatus;
@@ -144,6 +218,9 @@ export const OrdersView: React.FC = () => {
   const {
     orders,
     ordersLoading,
+    refreshingOrders,
+    refreshOrders,
+    productsLoading,
     loadError,
     retryLoad,
     ratings,
@@ -155,17 +232,24 @@ export const OrdersView: React.FC = () => {
     openPage,
     openOrderDetail,
     repeatOrderToCart,
+    updateQty,
+    showToast,
     setSheet,
     goTab,
     lang,
     t,
   } = useStore();
 
+  const [pullDist, setPullDist] = useState(0);
+  const pullStartYRef = useRef<number | null>(null);
+
   const filtered = orders.filter((o) => {
     if (orderSeg === 0) return !['Yetkazildi', 'Bekor qilindi'].includes(o.status);
     if (orderSeg === 1) return o.status === 'Yetkazildi';
     return o.status === 'Bekor qilindi';
   });
+
+  const buyAgainItems = getLastDeliveredBuyAgainItems(orders, productsById);
 
   if (loadError) {
     return (
@@ -178,7 +262,126 @@ export const OrdersView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div
+      className="space-y-4"
+      onTouchStart={(e) => {
+        const scroller = (e.currentTarget.closest('main') as HTMLElement | null);
+        if (scroller && scroller.scrollTop > 4) return;
+        pullStartYRef.current = e.touches[0]?.clientY ?? null;
+      }}
+      onTouchMove={(e) => {
+        if (pullStartYRef.current === null || refreshingOrders) return;
+        const currentY = e.touches[0]?.clientY;
+        if (currentY === undefined) return;
+        const delta = currentY - pullStartYRef.current;
+        if (delta > 0) {
+          setPullDist(Math.min(64, Math.round(delta * 0.45)));
+        }
+      }}
+      onTouchEnd={() => {
+        if (pullDist >= 42 && !refreshingOrders) {
+          void refreshOrders();
+        }
+        pullStartYRef.current = null;
+        setPullDist(0);
+      }}
+    >
+      {/* Pull-to-refresh bar & quick refresh button */}
+      <div
+        className="flex items-center justify-between gap-2 px-1 transition-all duration-150"
+        style={{ paddingTop: pullDist > 0 ? `${Math.min(18, pullDist * 0.3)}px` : undefined }}
+      >
+        <div className="flex items-center gap-2 text-xs font-medium text-[#6B7280] dark:text-zinc-400">
+          <RefreshCw
+            className={`w-3.5 h-3.5 text-[#9B111E] dark:text-[#FB7185] ${
+              refreshingOrders ? 'animate-spin' : ''
+            }`}
+          />
+          <span>
+            {refreshingOrders
+              ? t.refreshingLabel
+              : pullDist >= 42
+                ? t.pullToRefreshRelease
+                : t.pullToRefreshHint}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => void refreshOrders()}
+          disabled={refreshingOrders}
+          className="min-h-[36px] px-3 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-xs font-semibold text-[#111827] dark:text-zinc-200 inline-flex items-center gap-1.5 hover:border-[#9B111E] transition-colors disabled:opacity-60"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshingOrders ? 'animate-spin' : ''}`} />
+          <span>{t.refreshBtnLabel}</span>
+        </button>
+      </div>
+
+      {/* Instacart 'Yana buyurtma qilish' horizontal row from last delivered order */}
+      {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
+        <section className="space-y-2">
+          <div>
+            <h2 className="text-base font-bold text-[#111827] dark:text-white leading-tight">
+              {t.buyAgainTitle}
+            </h2>
+            <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-0.5 truncate">
+              {t.buyAgainSub}
+            </p>
+          </div>
+          {ordersLoading || productsLoading ? (
+            <HorizontalStripSkeleton count={3} />
+          ) : (
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
+              {buyAgainItems.map(({ product, qty }) => {
+                const name = getProductName(product, lang);
+                const promoPrice = getPromoBoxPrice(product);
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => setSheet({ type: 'prod', id: product.id })}
+                    className="w-40 flex-none bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-2.5 card-calm cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="relative rounded-[16px] overflow-hidden">
+                      <ProductVisual product={product} size="grid" />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 text-[#111827] dark:text-zinc-100 text-[11px] font-bold tabular-nums">
+                        {qty} {t.boxUnit}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t.addToCart}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateQty(product.id, qty);
+                          showToast({
+                            icon: 'check',
+                            title: t.buyAgainAdded(name, qty),
+                            text: product.vol,
+                            tone: 'ok',
+                          });
+                        }}
+                        className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white shadow-md flex items-center justify-center after:absolute after:-inset-0.5 after:content-['']"
+                      >
+                        <Plus className="w-5 h-5 stroke-[2.4]" />
+                      </button>
+                    </div>
+                    <div className="mt-2 px-0.5">
+                      <div className="text-xs font-bold text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2rem] leading-snug">
+                        {name} {product.vol}
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+                        {formatNumberThin(promoPrice)}{' '}
+                        <span className="text-[11px] font-semibold text-[#6B7280] dark:text-zinc-400">
+                          so&apos;m
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Weekly Auto-order toggle card */}
       <div className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm flex items-center gap-3">
         <span className="w-11 h-11 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
@@ -228,12 +431,13 @@ export const OrdersView: React.FC = () => {
         ))}
       </div>
 
-      {ordersLoading ? (
+      {ordersLoading || refreshingOrders ? (
         <OrdersSkeleton />
       ) : filtered.length === 0 ? (
         <EmptyState
           variant="orders"
-          title={`${t.emptyOrdersTitle} · ${t.emptyOrdersSub}`}
+          title={t.emptyOrdersTitle}
+          subtitle={t.emptyOrdersSub}
           actionLabel={t.emptyOrdersCta}
           onAction={() => goTab('cat')}
         />
@@ -281,10 +485,13 @@ export const OrdersView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="text-xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+                  <div className="text-2xl font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap leading-none">
                     {formatSom(o.totalSum)}
                   </div>
                 </div>
+
+                {/* Mini horizontal 5-step progress */}
+                <MiniHorizontalSteps status={o.status} labels={t.miniStepsShort} />
 
                 <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
                   {o.items.slice(0, 4).map((it) => {
@@ -502,7 +709,7 @@ export const OrderDetailView: React.FC = () => {
           }}
           className="w-full min-h-[44px] rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-[#111827] dark:text-zinc-200 font-semibold text-base inline-flex items-center justify-center gap-2"
         >
-          <MessageCircle className="w-5 h-5 text-[#2563EB] dark:text-[#60A5FA]" />
+          <MessageCircle className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185]" />
           <span>{t.writeOperatorBtn}</span>
         </button>
         {canCancel && (
@@ -626,9 +833,9 @@ export const TrackView: React.FC = () => {
               goTab('me');
               openPage('chat');
             }}
-            className="w-11 h-11 rounded-full bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] hover:bg-blue-100 flex items-center justify-center flex-none"
+            className="w-11 h-11 rounded-full bg-[#F4F5F7] dark:bg-zinc-800 text-[#111827] dark:text-zinc-200 hover:bg-zinc-200 flex items-center justify-center flex-none"
           >
-            <MessageCircle className="w-5 h-5" />
+            <MessageCircle className="w-5 h-5 text-[#9B111E] dark:text-[#FB7185]" />
           </button>
         </div>
       </div>

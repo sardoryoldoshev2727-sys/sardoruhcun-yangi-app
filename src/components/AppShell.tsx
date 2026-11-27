@@ -7,6 +7,7 @@ import {
   Bell,
   Check,
   ClipboardList,
+  Clock,
   Droplet,
   Globe,
   Heart,
@@ -37,6 +38,7 @@ import {
   CATEGORIES,
   formatSom,
   getCategoryCircleColor,
+  getPromoBoxPrice,
 } from '../utils/catalog';
 import { HomeView } from '../views/HomeView';
 import { ListRowsSkeleton } from './Skeletons';
@@ -304,6 +306,17 @@ export const AppShell: React.FC = () => {
       );
     }
 
+    const deliveryHeaderChip = (
+      <button
+        type="button"
+        onClick={() => goTab('cart')}
+        className="flex-none min-h-[32px] px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/30 text-white text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+      >
+        <Clock className="w-3.5 h-3.5 flex-none" />
+        <span>{t.nextDeliveryChip}</span>
+      </button>
+    );
+
     if (tab === 'cat') {
       return (
         <>
@@ -317,12 +330,13 @@ export const AppShell: React.FC = () => {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">
-              {t.appName} · {t.navCatalog}
+              {t.navCatalog}
             </h1>
-            <small className="block text-xs text-white/90 truncate">
+            <small className="block text-[11px] text-white/90 truncate">
               {products.length} {t.productsInBoxMeta}
             </small>
           </div>
+          {deliveryHeaderChip}
           <button
             type="button"
             aria-label={t.cartLabel}
@@ -351,7 +365,8 @@ export const AppShell: React.FC = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="flex-1 text-base font-bold truncate">{t.promoTitle}</h1>
+          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.promoTitle}</h1>
+          {deliveryHeaderChip}
           <button
             type="button"
             aria-label={t.cartLabel}
@@ -383,11 +398,12 @@ export const AppShell: React.FC = () => {
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold leading-tight truncate">{t.cartTitle}</h1>
             {cartCount > 0 && (
-              <small className="block text-xs text-white/90 tabular-nums">
+              <small className="block text-[11px] text-white/90 tabular-nums">
                 {cartCount} {t.boxUnit}
               </small>
             )}
           </div>
+          {deliveryHeaderChip}
           {cartCount > 0 && (
             <button
               type="button"
@@ -405,7 +421,8 @@ export const AppShell: React.FC = () => {
     if (tab === 'ord') {
       return (
         <>
-          <h1 className="flex-1 text-base font-bold">{t.ordersTitle}</h1>
+          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.ordersTitle}</h1>
+          {deliveryHeaderChip}
           <button
             type="button"
             aria-label={t.cartLabel}
@@ -426,7 +443,8 @@ export const AppShell: React.FC = () => {
     if (tab === 'me') {
       return (
         <>
-          <h1 className="flex-1 text-base font-bold">{t.profileTitle}</h1>
+          <h1 className="flex-1 min-w-0 text-base font-bold truncate">{t.profileTitle}</h1>
+          {deliveryHeaderChip}
           <button
             type="button"
             aria-label={t.notifLabel}
@@ -454,12 +472,13 @@ export const AppShell: React.FC = () => {
             className="w-9 h-9 rounded-xl bg-white object-contain p-1 flex-none"
           />
           <div className="min-w-0">
-            <h1 className="text-base font-bold leading-tight truncate">{t.appName}</h1>
-            <small className="block text-xs text-white/90 truncate">
-              {session?.userName || 'Dilnoza'} · {shop?.name || "«Baraka» do'koni"}
+            <h1 className="text-sm sm:text-base font-bold leading-tight truncate">{t.appName}</h1>
+            <small className="block text-[11px] text-white/90 truncate">
+              {session?.userName || 'Dilnoza'} · {shop?.name || "«Baraka»"}
             </small>
           </div>
         </div>
+        {deliveryHeaderChip}
         <button
           type="button"
           aria-label={t.notifLabel}
@@ -604,7 +623,7 @@ export const AppShell: React.FC = () => {
             )}
 
             {/* Top Brand Bordeaux Header */}
-            <header className="h-14 px-3 bg-[#9B111E] text-white flex items-center gap-2 flex-none z-20">
+            <header className="h-14 px-2.5 sm:px-3 bg-[#9B111E] text-white flex items-center gap-1.5 sm:gap-2 flex-none z-20">
               {renderTopBar()}
             </header>
 
@@ -857,6 +876,8 @@ export const AppShell: React.FC = () => {
                       const p = productsById[id];
                       if (!p) return null;
                       const q = cart[id];
+                      const unitBox = getPromoBoxPrice(p);
+                      const hasPromo = Boolean(p.promoPct && p.promoPct > 0);
                       return (
                         <div
                           key={id}
@@ -867,8 +888,15 @@ export const AppShell: React.FC = () => {
                               <div className="text-sm font-bold text-[#111827] dark:text-zinc-100 truncate">
                                 {getProductName(p, lang)} {p.vol}
                               </div>
-                              <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap">
-                                {formatSom(p.box)}/{t.boxUnit}
+                              <div className="text-xs text-[#6B7280] dark:text-zinc-400 tabular-nums whitespace-nowrap flex items-center gap-1.5">
+                                <span>
+                                  {formatSom(unitBox)}/{t.boxUnit}
+                                </span>
+                                {hasPromo && (
+                                  <span className="line-through opacity-75">
+                                    {formatSom(p.box)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <button
@@ -907,7 +935,7 @@ export const AppShell: React.FC = () => {
                               </button>
                             </div>
                             <strong className="text-sm font-bold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
-                              {formatSom(p.box * q)}
+                              {formatSom(unitBox * q)}
                             </strong>
                           </div>
                         </div>

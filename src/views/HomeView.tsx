@@ -15,18 +15,20 @@ import {
   TrendingDown,
   Truck,
 } from 'lucide-react';
-import { AnorSeeds } from '../components/AnorSeeds';
 import { ProductCard, ShelfRowCard } from '../components/ProductCard';
 import { ProductVisual } from '../components/ProductVisual';
-import { CatalogSkeleton } from '../components/Skeletons';
+import { CatalogSkeleton, HorizontalStripSkeleton } from '../components/Skeletons';
 import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { useStore } from '../context/StoreContext';
 import { getCategoryLabel, getProductName } from '../i18n';
 import {
   HOT_IDS,
   QUICK_HOME_CATEGORIES,
+  formatNumberThin,
   formatSom,
   getCategoryCircleColor,
+  getLastDeliveredBuyAgainItems,
+  getPromoBoxPrice,
 } from '../utils/catalog';
 
 export const HomeView: React.FC = () => {
@@ -41,9 +43,9 @@ export const HomeView: React.FC = () => {
     repeatLastOrder,
     productsById,
     productsLoading,
+    ordersLoading,
     loadError,
     retryLoad,
-    monthTotal,
     discountNudge,
     unreadChat,
     orders,
@@ -54,6 +56,8 @@ export const HomeView: React.FC = () => {
     goTab,
     setCat,
     openPage,
+    updateQty,
+    showToast,
   } = useStore();
 
   const [slideIdx, setSlideIdx] = useState(0);
@@ -84,6 +88,7 @@ export const HomeView: React.FC = () => {
   const activeOrder = orders.find(
     (o) => o.status === "Yo'lda" || o.status === 'Tasdiqlandi' || o.status === 'Yuborildi',
   );
+  const buyAgainItems = getLastDeliveredBuyAgainItems(orders, productsById);
 
   const scrollToShelf = () => {
     const el = document.getElementById('mening-javonim');
@@ -102,24 +107,14 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* 1) Greeting header + shop name + next delivery window chip */}
-      <div className="flex items-start justify-between gap-2 pt-0.5">
-        <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#111827] dark:text-white leading-tight tracking-tight break-words">
-            {t.greetingHello(session?.userName || 'Dilnoza')}
-          </h2>
-          <p className="text-xs sm:text-[13px] font-medium text-[#6B7280] dark:text-zinc-400 mt-0.5 truncate">
-            {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => goTab('cart')}
-          className="flex-none min-h-[36px] px-3 py-1.5 rounded-full bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-700 text-xs font-semibold text-[#111827] dark:text-zinc-100 inline-flex items-center gap-1.5 card-calm hover:border-[#9B111E] transition-colors whitespace-nowrap"
-        >
-          <Clock className="w-3.5 h-3.5 text-[#9B111E] dark:text-[#FB7185] flex-none" />
-          <span>{t.nextDeliveryChip}</span>
-        </button>
+      {/* 1) Greeting header + shop name (delivery chip stays in AppShell header across all tabs) */}
+      <div className="pt-0.5">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#111827] dark:text-white leading-tight tracking-tight break-words">
+          {t.greetingHello(session?.userName || 'Dilnoza')}
+        </h2>
+        <p className="text-xs sm:text-[13px] font-medium text-[#6B7280] dark:text-zinc-400 mt-0.5 truncate">
+          {shop?.name || "«Baraka» do'koni"} · {shop?.address || 'Termiz, Alpomish 14'}
+        </p>
       </div>
 
       {/* 2) Hero Promo Carousel (radius 24, bordeaux gradient #9B111E -> #6E0B15, auto-advance 5s, swipe) */}
@@ -330,9 +325,9 @@ export const HomeView: React.FC = () => {
                 goTab('me');
                 openPage('chat');
               }}
-              className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#2563EB] transition-colors duration-150"
+              className="min-h-[56px] flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] card-calm text-left hover:border-[#9B111E] transition-colors duration-150"
             >
-              <span className="w-10 h-10 rounded-xl bg-[#EFF6FF] dark:bg-blue-950/40 text-[#2563EB] dark:text-[#60A5FA] flex items-center justify-center flex-none">
+              <span className="w-10 h-10 rounded-xl bg-[#FCE8EA] dark:bg-rose-950/50 text-[#9B111E] dark:text-[#FB7185] flex items-center justify-center flex-none">
                 <MessageCircle className="w-5 h-5" />
               </span>
               <div className="min-w-0 flex-1">
@@ -387,7 +382,84 @@ export const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* Smart Refill 'Tugayotganlar' Clean White Card with new flavor-tinted tiles */}
+      {/* Instacart 'Yana buyurtma qilish' horizontal row from last delivered order */}
+      {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-[#111827] dark:text-white leading-tight">
+                {t.buyAgainTitle}
+              </h2>
+              <p className="text-xs text-[#6B7280] dark:text-zinc-400 mt-0.5 truncate">
+                {t.buyAgainSub}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => goTab('ord')}
+              className="min-h-[44px] px-2 inline-flex items-center gap-1 text-sm font-semibold text-[#9B111E] dark:text-[#FB7185] whitespace-nowrap flex-none"
+            >
+              <span>{t.viewAll}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {ordersLoading || productsLoading ? (
+            <HorizontalStripSkeleton count={3} />
+          ) : (
+            <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
+              {buyAgainItems.map(({ product, qty }) => {
+                const name = getProductName(product, lang);
+                const promoPrice = getPromoBoxPrice(product);
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => setSheet({ type: 'prod', id: product.id })}
+                    className="w-40 flex-none bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-2.5 card-calm cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="relative rounded-[16px] overflow-hidden">
+                      <ProductVisual product={product} size="grid" />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 text-[#111827] dark:text-zinc-100 text-[11px] font-bold tabular-nums">
+                        {qty} {t.boxUnit}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={t.addToCart}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateQty(product.id, qty);
+                          showToast({
+                            icon: 'check',
+                            title: t.buyAgainAdded(name, qty),
+                            text: product.vol,
+                            tone: 'ok',
+                          });
+                        }}
+                        className="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#9B111E] hover:bg-[#7E0E18] active:bg-[#7E0E18] text-white shadow-md flex items-center justify-center after:absolute after:-inset-0.5 after:content-['']"
+                      >
+                        <Plus className="w-5 h-5 stroke-[2.4]" />
+                      </button>
+                    </div>
+                    <div className="mt-2 px-0.5">
+                      <div className="text-xs font-bold text-[#111827] dark:text-zinc-100 line-clamp-2 min-h-[2rem] leading-snug">
+                        {name} {product.vol}
+                      </div>
+                      <div className="mt-1 text-sm font-extrabold text-[#111827] dark:text-white tabular-nums whitespace-nowrap">
+                        {formatNumberThin(promoPrice)}{' '}
+                        <span className="text-[11px] font-semibold text-[#6B7280] dark:text-zinc-400">
+                          so&apos;m
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Smart Refill 'Tugayotganlar' Clean White Card with flavor-tinted tiles */}
       <section className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -452,7 +524,7 @@ export const HomeView: React.FC = () => {
         )}
       </section>
 
-      {/* Mening javonim (clean white section with new flavor-tinted tiles) */}
+      {/* Mening javonim */}
       <section
         id="mening-javonim"
         className="bg-white dark:bg-[#1A1C20] border border-[#E5E7EB] dark:border-zinc-800 rounded-[20px] p-4 card-calm space-y-3"
@@ -531,11 +603,6 @@ export const HomeView: React.FC = () => {
             </button>
           </div>
         )}
-      </section>
-
-      {/* Monthly discount tier */}
-      <section>
-        <AnorSeeds sum={monthTotal} />
       </section>
 
       {/* Top sellers in Termiz */}

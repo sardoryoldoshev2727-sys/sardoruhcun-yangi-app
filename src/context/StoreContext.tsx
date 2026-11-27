@@ -136,6 +136,8 @@ interface StoreContextValue {
   productsLoading: boolean;
   orders: OrderRecord[];
   ordersLoading: boolean;
+  refreshingOrders: boolean;
+  refreshOrders: () => Promise<void>;
   payments: PaymentRecord[];
   shop: ShopInfo | null;
   session: SessionInfo | null;
@@ -244,6 +246,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [productsLoading, setProductsLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState<boolean>(true);
+  const [refreshingOrders, setRefreshingOrders] = useState<boolean>(false);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [session, setSession] = useState<SessionInfo | null>(null);
@@ -352,6 +355,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const retryLoad = useCallback(async () => {
     await loadAllData();
   }, [loadAllData]);
+
+  const refreshOrders = useCallback(async () => {
+    setRefreshingOrders(true);
+    try {
+      const ords = await apiGetOrders();
+      setOrders(ords);
+    } catch {
+      // keep existing orders on transient failure
+    } finally {
+      setRefreshingOrders(false);
+    }
+  }, []);
 
   // Initialize Telegram Mini App + load initial data from src/api.ts
   useEffect(() => {
@@ -587,13 +602,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     () =>
       Object.entries(cart).reduce((acc, [id, q]) => {
         const prod = productsById[Number(id)];
-        return prod ? acc + prod.box * q : acc;
+        if (!prod || q <= 0) return acc;
+        return acc + Math.round(prod.box * q * (1 - (prod.promoPct || 0) / 100));
       }, 0),
     [cart, productsById],
   );
 
   const discountNudge = useMemo(
-    () => computeBoxDiscountNudge(checkoutQuote.boxCount || cartCount, checkoutQuote.subtotal || cartSubtotal, boxDiscountTiers),
+    () =>
+      cartCount === 0
+        ? computeBoxDiscountNudge(0, 0, boxDiscountTiers)
+        : computeBoxDiscountNudge(
+            checkoutQuote.boxCount || cartCount,
+            checkoutQuote.subtotal || cartSubtotal,
+            boxDiscountTiers,
+          ),
     [boxDiscountTiers, cartCount, cartSubtotal, checkoutQuote.boxCount, checkoutQuote.subtotal],
   );
 
@@ -1112,6 +1135,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     productsLoading,
     orders,
     ordersLoading,
+    refreshingOrders,
+    refreshOrders,
     payments,
     shop,
     session,

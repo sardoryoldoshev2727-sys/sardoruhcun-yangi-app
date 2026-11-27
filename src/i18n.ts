@@ -100,6 +100,14 @@ export interface Translations {
   currentDiscounts: string;
   monthlyProgress: string;
   newArrivals: string;
+  discountLadderTitle: string;
+  discountLadderSub: string;
+  discountLadderCurrentCart: (amt: string) => string;
+  discountLadderLeft: (amt: string, pct: number) => string;
+  discountLadderMaxDone: (pct: number) => string;
+  promoOperatorTitle: string;
+  promoOperatorSub: (name: string) => string;
+  promoCouponBadge: string;
   // Anor seeds
   anorStorageTitle: string;
   activeDiscount: (pct: number) => string;
@@ -115,6 +123,10 @@ export interface Translations {
   emptyCartSub: string;
   addUsualOrder: string;
   goToCatalog: string;
+  savingsRibbon: (saved: string) => string;
+  billProductsGross: (n: number) => string;
+  billPromoDiscount: string;
+  billOrderDiscount: (pct: number) => string;
   discountSavingsLine: (pct: number, saved: string) => string;
   discountNudgeLine: (boxesNeeded: number, pct: number, saved: string, amount: string) => string;
   discountNudgeMax: (pct: number) => string;
@@ -138,6 +150,14 @@ export interface Translations {
   chooseProductsBtn: string;
   // Orders & Track & Detail & Rating
   ordersTitle: string;
+  buyAgainTitle: string;
+  buyAgainSub: string;
+  buyAgainAdded: (name: string, qty: number) => string;
+  pullToRefreshHint: string;
+  pullToRefreshRelease: string;
+  refreshingLabel: string;
+  refreshBtnLabel: string;
+  miniStepsShort: string[];
   autoOrderTitle: string;
   autoOrderOnSub: string;
   autoOrderOffSub: string;
@@ -238,17 +258,22 @@ export interface Translations {
   suggestedRoundedHint: (price: string) => string;
   monthlyProfitEstLabel: (boxes: number) => string;
   selectProductLabel: string;
-  // Monthly report
+  // Monthly report & Loyalty card
   reportSpentLabel: string;
   reportBoxesLabel: string;
   reportSavedLabel: string;
   reportProfitLabel: string;
   reportWeeklyTitle: string;
+  reportCategoriesTitle: string;
+  reportPeakWeekLabel: string;
   reportTopProductsTitle: string;
   reportShareBtn: string;
   reportShareToastTitle: string;
   reportShareToastText: string;
   reportComparePrev: string;
+  loyaltyCardLabel: string;
+  loyaltyLevelLabel: string;
+  loyaltyInfoNote: string;
   // Chat
   chatPlaceholder: string;
   sendBtn: string;
@@ -371,10 +396,18 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     inStock: 'Omborda bor',
     outOfStock: 'Tugagan',
     promoTitle: 'Aksiyalar va chegirmalar',
-    promoSub: 'Joriy chegirmalar, oylik daraja va yangi mahsulotlar',
+    promoSub: 'Har bir buyurtma summasiga qarab chegirma va haftalik aksiyalar',
     currentDiscounts: 'Chegirmadagi mahsulotlar',
-    monthlyProgress: 'Oylik chegirma darajasi',
+    monthlyProgress: 'Chegirma zinapoyasi',
     newArrivals: 'Yangi mahsulotlar',
+    discountLadderTitle: 'Chegirma zinapoyasi',
+    discountLadderSub: 'Chegirma har bir buyurtma summasiga avtomatik qo‘llanadi',
+    discountLadderCurrentCart: (amt) => `Joriy savat: ${amt}`,
+    discountLadderLeft: (amt, pct) => `${pct}% chegirmagacha yana ${amt} qoldi`,
+    discountLadderMaxDone: (pct) => `Maksimal ${pct}% chegirma faol`,
+    promoOperatorTitle: 'Ulgurji buyurtma bo‘yicha savolingiz bormi?',
+    promoOperatorSub: (name) => `Shaxsiy operator ${name} aksiyalar va partiyalar bo‘yicha yordam beradi`,
+    promoCouponBadge: 'Kupon aksiya',
     anorStorageTitle: "Anor jamg'armasi · bu oy",
     activeDiscount: (pct) => `Faol chegirma: ${pct}%`,
     discountStartsAt500k: '5% chegirma 500 mingdan boshlanadi',
@@ -384,10 +417,14 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     cartTitle: 'Mening savatim',
     currentCart: 'Joriy savat',
     addProductsHint: "Savatga mahsulot qo'shing",
-    emptyCartTitle: "Savat bo'sh",
+    emptyCartTitle: "Savat hozircha bo'sh",
     emptyCartSub: "Doimiy javoningizdagi ichimliklarni bir bosishda qo'shing",
     addUsualOrder: "Odatdagi buyurtmani qo'shish",
     goToCatalog: "Katalogga o'tish",
+    savingsRibbon: (saved) => `Siz bu buyurtmada ${saved} tejaysiz`,
+    billProductsGross: (n) => `Mahsulotlar (${n} quti)`,
+    billPromoDiscount: 'Aksiya chegirmasi',
+    billOrderDiscount: (pct) => `Summa chegirmasi (${pct}%)`,
     discountSavingsLine: (pct, saved) => `${pct}% chegirma — ${saved} tejaysiz`,
     discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
       `Yana ${amount} (≈ ${boxesNeeded} quti) — ${pct}% chegirma, ≈ ${saved} tejaysiz`,
@@ -411,6 +448,14 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     goToCartBtn: "Savatga o'tish",
     chooseProductsBtn: 'Mahsulot tanlash',
     ordersTitle: 'Buyurtmalarim',
+    buyAgainTitle: 'Yana buyurtma qilish',
+    buyAgainSub: 'Oxirgi yetkazilgan buyurtmadan bir bosishda qo‘shing',
+    buyAgainAdded: (name, qty) => `${name} (${qty} quti) savatga qo‘shildi`,
+    pullToRefreshHint: 'Yangilash uchun pastga torting',
+    pullToRefreshRelease: 'Yangilash uchun qo‘yib yuboring',
+    refreshingLabel: 'Yangilanmoqda…',
+    refreshBtnLabel: 'Yangilash',
+    miniStepsShort: ['Qabul', 'Tasdiq', 'Yuklash', "Yo'lda", 'Yetkazildi'],
     autoOrderTitle: 'Avto-buyurtma',
     autoOrderOnSub: 'Har dushanba tayyorlanadi — siz tasdiqlaysiz',
     autoOrderOffSub: 'Har hafta bir xil olsangiz, yoqing',
@@ -521,11 +566,16 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     reportSavedLabel: 'Chegirmadan tejaldi',
     reportProfitLabel: 'Taxminiy foyda',
     reportWeeklyTitle: "Haftalik xaridlar",
+    reportCategoriesTitle: "Toifalar bo'yicha",
+    reportPeakWeekLabel: 'Eng yuqori hafta',
     reportTopProductsTitle: 'Top 5 mahsulot',
     reportShareBtn: 'Ulashish',
     reportShareToastTitle: 'Hisobot matni tayyor',
     reportShareToastText: 'Telegram orqali ulashish uchun nusxalandi',
     reportComparePrev: "o'tgan oyga nisbatan",
+    loyaltyCardLabel: 'Hamkor kartasi',
+    loyaltyLevelLabel: 'Daraja',
+    loyaltyInfoNote: "Faol do'kon hisobi · oylik xaridlar ko'rsatkichi",
     chatPlaceholder: 'Xabar yozing…',
     sendBtn: 'Yuborish',
   },
@@ -645,10 +695,18 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     inStock: 'В наличии',
     outOfStock: 'Нет в наличии',
     promoTitle: 'Акции и скидки',
-    promoSub: 'Текущие скидки, ежемесячный прогресс и новинки',
+    promoSub: 'Скидки от суммы каждого заказа и акции недели',
     currentDiscounts: 'Товары со скидкой',
-    monthlyProgress: 'Ежемесячная скидка',
+    monthlyProgress: 'Лестница скидок',
     newArrivals: 'Новинки',
+    discountLadderTitle: 'Лестница скидок',
+    discountLadderSub: 'Скидка применяется автоматически к сумме каждого заказа',
+    discountLadderCurrentCart: (amt) => `Текущая корзина: ${amt}`,
+    discountLadderLeft: (amt, pct) => `До скидки ${pct}% осталось ${amt}`,
+    discountLadderMaxDone: (pct) => `Активна максимальная скидка ${pct}%`,
+    promoOperatorTitle: 'Есть вопрос по оптовому заказу?',
+    promoOperatorSub: (name) => `Персональный оператор ${name} поможет с акциями и партиями`,
+    promoCouponBadge: 'Купон дня',
     anorStorageTitle: 'Накопление зёрен · за месяц',
     activeDiscount: (pct) => `Активная скидка: ${pct}%`,
     discountStartsAt500k: 'Скидка 5% начинается от 500 тыс.',
@@ -658,10 +716,14 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     cartTitle: 'Моя корзина',
     currentCart: 'Текущая корзина',
     addProductsHint: 'Добавьте товары в корзину',
-    emptyCartTitle: 'Корзина пуста',
+    emptyCartTitle: 'Корзина пока пуста',
     emptyCartSub: 'Добавьте привычный заказ с вашей полки одним нажатием',
     addUsualOrder: 'Добавить обычный заказ',
     goToCatalog: 'Перейти в каталог',
+    savingsRibbon: (saved) => `Вы экономите ${saved} на этом заказе`,
+    billProductsGross: (n) => `Товары (${n} кор.)`,
+    billPromoDiscount: 'Скидка по акции',
+    billOrderDiscount: (pct) => `Скидка от суммы (${pct}%)`,
     discountSavingsLine: (pct, saved) => `Скидка ${pct}% — вы экономите ${saved}`,
     discountNudgeLine: (boxesNeeded, pct, saved, amount) =>
       `Ещё ${amount} (≈ ${boxesNeeded} кор.) — скидка ${pct}%, ≈ ${saved} экономии`,
@@ -685,6 +747,14 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     goToCartBtn: 'Перейти в корзину',
     chooseProductsBtn: 'Выбрать товары',
     ordersTitle: 'Мои заказы',
+    buyAgainTitle: 'Заказать снова',
+    buyAgainSub: 'Товары из последнего доставленного заказа',
+    buyAgainAdded: (name, qty) => `${name} (${qty} кор.) добавлено в корзину`,
+    pullToRefreshHint: 'Потяните вниз для обновления',
+    pullToRefreshRelease: 'Отпустите для обновления',
+    refreshingLabel: 'Обновление…',
+    refreshBtnLabel: 'Обновить',
+    miniStepsShort: ['Принят', 'Подтв.', 'Сбор', 'В пути', 'Дост.'],
     autoOrderTitle: 'Автозаказ',
     autoOrderOnSub: 'Формируется каждый понедельник — вы подтверждаете',
     autoOrderOffSub: 'Включите, если заказываете одинаково каждую неделю',
@@ -795,11 +865,16 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     reportSavedLabel: 'Сэкономлено скидками',
     reportProfitLabel: 'Расчётная прибыль',
     reportWeeklyTitle: 'Закупки по неделям',
+    reportCategoriesTitle: 'По категориям',
+    reportPeakWeekLabel: 'Пиковая неделя',
     reportTopProductsTitle: 'Топ-5 товаров',
     reportShareBtn: 'Поделиться',
     reportShareToastTitle: 'Текст отчёта готов',
     reportShareToastText: 'Скопировано для отправки в Telegram',
     reportComparePrev: 'к прошлому месяцу',
+    loyaltyCardLabel: 'Карта партнёра',
+    loyaltyLevelLabel: 'Уровень',
+    loyaltyInfoNote: 'Активный профиль магазина · статистика за месяц',
     chatPlaceholder: 'Напишите сообщение…',
     sendBtn: 'Отправить',
   },

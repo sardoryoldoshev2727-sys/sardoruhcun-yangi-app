@@ -68,14 +68,12 @@ export function getTelegramColorScheme(): 'light' | 'dark' | null {
   return null;
 }
 
-export function triggerHaptic(type: 'add' | 'remove' | 'success' | 'error'): void {
+export function triggerHaptic(type: 'add' | 'remove' | 'step' | 'success' | 'error'): void {
   const hf = getTelegramWebApp()?.HapticFeedback;
   if (!hf) return;
   try {
-    if (type === 'add') {
+    if (type === 'add' || type === 'remove' || type === 'step') {
       hf.impactOccurred?.('light');
-    } else if (type === 'remove') {
-      hf.selectionChanged?.();
     } else if (type === 'success') {
       hf.notificationOccurred?.('success');
     } else {
