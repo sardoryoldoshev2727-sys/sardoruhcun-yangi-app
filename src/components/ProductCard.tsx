@@ -27,9 +27,16 @@ export const CartStepper: React.FC<StepperProps> = ({ product, coachId }) => {
 
   if (product.out) {
     return (
-      <span className="inline-flex items-center justify-center rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] font-medium text-xs min-h-[36px] px-3">
-        {t.badgeOut}
-      </span>
+      <GreenAddControl
+        qty={0}
+        disabled
+        coachId={coachId}
+        addLabel={t.badgeOut}
+        removeLabel={t.removeFromCart}
+        unitLabel={t.boxUnit}
+        onAdd={() => {}}
+        onRemove={() => {}}
+      />
     );
   }
 
@@ -128,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         onClick={() => setSheet({ type: 'prod', id: product.id })}
         className="v4-card h-full rounded-[16px] p-2.5 flex flex-col cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)]"
       >
-        {/* Single neutral tile + top-left badge + bottom-right signature green + */}
+        {/* Single neutral tile + top-left badge + bottom-right signature green + (disabled if out) */}
         <div className="relative rounded-[10px] overflow-hidden">
           <ProductVisual product={product} size="grid" />
 
@@ -138,23 +145,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
 
-          {!product.out && (
-            <div
-              className="absolute bottom-2 right-2 z-20"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GreenAddControl
-                qty={qty}
-                coachId={coachAdd ? 'cat' : undefined}
-                addLabel={t.addToCart}
-                removeLabel={t.removeFromCart}
-                unitLabel={t.boxUnit}
-                onAdd={() => updateQty(product.id, 1)}
-                onRemove={() => updateQty(product.id, -1)}
-                onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
-              />
-            </div>
-          )}
+          <div
+            className="absolute bottom-2 right-2 z-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GreenAddControl
+              qty={qty}
+              disabled={product.out}
+              coachId={coachAdd ? 'cat' : undefined}
+              addLabel={product.out ? t.badgeOut : t.addToCart}
+              removeLabel={t.removeFromCart}
+              unitLabel={t.boxUnit}
+              onAdd={() => updateQty(product.id, 1)}
+              onRemove={() => updateQty(product.id, -1)}
+              onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
+            />
+          </div>
         </div>
 
         {/* Name (max 2 lines, weight 500) */}
@@ -162,7 +168,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {displayName} {product.vol}
         </div>
 
-        {/* Inline '+ Javonga' / 'Javonda' + small muted heart (44px tap targets) */}
+        {/* Inline "Javonga qo'shish" / "Javondan olish" + small muted heart (44px tap targets) */}
         <div className="px-0.5 -my-1 flex items-center justify-between gap-1">
           <button
             type="button"
@@ -174,17 +180,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 addShelfItem(product.id);
               }
             }}
-            className="min-h-[44px] inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            className="min-h-[44px] inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors min-w-0"
           >
             {onShelf ? (
-              <span className="inline-flex items-center gap-1 text-[var(--anor-text)]">
+              <span className="inline-flex items-center gap-1 text-[var(--anor-text)] truncate">
                 <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                <span>{t.inShelfPill}</span>
+                <span className="truncate">{t.shelfRemoveAction}</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 truncate">
                 <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                <span>{t.addToShelfPill}</span>
+                <span className="truncate">{t.shelfAddAction}</span>
               </span>
             )}
           </button>
@@ -432,12 +438,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {onShelf ? (
                 <span className="inline-flex items-center gap-1 text-[var(--anor-text)]">
                   <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                  <span>{t.inShelfPill}</span>
+                  <span>{t.shelfRemoveAction}</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                  <span>{t.addToShelfPill}</span>
+                  <span>{t.shelfAddAction}</span>
                 </span>
               )}
             </button>
@@ -512,130 +518,109 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
   const loose = getShelfLoose(id);
   const need = getShelfNeed(id);
   const low = isShelfLow(id);
-  const pct = Math.max(6, Math.min(100, Math.round((stock / Math.max(1, norm)) * 100)));
+  const effectiveStock = stock + loose / Math.max(1, product.blk);
+  const pct = Math.max(6, Math.min(100, Math.round((effectiveStock / Math.max(1, norm)) * 100)));
   const displayName = shortName(getProductName(product, lang));
-
-  // Swipe-to-count ±1 whole box directly on shelf row
-  const [swipeDx, setSwipeDx] = useState(0);
-  const swipeOriginRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
 
   return (
     <div
-      onTouchStart={(e) => {
-        if (editMode) return;
-        const touch = e.touches[0];
-        if (!touch) return;
-        swipeOriginRef.current = { x: touch.clientX, y: touch.clientY, active: false };
-      }}
-      onTouchMove={(e) => {
-        if (editMode) return;
-        const origin = swipeOriginRef.current;
-        const touch = e.touches[0];
-        if (!origin || !touch) return;
-        const dx = touch.clientX - origin.x;
-        const dy = touch.clientY - origin.y;
-        if (!origin.active && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.25) {
-          origin.active = true;
-        }
-        if (origin.active) {
-          setSwipeDx(Math.max(-56, Math.min(56, dx)));
-        }
-      }}
-      onTouchEnd={() => {
-        if (!editMode) {
-          if (swipeDx >= 30) adjustShelfStock(id, 1);
-          else if (swipeDx <= -30) adjustShelfStock(id, -1);
-        }
-        setSwipeDx(0);
-        swipeOriginRef.current = null;
-      }}
       onClick={() => {
-        if (Math.abs(swipeDx) > 8) return;
         if (!editMode) setSheet({ type: 'prod', id: product.id });
       }}
-      style={{ transform: `translateX(${swipeDx}px)` }}
-      className={`v4-card rounded-[16px] p-3 flex items-stretch gap-3 transition-transform duration-150 ${
+      className={`v4-card rounded-[16px] p-3 flex flex-col gap-3 transition-colors duration-150 ${
         editMode ? '' : 'cursor-pointer hover:border-[var(--border-strong)]'
       }`}
     >
-      <ProductVisual product={product} size="row" />
-      <div className="flex-1 min-w-0 flex flex-col justify-between">
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
-              {displayName} {product.vol}
-            </div>
-            {low ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium flex-none mt-0.5">
-                {t.shelfLowBadge}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-medium flex-none mt-0.5">
-                <Check className="w-3 h-3" strokeWidth={1.75} />
-                <span>{t.inShelfPill}</span>
-              </span>
-            )}
-          </div>
-
-          <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-1.5 flex-wrap">
-            <span>
-              {t.shelfNormLabel}: <strong className="font-semibold text-[var(--text-primary)]">{norm}</strong>
-            </span>
-            <span>·</span>
-            <span>
-              {t.shelfStockLabel}:{' '}
-              <strong className={`font-semibold ${low ? 'text-[var(--warning)]' : 'text-[var(--text-primary)]'}`}>
-                {stock}
-              </strong>
-              {loose > 0 && (
-                <span className="text-[var(--text-muted)]">
-                  {' '}(+{loose} {t.pieceUnit})
+      <div className="flex items-stretch gap-3">
+        <ProductVisual product={product} size="row" />
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
+                {displayName} {product.vol}
+              </div>
+              {low ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium flex-none mt-0.5">
+                  {t.shelfLowBadge}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-medium flex-none mt-0.5">
+                  <Check className="w-3 h-3" strokeWidth={1.75} />
+                  <span>{t.shelfStatusOk}</span>
                 </span>
               )}
-            </span>
-            <span>·</span>
-            <span>
-              {t.shelfNeedLabel}:{' '}
-              <strong className={`font-semibold ${need > 0 ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
-                {need}
-              </strong>
-            </span>
-          </div>
-
-          <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-[width] duration-200 ease-out ${
-                low ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'
-              }`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          {Math.abs(swipeDx) > 8 && (
-            <div className="mt-1 text-[11px] font-medium text-[var(--anor-text)] tabular-nums">
-              {swipeDx > 0 ? `+1 ${t.boxUnit}` : `−1 ${t.boxUnit}`}
             </div>
-          )}
-        </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
-          <div>
-            <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
-              {formatNumberThin(product.box)}{' '}
-              <span className="text-xs font-normal text-[var(--text-muted)]">
-                so&apos;m
+            <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-1.5 flex-wrap">
+              <span>
+                {t.shelfNormLabel}: <strong className="font-semibold text-[var(--text-primary)]">{norm}</strong>
+              </span>
+              <span>·</span>
+              <span>
+                {t.shelfStockLabel}:{' '}
+                <strong className={`font-semibold ${low ? 'text-[var(--warning)]' : 'text-[var(--text-primary)]'}`}>
+                  {stock}
+                </strong>
+                {loose > 0 && (
+                  <span className="text-[var(--text-muted)]">
+                    {' '}(+{loose} {t.pieceUnit})
+                  </span>
+                )}
+              </span>
+              <span>·</span>
+              <span>
+                {t.shelfNeedLabel}:{' '}
+                <strong className={`font-semibold ${need > 0 ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'}`}>
+                  {need}
+                </strong>
               </span>
             </div>
-            <div className={`text-xs ${inCart ? 'font-medium text-[var(--success)]' : 'font-normal text-[var(--text-muted)]'}`}>
-              {inCart ? t.inCartQty(cart[id]) : t.swipeStockHint}
+
+            <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                  low ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'
+                }`}
+                style={{ width: `${pct}%` }}
+              />
             </div>
           </div>
 
-          {editMode ? (
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+            <div>
+              <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
+                {formatNumberThin(product.box)}{' '}
+                <span className="text-xs font-normal text-[var(--text-muted)]">
+                  so&apos;m
+                </span>
+              </div>
+              {inCart && (
+                <div className="text-xs font-medium text-[var(--success)] tabular-nums">
+                  {t.inCartQty(cart[id])}
+                </div>
+              )}
+            </div>
+
+            {!editMode && <CartStepper product={product} />}
+          </div>
+        </div>
+      </div>
+
+      {/* Visible Stock / Norm Controls */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="pt-2.5 border-t border-[var(--border-hairline)] flex items-center justify-between gap-2 flex-wrap"
+      >
+        {editMode ? (
+          <>
+            <span className="text-xs font-medium text-[var(--text-secondary)]">
+              {t.shelfNormLabel} ({t.boxUnit})
+            </span>
+            <div className="flex items-center gap-2">
               <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card)] px-1">
                 <button
                   type="button"
-                  aria-label="Kamaytirish"
+                  aria-label={`${t.shelfNormLabel} −`}
                   onClick={() => updateShelfUsual(id, -1)}
                   className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)]"
                 >
@@ -646,7 +631,7 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                 </span>
                 <button
                   type="button"
-                  aria-label="Ko'paytirish"
+                  aria-label={`${t.shelfNormLabel} +`}
                   onClick={() => updateShelfUsual(id, 1)}
                   className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--anor-soft)]"
                 >
@@ -655,17 +640,44 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
               </div>
               <button
                 type="button"
-                aria-label={t.removeFromCart}
+                aria-label={t.shelfRemoveAction}
                 onClick={() => removeShelfItem(id)}
-                className="w-11 h-11 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center"
+                className="min-h-[44px] px-3 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] inline-flex items-center gap-1.5 text-xs font-medium"
               >
-                <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                <X className="w-4 h-4 flex-none" strokeWidth={1.5} />
+                <span>{t.shelfRemoveAction}</span>
               </button>
             </div>
-          ) : (
-            <CartStepper product={product} />
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            <span className="text-xs font-medium text-[var(--text-secondary)]">
+              {t.shelfStockLabel} ({t.boxUnit})
+            </span>
+            <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-raised)] px-1">
+              <button
+                type="button"
+                aria-label={`${t.shelfStockLabel} −`}
+                disabled={stock <= 0}
+                onClick={() => adjustShelfStock(id, -1)}
+                className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-35"
+              >
+                <Minus className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+              <span className="min-w-[52px] px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
+                {stock} {t.boxUnit}
+              </span>
+              <button
+                type="button"
+                aria-label={`${t.shelfStockLabel} +`}
+                onClick={() => adjustShelfStock(id, 1)}
+                className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--bg-card)]"
+              >
+                <Plus className="w-4 h-4" strokeWidth={1.75} />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

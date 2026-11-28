@@ -33,6 +33,8 @@ export const CatalogView: React.FC = () => {
     return `${p.name} ${p.nameRu || ''} ${p.vol} ${brand} ${pack}`.toLowerCase().includes(q);
   });
 
+  const sortedFiltered = [...filtered].sort((a, b) => Number(a.out) - Number(b.out));
+
   if (loadError) {
     return (
       <ErrorState
@@ -46,7 +48,7 @@ export const CatalogView: React.FC = () => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs font-medium text-[var(--text-muted)] tabular-nums">
-        <span>{t.shownCount(filtered.length)}</span>
+        <span>{t.shownCount(sortedFiltered.length)}</span>
         {hasFilter && (
           <button
             type="button"
@@ -61,7 +63,7 @@ export const CatalogView: React.FC = () => {
 
       {productsLoading ? (
         <CatalogSkeleton viewMode={viewMode} />
-      ) : filtered.length === 0 ? (
+      ) : sortedFiltered.length === 0 ? (
         <EmptyState
           variant="search"
           title={`${t.emptySearchTitle} · ${t.emptySearchHint}`}
@@ -70,13 +72,13 @@ export const CatalogView: React.FC = () => {
         />
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-stretch">
-          {filtered.map((p, idx) => (
+          {sortedFiltered.map((p, idx) => (
             <ProductCard key={p.id} product={p} mode="grid" coachAdd={idx === 0} />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-          {filtered.map((p, idx) => (
+          {sortedFiltered.map((p, idx) => (
             <ProductCard key={p.id} product={p} mode="row" coachAdd={idx === 0} />
           ))}
         </div>

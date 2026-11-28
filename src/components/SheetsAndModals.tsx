@@ -541,7 +541,7 @@ export const SheetsAndModals: React.FC = () => {
                   </PillButton>
                 </div>
                 <div className="flex-[1.6]">
-                  <PillButton level="primary" size="lg" fullWidth onClick={() => setSheet({ type: 'pin' })}>
+                  <PillButton level="buy" size="lg" fullWidth onClick={() => setSheet({ type: 'pin' })}>
                     <Lock className="w-[18px] h-[18px]" strokeWidth={1.5} />
                     <span>{t.confirmAndEnterPin}</span>
                   </PillButton>
@@ -593,7 +593,17 @@ export const SheetsAndModals: React.FC = () => {
             >
               <div className="w-10 h-1 rounded-full bg-[var(--border-strong)] mx-auto md:hidden" />
 
-              <ProductVisual product={product} size="large" />
+              <div className="relative">
+                <ProductVisual product={product} size="large" />
+                <button
+                  type="button"
+                  aria-label={t.closeLabel}
+                  onClick={dismiss}
+                  className="absolute top-2.5 right-2.5 w-11 h-11 rounded-full bg-[var(--bg-card)]/90 border border-[var(--border-hairline)] text-[var(--text-secondary)] flex items-center justify-center"
+                >
+                  <X className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                </button>
+              </div>
 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -627,7 +637,7 @@ export const SheetsAndModals: React.FC = () => {
                       ) : (
                         <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
                       )}
-                      <span>{onShelf ? t.inShelfPill : t.addToShelfPill}</span>
+                      <span>{onShelf ? t.shelfRemoveAction : t.shelfAddAction}</span>
                     </span>
                   </button>
                 </div>
@@ -722,9 +732,23 @@ export const SheetsAndModals: React.FC = () => {
                 <CartStepper product={product} />
               </div>
 
-              <PillButton level="primary" size="lg" fullWidth onClick={dismiss}>
-                {t.doneLabel}
-              </PillButton>
+              {qty > 0 ? (
+                <PillButton
+                  level="buy"
+                  size="lg"
+                  fullWidth
+                  onClick={() => {
+                    setSheet(null);
+                    goTab('cart');
+                  }}
+                >
+                  {t.goToCartBtn}
+                </PillButton>
+              ) : (
+                <PillButton level="outline" size="lg" fullWidth onClick={dismiss}>
+                  {t.closeLabel}
+                </PillButton>
+              )}
             </motion.div>
           </motion.div>
         );
@@ -1197,9 +1221,11 @@ export const SheetsAndModals: React.FC = () => {
 
         const totalNeed = shelf.reduce((sum, s) => {
           const id = s[0];
+          const prod = productsById[id];
           const curStock = typeof draftStocks[id] === 'number' ? draftStocks[id] : getShelfStock(id);
+          const curLoose = typeof draftLoose[id] === 'number' ? draftLoose[id] : getShelfLoose(id);
           const curNorm = typeof draftNorms[id] === 'number' ? draftNorms[id] : getShelfNorm(id);
-          return sum + computeShelfNeed(curNorm, curStock);
+          return sum + computeShelfNeed(curNorm, curStock, curLoose, prod?.blk || 9);
         }, 0);
 
         return (
@@ -1252,8 +1278,8 @@ export const SheetsAndModals: React.FC = () => {
                   const curNorm = typeof draftNorms[id] === 'number' ? draftNorms[id] : getShelfNorm(id);
                   const prevStock =
                     typeof shelfPrevStocks[id] === 'number' ? Math.round(shelfPrevStocks[id]) : null;
-                  const need = computeShelfNeed(curNorm, curStock);
-                  const low = isShelfItemLow(curNorm, curStock);
+                  const need = computeShelfNeed(curNorm, curStock, curLoose, product.blk);
+                  const low = isShelfItemLow(curNorm, curStock, curLoose, product.blk);
                   const normEditing = editingNormId === id;
                   const trendWord =
                     prevStock !== null
@@ -1405,7 +1431,7 @@ export const SheetsAndModals: React.FC = () => {
                   disabled={totalNeed === 0}
                   onClick={() => {
                     saveShelfCheck(draftStocks, draftLoose, draftNorms);
-                    fillShelfNeedsToCart(false, draftStocks, draftNorms);
+                    fillShelfNeedsToCart(false, draftStocks, draftNorms, draftLoose);
                     goTab('cart');
                   }}
                 >

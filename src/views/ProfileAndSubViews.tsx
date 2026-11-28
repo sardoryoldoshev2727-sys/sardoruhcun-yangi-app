@@ -1403,7 +1403,6 @@ export const NotifView: React.FC = () => {
               type="button"
               onClick={() => {
                 if (n[0] === 'chat') {
-                  goTab('me');
                   openPage('chat');
                 } else if (n[0] === 'road') {
                   goTab('ord', 'track');

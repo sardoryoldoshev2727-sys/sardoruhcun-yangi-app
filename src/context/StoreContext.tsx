@@ -57,6 +57,7 @@ import {
   computeBoxDiscountNudge,
   computeShelfNeed,
   computeSuggestedNorm,
+  getLastDeliveredOrder,
   getTodayIsoLocal,
   isShelfItemLow,
   shortName,
@@ -295,7 +296,12 @@ interface StoreContextValue {
     loosePieces?: Record<number, number>,
     norms?: Record<number, number>,
   ) => void;
-  fillShelfNeedsToCart: (onlyLow: boolean, customStocks?: Record<number, number>, customNorms?: Record<number, number>) => void;
+  fillShelfNeedsToCart: (
+    onlyLow: boolean,
+    customStocks?: Record<number, number>,
+    customNorms?: Record<number, number>,
+    customLoose?: Record<number, number>,
+  ) => void;
   fillShelfNormsToCart: () => void;
   favorites: number[];
   guideOpen: boolean;
@@ -325,6 +331,7 @@ interface StoreContextValue {
   openPage: (p: SubPageId) => void;
   goBack: () => void;
   openOrderDetail: (orderId: number) => void;
+  openOrderTrack: (orderId: number) => void;
   setCat: (c: string) => void;
   setBrandFilter: (b: string) => void;
   setFlavorFilter: (f: string) => void;
@@ -927,13 +934,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const getShelfNeed = useCallback(
-    (id: number): number => computeShelfNeed(getShelfNorm(id), getShelfStock(id)),
-    [getShelfNorm, getShelfStock],
+    (id: number): number =>
+      computeShelfNeed(getShelfNorm(id), getShelfStock(id), getShelfLoose(id), productsById[id]?.blk || 9),
+    [getShelfLoose, getShelfNorm, getShelfStock, productsById],
   );
 
   const isShelfLow = useCallback(
-    (id: number): boolean => isShelfItemLow(getShelfNorm(id), getShelfStock(id)),
-    [getShelfNorm, getShelfStock],
+    (id: number): boolean =>
+      isShelfItemLow(getShelfNorm(id), getShelfStock(id), getShelfLoose(id), productsById[id]?.blk || 9),
+    [getShelfLoose, getShelfNorm, getShelfStock, productsById],
   );
 
   const inShelf = useCallback(
@@ -950,13 +959,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (guideOpen || sheet || page) return null;
     if (tab === 'home') {
       if (!coachSeen.home) return 'home';
-      if (homeVisitEpoch > 0 && !coachSeen.shelf && shelf.length > 0) return 'shelf';
       return null;
     }
+    if (tab === 'shelf' && !coachSeen.shelf && shelf.length > 0) return 'shelf';
     if (tab === 'cat' && !coachSeen.cat) return 'cat';
     if (tab === 'cart' && cartCount > 0 && !coachSeen.cart) return 'cart';
     return null;
-  }, [cartCount, coachSeen.cart, coachSeen.cat, coachSeen.home, coachSeen.shelf, guideOpen, homeVisitEpoch, page, sheet, shelf.length, tab]);
+  }, [cartCount, coachSeen.cart, coachSeen.cat, coachSeen.home, coachSeen.shelf, guideOpen, page, sheet, shelf.length, tab]);
 
   const activeCoachRef = useRef<CoachScreenKey | null>(activeCoach);
   activeCoachRef.current = activeCoach;
@@ -1067,6 +1076,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSelectedOrderId(orderId);
     setTab('ord');
     setPage('orderDetail');
+    setSheet(null);
+  }, []);
+
+  const openOrderTrack = useCallback((orderId: number) => {
+    pushNav('ord', 'track');
+    setNavDirection('forward');
+    setSelectedOrderId(orderId);
+    setTab('ord');
+    setPage('track');
     setSheet(null);
   }, []);
 
@@ -1296,7 +1314,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const fillShelfNeedsToCart = useCallback(
-    (onlyLow: boolean, customStocks?: Record<number, number>, customNorms?: Record<number, number>) => {
+    (
+      onlyLow: boolean,
+      customStocks?: Record<number, number>,
+      customNorms?: Record<number, number>,
+      customLoose?: Record<number, number>,
+    ) => {
       userMutatedCartRef.current = true;
       let addedAny = false;
       setCart((prev) => {
@@ -1304,6 +1327,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shelf.forEach((s) => {
           const prod = productsById[s[0]];
           if (prod?.out) return;
+          const blk = prod?.blk || 9;
           const norm =
             customNorms && typeof customNorms[s[0]] === 'number'
               ? Math.max(1, Math.round(customNorms[s[0]]))
@@ -1312,8 +1336,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             customStocks && typeof customStocks[s[0]] === 'number'
               ? Math.max(0, Math.round(customStocks[s[0]]))
               : getShelfStock(s[0]);
-          const need = computeShelfNeed(norm, stock);
-          const low = isShelfItemLow(norm, stock);
+          const loose =
+            customLoose && typeof customLoose[s[0]] === 'number'
+              ? Math.max(0, Math.round(customLoose[s[0]]))
+              : getShelfLoose(s[0]);
+          const need = computeShelfNeed(norm, stock, loose, blk);
+          const low = isShelfItemLow(norm, stock, loose, blk);
           if (need <= 0) return;
           if (!onlyLow || low) {
             next[s[0]] = Math.max(next[s[0]] || 0, need);
@@ -1327,7 +1355,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setBumpKey((k) => k + 1);
       }
     },
-    [getShelfNorm, getShelfStock, productsById, shelf],
+    [getShelfLoose, getShelfNorm, getShelfStock, productsById, shelf],
   );
 
   const fillShelfNormsToCart = useCallback(() => {
@@ -1400,9 +1428,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const repeatLastOrder = useCallback(() => {
-    const lastValid = orders.find((o) => o.status !== 'Bekor qilindi') || orders[0];
-    if (!lastValid) return;
-    repeatOrderToCart(lastValid.items.map((it) => ({ productId: it.productId, qty: it.qty })));
+    const lastDelivered = getLastDeliveredOrder(orders);
+    if (!lastDelivered) return;
+    repeatOrderToCart(lastDelivered.items.map((it) => ({ productId: it.productId, qty: it.qty })));
   }, [orders, repeatOrderToCart]);
 
   const clearCart = useCallback(() => {
@@ -1706,6 +1734,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     openPage,
     goBack,
     openOrderDetail,
+    openOrderTrack,
     setCat,
     setBrandFilter,
     setFlavorFilter,

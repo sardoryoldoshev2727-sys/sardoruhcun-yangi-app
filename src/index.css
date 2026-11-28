@@ -113,8 +113,3 @@ input[type='range'].calm-slider::-moz-range-thumb {
 @keyframes v4ArtIn { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
 .v4-art-in { animation: v4ArtIn .5s cubic-bezier(.05,.7,.1,1) both; }
 @media (prefers-reduced-motion: reduce) { .v4-art-in { animation: none; } }
-
-/* Aksiya rasmlari: juda sekin "jonlanish" (Ken Burns) */
-@keyframes v4Kb { from { transform: scale(1) translate(0,0); } to { transform: scale(1.06) translate(-1.5%, -1%); } }
-.v4-kenburns { animation: v4ArtIn .5s cubic-bezier(.05,.7,.1,1) both, v4Kb 14s ease-in-out .5s infinite alternate; transform-origin: 60% 50%; }
-@media (prefers-reduced-motion: reduce) { .v4-kenburns { animation: none; } }

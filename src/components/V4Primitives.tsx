@@ -140,114 +140,36 @@ export const VelvetNetBasketSvg: React.FC<{
   boxesCount: number;
   fxKey: number;
 }> = ({ boxesCount, fxKey }) => {
-  const visibleBottles = Math.min(8, Math.max(0, boxesCount));
-  const extraCount = Math.max(0, boxesCount - 8);
-  const bottleSlots = [
-    { x: 24, y: 31, rot: -6 },
-    { x: 35, y: 29, rot: -2 },
-    { x: 46, y: 30, rot: 3 },
-    { x: 57, y: 31, rot: 7 },
-    { x: 29, y: 42, rot: -3 },
-    { x: 40, y: 41, rot: 1 },
-    { x: 51, y: 42, rot: 4 },
-    { x: 61, y: 43, rot: -4 },
-  ];
-
   return (
     <div className="relative w-[96px] h-[96px] flex-none select-none overflow-hidden rounded-[18px]">
-      <img src={ART.basket} alt="" aria-hidden="true" decoding="async" className="absolute inset-0 w-full h-full object-cover" style={{ WebkitMaskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)', maskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)' }} />
-      {boxesCount > 0 && (
-        <span className="absolute right-1 bottom-1 z-30 min-w-[22px] h-[22px] px-1.5 rounded-full bg-white text-[#7E0E18] text-[11px] font-semibold tabular-nums flex items-center justify-center shadow-sm">{boxesCount}</span>
-      )}
-    </div>
-  );
-  // eslint-disable-next-line no-unreachable
-  return (
-    <div className="relative w-[92px] h-[84px] flex-none select-none overflow-hidden rounded-[16px]">
+      <img
+        src={ART.basket}
+        alt=""
+        aria-hidden="true"
+        decoding="async"
+        className="w-full h-full object-cover"
+        style={{
+          WebkitMaskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)',
+          maskImage: 'radial-gradient(circle at 50% 50%, #000 62%, transparent 100%)',
+        }}
+      />
       {fxKey > 0 && (
         <span
-          key={fxKey}
+          key={`streak-${fxKey}`}
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-0 left-0 w-10 animate-basket-streak z-20"
         />
       )}
-      <svg
-        width="92"
-        height="84"
-        viewBox="0 0 92 84"
-        fill="none"
-        aria-hidden="true"
-        className="w-full h-full"
-      >
-        {/* Soft highlight disc behind basket */}
-        <circle cx="46" cy="48" r="34" fill="rgba(255,255,255,0.08)" />
-
-        {/* Basket handle */}
-        <path
-          d="M31 28C31 18.5 37.5 13 46 13C54.5 13 61 18.5 61 28"
-          stroke="rgba(255,255,255,0.88)"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-        />
-
-        {/* Simplified bottle silhouettes inside basket (1 per box up to 8) */}
-        {bottleSlots.slice(0, visibleBottles).map((b, idx) => (
-          <g
-            key={idx}
-            transform={`translate(${b.x}, ${b.y}) rotate(${b.rot})`}
-          >
-            <rect
-              x="-4"
-              y="0"
-              width="8"
-              height="19"
-              rx="3"
-              fill="rgba(255,255,255,0.9)"
-              stroke="rgba(126,14,24,0.35)"
-              strokeWidth="0.9"
-            />
-            <rect
-              x="-2.2"
-              y="-3.5"
-              width="4.4"
-              height="3.8"
-              rx="1.2"
-              fill="rgba(255,255,255,0.95)"
-            />
-          </g>
-        ))}
-
-        {/* Basket body & diamond woven wire/string net */}
-        <path
-          d="M17 30H75L67 69C66.4 72 63.8 74 60.8 74H31.2C28.2 74 25.6 72 25 69L17 30Z"
-          fill="rgba(126,14,24,0.34)"
-          stroke="rgba(255,255,255,0.88)"
-          strokeWidth="1.9"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M14 30H78"
-          stroke="rgba(255,255,255,0.95)"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        {/* Woven net mesh */}
-        <path
-          d="M23 30L37 73M37 30L51 73M51 30L65 73M69 30L55 73M55 30L41 73M41 30L27 73"
-          stroke="rgba(255,255,255,0.38)"
-          strokeWidth="1.15"
-          strokeLinecap="round"
-        />
-        <path
-          d="M20 43H72M22 57H70"
-          stroke="rgba(255,255,255,0.32)"
-          strokeWidth="1.1"
-        />
-      </svg>
-      {extraCount > 0 && (
-        <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white text-[#7E0E18] text-[11px] font-semibold tabular-nums leading-none">
-          +{extraCount}
-        </span>
+      {boxesCount > 0 && (
+        <motion.span
+          key={`badge-${fxKey}`}
+          initial={fxKey > 0 ? { scale: 0.72 } : false}
+          animate={fxKey > 0 ? { scale: [0.72, 1.24, 1] } : { scale: 1 }}
+          transition={{ duration: 0.32, ease: [0.2, 0, 0, 1] }}
+          className="absolute right-1 bottom-1 z-30 min-w-[22px] h-[22px] px-1.5 rounded-full bg-white text-[#7E0E18] text-[11px] font-semibold tabular-nums flex items-center justify-center shadow-sm"
+        >
+          {boxesCount}
+        </motion.span>
       )}
     </div>
   );
@@ -454,6 +376,7 @@ interface GreenAddControlProps {
   onQtyTap?: () => void;
   compactPill?: boolean;
   coachId?: string;
+  disabled?: boolean;
 }
 
 export const GreenAddControl: React.FC<GreenAddControlProps> = ({
@@ -466,13 +389,34 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
   onQtyTap,
   compactPill = false,
   coachId,
+  disabled = false,
 }) => {
   const [fxKey, setFxKey] = useState(0);
 
   const handleFirstAdd = () => {
+    if (disabled) return;
     setFxKey((k) => k + 1);
     onAdd();
   };
+
+  if (disabled) {
+    return (
+      <div
+        className="relative inline-flex items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          aria-label={addLabel}
+          className="w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-muted)] opacity-55 flex items-center justify-center cursor-not-allowed"
+        >
+          <Plus className="w-[18px] h-[18px]" strokeWidth={2} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

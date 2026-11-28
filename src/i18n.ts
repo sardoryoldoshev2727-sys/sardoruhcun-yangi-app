@@ -415,6 +415,23 @@ export interface Translations {
   shelfTrendLine: (prev: number, cur: number, trend: string) => string;
   shelfSaveAndAddNeedBtn: (boxes: number) => string;
   shelfSaveOnlyBtn: string;
+  // Round 10: Consolidated nav, glossary & UX fixes
+  navShelf: string;
+  shelfHeaderShort: string;
+  velvetCatalogBtn: string;
+  velvetFillShelfBtn: string;
+  allPromosLink: string;
+  shelfAddAction: string;
+  shelfRemoveAction: string;
+  shelfStatusOk: string;
+  smartActionFillTitle: (boxes: number) => string;
+  smartActionFillSub: (lowCount: number) => string;
+  smartActionFillBtn: (boxes: number) => string;
+  shelfNeedAddBtn: (boxes: number) => string;
+  shelfAllOkSub: string;
+  lastDeliveredRepeatTitle: (id: number) => string;
+  promoCardDiscountNote: (pct: number) => string;
+  reportIssueChatMsg: (orderId: number) => string;
 }
 
 export const TRANSLATIONS: Record<Lang, Translations> = {
@@ -900,8 +917,26 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     shelfLooseLabel: '+ dona',
     shelfTrendLine: (prev, cur, trend) => `Oldin ${prev} → hozir ${cur}, ${trend}`,
     shelfSaveAndAddNeedBtn: (boxes) =>
-      boxes > 0 ? `Kerakli ${boxes} qutini savatga solish` : 'Javonda kamomad yo‘q',
+      boxes > 0 ? `Kerakli ${boxes} qutini savatga` : 'Javonda kamomad yo‘q',
     shelfSaveOnlyBtn: 'Faqat saqlash',
+    navShelf: 'Javonim',
+    shelfHeaderShort: 'Javonim',
+    velvetCatalogBtn: 'Katalog',
+    velvetFillShelfBtn: "Javonni to'ldirish",
+    allPromosLink: 'Barcha aksiyalar',
+    shelfAddAction: "Javonga qo'shish",
+    shelfRemoveAction: 'Javondan olish',
+    shelfStatusOk: 'Normada',
+    smartActionFillTitle: (boxes) => `Javonni to'ldirish · ${boxes} quti`,
+    smartActionFillSub: (lowCount) =>
+      lowCount > 0 ? `${lowCount} ta mahsulot tugayapti` : "Normadan kam qolganlarni qo'shish",
+    smartActionFillBtn: (boxes) => `Kerakli ${boxes} qutini savatga`,
+    shelfNeedAddBtn: (boxes) =>
+      boxes > 0 ? `Kerakli ${boxes} qutini savatga` : 'Hamma javon normada',
+    shelfAllOkSub: "Bugun sanalgan · kamomad yo'q",
+    lastDeliveredRepeatTitle: (id) => `Oxirgi yetkazilgan #${id}`,
+    promoCardDiscountNote: (pct) => `Mahsulot aksiyasi · −${pct}% chegirma`,
+    reportIssueChatMsg: (orderId) => `Buyurtma #${orderId}: mahsulotda kamchilik bor, tekshirib bering.`,
   },
   ru: {
     appName: 'LAL ANAAR',
@@ -1385,8 +1420,26 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     shelfLooseLabel: '+ шт.',
     shelfTrendLine: (prev, cur, trend) => `Было ${prev} → стало ${cur}, ${trend}`,
     shelfSaveAndAddNeedBtn: (boxes) =>
-      boxes > 0 ? `В корзину нужные ${boxes} кор.` : 'На полке всё в норме',
+      boxes > 0 ? `Нужные ${boxes} кор. в корзину` : 'На полке всё в норме',
     shelfSaveOnlyBtn: 'Только сохранить',
+    navShelf: 'Полка',
+    shelfHeaderShort: 'Моя полка',
+    velvetCatalogBtn: 'Каталог',
+    velvetFillShelfBtn: 'Пополнить полку',
+    allPromosLink: 'Все акции',
+    shelfAddAction: 'Добавить на полку',
+    shelfRemoveAction: 'Убрать с полки',
+    shelfStatusOk: 'В норме',
+    smartActionFillTitle: (boxes) => `Пополнить полку · ${boxes} кор.`,
+    smartActionFillSub: (lowCount) =>
+      lowCount > 0 ? `${lowCount} поз. заканчиваются` : 'Добавить нехватку до нормы',
+    smartActionFillBtn: (boxes) => `Нужные ${boxes} кор. в корзину`,
+    shelfNeedAddBtn: (boxes) =>
+      boxes > 0 ? `Нужные ${boxes} кор. в корзину` : 'Вся полка в норме',
+    shelfAllOkSub: 'Подсчёт выполнен · нехватки нет',
+    lastDeliveredRepeatTitle: (id) => `Последний доставленный #${id}`,
+    promoCardDiscountNote: (pct) => `Акция на товар · скидка −${pct}%`,
+    reportIssueChatMsg: (orderId) => `Заказ #${orderId}: есть замечание по товару, проверьте пожалуйста.`,
   },
 };
 
@@ -1397,6 +1450,7 @@ export function getProductName(p: Product, lang: Lang): string {
 
 const CAT_RU: Record<string, string> = {
   Hammasi: 'Все',
+  'Faqat bor': 'В наличии',
   Javonim: 'Полка',
   '1 L': '1 Л',
   '0.33 L': '0.33 Л',

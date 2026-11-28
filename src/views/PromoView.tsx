@@ -31,6 +31,7 @@ export const PromoView: React.FC = () => {
     shop,
     lang,
     goTab,
+    openPage,
     updateQty,
     setSheet,
     t,
@@ -150,16 +151,6 @@ export const PromoView: React.FC = () => {
                     onClick={() => setSheet({ type: 'prod', id: prod.id })}
                     className="v4-card rounded-[16px] p-3.5 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden hover:border-[var(--border-strong)] transition-colors"
                   >
-                    <div className="relative -mx-3.5 -mt-3.5 mb-0.5 overflow-hidden">
-                      <img
-                        src={hasGift ? ART.promoGift : hasPct ? ART.promoPct : ART.promoNew}
-                        alt=""
-                        aria-hidden="true"
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full aspect-[16/9] object-cover v4-kenburns"
-                      />
-                    </div>
                     <div className="flex items-start gap-3">
                       <ProductVisual
                         product={prod}
@@ -169,9 +160,18 @@ export const PromoView: React.FC = () => {
 
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold tabular-nums">
-                            {hasPct ? `−${prod.promoPct}%` : `${giftBuy}+${giftFree}`}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {hasPct && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold tabular-nums">
+                                −{prod.promoPct}%
+                              </span>
+                            )}
+                            {hasGift && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold tabular-nums">
+                                {giftBuy}+{giftFree}
+                              </span>
+                            )}
+                          </div>
                           {prod.promoEndsDays && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium tabular-nums whitespace-nowrap">
                               <Clock className="w-3 h-3" strokeWidth={1.75} />
@@ -190,45 +190,51 @@ export const PromoView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Deal / Gift Progress Bar */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 tabular-nums ${
-                            giftUnlocked ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'
-                          }`}
-                        >
-                          {hasGift && <Gift className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />}
-                          <span>
-                            {hasGift
-                              ? giftUnlocked
+                    {/* Product-specific Promo / Gift Info */}
+                    {hasGift ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 tabular-nums ${
+                              giftUnlocked ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'
+                            }`}
+                          >
+                            <Gift className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                            <span>
+                              {giftUnlocked
                                 ? t.promoGiftUnlocked(giftFree)
-                                : t.promoGiftRuleProgress(giftBuy, giftFree, qty)
-                              : discountNudge.nextTier
-                                ? t.promoOrderProgress(
-                                    formatSom(discountNudge.amountNeeded),
-                                    discountNudge.nextTier.pct,
-                                  )
-                                : t.discountLadderMaxDone(discountNudge.currentPct)}
+                                : t.promoGiftRuleProgress(giftBuy, giftFree, qty)}
+                            </span>
                           </span>
-                        </span>
-                        {savedPerBox > 0 && (
-                          <span className="text-[var(--success)] tabular-nums whitespace-nowrap">
-                            {t.promoSavePerBox(formatSom(savedPerBox))}
+                          {savedPerBox > 0 && (
+                            <span className="text-[var(--success)] tabular-nums whitespace-nowrap">
+                              {t.promoSavePerBox(formatSom(savedPerBox))}
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                              giftUnlocked ? 'bg-[var(--success)]' : 'bg-[var(--anor)]'
+                            }`}
+                            style={{ width: `${Math.max(qty > 0 ? 8 : 0, giftProgress)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      hasPct && (
+                        <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
+                          <span className="text-[var(--text-secondary)]">
+                            {t.promoCardDiscountNote(prod.promoPct || 0)}
                           </span>
-                        )}
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-[width] duration-200 ease-out ${
-                            giftUnlocked || (!hasGift && !discountNudge.nextTier)
-                              ? 'bg-[var(--success)]'
-                              : 'bg-[var(--anor)]'
-                          }`}
-                          style={{ width: `${Math.max(qty > 0 ? 8 : 0, giftProgress)}%` }}
-                        />
-                      </div>
-                    </div>
+                          {savedPerBox > 0 && (
+                            <span className="text-[var(--success)] tabular-nums whitespace-nowrap">
+                              {t.promoSavePerBox(formatSom(savedPerBox))}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    )}
 
                     {/* Bottom price + GreenAddControl inline inside same card */}
                     <div
@@ -401,7 +407,7 @@ export const PromoView: React.FC = () => {
       {/* Calm hairline operator help card */}
       <button
         type="button"
-        onClick={() => goTab('me', 'chat')}
+        onClick={() => openPage('chat')}
         className="v4-card w-full text-left p-4 flex items-center gap-3 hover:border-[var(--border-strong)] transition-colors duration-150"
       >
         <span className="w-11 h-11 rounded-[12px] bg-[var(--bg-raised)] text-[var(--anor-text)] flex items-center justify-center flex-none">

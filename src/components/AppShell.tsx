@@ -54,6 +54,7 @@ const lazyNamed = <T extends Record<string, any>>(load: () => Promise<T>, name: 
   React.lazy(() => load().then((m) => ({ default: m[name] as React.ComponentType<any> })));
 const CartView = lazyNamed(() => import('../views/CartView'), 'CartView');
 const CatalogView = lazyNamed(() => import('../views/CatalogView'), 'CatalogView');
+const ShelfView = lazyNamed(() => import('../views/ShelfView'), 'ShelfView');
 const PromoView = lazyNamed(() => import('../views/PromoView'), 'PromoView');
 const loadOrders = () => import('../views/OrdersAndTrackView');
 const OrderDetailView = lazyNamed(loadOrders, 'OrderDetailView');
@@ -114,7 +115,6 @@ export const AppShell: React.FC = () => {
     searchQuery,
     monthTotal,
     cartCount,
-    unreadChat,
     unreadNotifCount,
     selectedOrderId,
     shop,
@@ -230,9 +230,9 @@ export const AppShell: React.FC = () => {
   }, [openPage]);
 
   useEffect(() => {
-    const showNativeBack = Boolean(page || tab !== 'home');
+    const showNativeBack = Boolean(page && page !== 'success');
     return syncTelegramBackButton(showNativeBack, handleBack);
-  }, [handleBack, page, tab]);
+  }, [handleBack, page]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
@@ -254,21 +254,27 @@ export const AppShell: React.FC = () => {
   const mobileNavItems: { id: TabId; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
     { id: 'home', label: t.navHome, icon: Home },
     { id: 'cat', label: t.navCatalog, icon: LayoutGrid },
-    { id: 'promo', label: t.navPromo, icon: Tag },
+    { id: 'shelf', label: t.navShelf, icon: BookmarkCheck },
     { id: 'cart', label: t.navCart, icon: ShoppingCart },
     { id: 'ord', label: t.navOrders, icon: ClipboardList },
   ];
 
-  const desktopNavItems = [
+  const desktopNavItems: {
+    id: TabId;
+    label: string;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+    pushedPage?: 'promo' | 'me';
+  }[] = [
     ...mobileNavItems,
-    { id: 'me' as TabId, label: t.navProfile, icon: User },
+    { id: 'promo', label: t.navPromo, icon: Tag, pushedPage: 'promo' },
+    { id: 'me', label: t.navProfile, icon: User, pushedPage: 'me' },
   ];
 
   const showCatalogStrip = !page && tab === 'cat';
 
   const { discountPct, discountAmount, total: discountedTotal } = checkoutQuote;
   const showFloatingCartPill =
-    !page && (tab === 'home' || tab === 'cat' || tab === 'promo') && cartCount > 0;
+    !page && (tab === 'home' || tab === 'cat' || tab === 'shelf') && cartCount > 0;
   const cartIds = Object.keys(cart).map(Number);
 
   const nudgeLineText = discountNudge.nextTier
@@ -312,19 +318,14 @@ export const AppShell: React.FC = () => {
     </button>
   );
 
-  const headerCartBtn = (
+  const profileHeaderBtn = (
     <button
       type="button"
-      aria-label={t.cartLabel}
-      onClick={() => goTab('cart')}
-      className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none transition-colors"
+      aria-label={t.profileLabel}
+      onClick={() => openPage('me')}
+      className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none md:hidden"
     >
-      <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={1.5} />
-      {cartCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
-          {cartCount}
-        </span>
-      )}
+      <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
     </button>
   );
 
@@ -407,6 +408,41 @@ export const AppShell: React.FC = () => {
         </>
       );
     }
+    if (page === 'promo') {
+      return (
+        <>
+          {headerBackBtn}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.promoHeaderShort}
+          </h1>
+          {themeToggleBtn}
+        </>
+      );
+    }
+    if (page === 'me') {
+      return (
+        <>
+          {headerBackBtn}
+          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.profileTitle}
+          </h1>
+          {themeToggleBtn}
+          <button
+            type="button"
+            aria-label={t.notifLabel}
+            onClick={() => openPage('notif')}
+            className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none"
+          >
+            <Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
+                {unreadNotifCount}
+              </span>
+            )}
+          </button>
+        </>
+      );
+    }
     if (
       page === 'shop' ||
       page === 'fin' ||
@@ -435,8 +471,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'cat') {
       return (
         <>
-          {headerBackBtn}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pl-1">
             <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               {t.navCatalog}
             </h1>
@@ -445,7 +480,18 @@ export const AppShell: React.FC = () => {
             </small>
           </div>
           {themeToggleBtn}
-          {headerCartBtn}
+        </>
+      );
+    }
+
+    if (tab === 'shelf') {
+      return (
+        <>
+          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+            {t.shelfHeaderShort}
+          </h1>
+          {profileHeaderBtn}
+          {themeToggleBtn}
         </>
       );
     }
@@ -453,12 +499,10 @@ export const AppShell: React.FC = () => {
     if (tab === 'promo') {
       return (
         <>
-          {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
             {t.promoHeaderShort}
           </h1>
           {themeToggleBtn}
-          {headerCartBtn}
         </>
       );
     }
@@ -466,8 +510,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'cart') {
       return (
         <>
-          {headerBackBtn}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pl-1">
             <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               {t.cartHeaderShort}
             </h1>
@@ -485,11 +528,11 @@ export const AppShell: React.FC = () => {
     if (tab === 'ord') {
       return (
         <>
-          {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
             {t.ordersHeaderShort}
           </h1>
           {refreshOrdersHeaderBtn}
+          {profileHeaderBtn}
           {themeToggleBtn}
         </>
       );
@@ -498,8 +541,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'me') {
       return (
         <>
-          {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
             {t.profileTitle}
           </h1>
           {themeToggleBtn}
@@ -551,19 +593,7 @@ export const AppShell: React.FC = () => {
             </span>
           )}
         </button>
-        <button
-          type="button"
-          aria-label={t.profileLabel}
-          onClick={() => goTab('me')}
-          className="relative w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none md:hidden"
-        >
-          <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          {unreadChat > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--anor)] text-white text-[11px] font-semibold flex items-center justify-center tabular-nums">
-              {unreadChat}
-            </span>
-          )}
-        </button>
+        {profileHeaderBtn}
         {themeToggleBtn}
       </>
     );
@@ -581,10 +611,14 @@ export const AppShell: React.FC = () => {
     if (page === 'profit') return <ProfitCalculatorView />;
     if (page === 'report') return <MonthlyReportView />;
     if (page === 'favorites') return <FavoritesView />;
+    if (page === 'promo') return <PromoView />;
+    if (page === 'me') return <ProfileView />;
 
     switch (tab) {
       case 'cat':
         return <CatalogView />;
+      case 'shelf':
+        return <ShelfView />;
       case 'promo':
         return <PromoView />;
       case 'cart':
@@ -640,14 +674,20 @@ export const AppShell: React.FC = () => {
               </div>
 
               <nav className="space-y-1">
-                {desktopNavItems.map(({ id, label, icon: Icon }) => {
-                  const active = tab === id && !page;
-                  const badge = id === 'cart' ? cartCount : id === 'me' ? unreadChat : 0;
+                {desktopNavItems.map(({ id, label, icon: Icon, pushedPage }) => {
+                  const active = pushedPage ? page === pushedPage : tab === id && !page;
+                  const badge = id === 'cart' ? cartCount : 0;
                   return (
                     <button
                       key={id}
                       type="button"
-                      onClick={() => goTab(id, null, { reset: true })}
+                      onClick={() => {
+                        if (pushedPage) {
+                          openPage(pushedPage);
+                        } else {
+                          goTab(id, null, { reset: true });
+                        }
+                      }}
                       className={`w-full flex items-center gap-3 px-3 min-h-[44px] rounded-full text-sm transition-colors duration-150 ${
                         active
                           ? 'bg-[var(--anor-soft)] text-[var(--anor-text)] font-semibold'
@@ -912,7 +952,7 @@ export const AppShell: React.FC = () => {
                       type="button"
                       onClick={() => {
                         dismissOperatorBanner();
-                        goTab('me', 'chat');
+                        openPage('chat');
                       }}
                       className="min-h-[44px] px-3.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold whitespace-nowrap flex-none"
                     >
@@ -1028,7 +1068,7 @@ export const AppShell: React.FC = () => {
           </div>
 
           {/* Desktop Right Live Cart Summary Rail */}
-          {!page && (tab === 'home' || tab === 'cat' || tab === 'promo') && (
+          {!page && (tab === 'home' || tab === 'cat' || tab === 'shelf') && (
             <aside className="hidden xl:flex flex-col w-80 flex-none bg-[var(--bg-card)] border-l border-[var(--border-hairline)] p-4 justify-between">
               <div className="min-h-0 flex-1 flex flex-col">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--border-hairline)]">

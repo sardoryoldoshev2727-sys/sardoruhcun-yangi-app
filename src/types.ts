@@ -1,4 +1,4 @@
-export type TabId = 'home' | 'cat' | 'promo' | 'cart' | 'ord' | 'me';
+export type TabId = 'home' | 'cat' | 'shelf' | 'promo' | 'cart' | 'ord' | 'me';
 
 export type Lang = 'uz' | 'ru';
 
@@ -6,6 +6,8 @@ export type CatalogSortMode = 'default' | 'hot' | 'priceAsc' | 'priceDesc' | 'av
 
 export type SubPageId =
   | null
+  | 'promo'
+  | 'me'
   | 'track'
   | 'orderDetail'
   | 'success'

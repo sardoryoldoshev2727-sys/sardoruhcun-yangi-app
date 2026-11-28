@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { ART } from '../data/assets';
 import {
   Check,
@@ -22,7 +22,6 @@ import { EmptyState, ErrorState } from '../components/StateFeedback';
 import {
   GreenAddControl,
   PillButton,
-  PullToRefreshSeeds,
   TweenSom,
 } from '../components/V4Primitives';
 import { useStore } from '../context/StoreContext';
@@ -232,7 +231,6 @@ export const OrdersView: React.FC = () => {
     orders,
     ordersLoading,
     refreshingOrders,
-    refreshOrders,
     productsLoading,
     loadError,
     retryLoad,
@@ -241,10 +239,8 @@ export const OrdersView: React.FC = () => {
     cart,
     orderSeg,
     setOrderSeg,
-    autoOrder,
-    toggleAutoOrder,
-    openPage,
     openOrderDetail,
+    openOrderTrack,
     repeatOrderToCart,
     updateQty,
     setSheet,
@@ -252,9 +248,6 @@ export const OrdersView: React.FC = () => {
     lang,
     t,
   } = useStore();
-
-  const [pullDist, setPullDist] = useState(0);
-  const pullStartYRef = useRef<number | null>(null);
 
   const filtered = orders.filter((o) => {
     if (orderSeg === 0) return !['Yetkazildi', 'Bekor qilindi'].includes(o.status);
@@ -275,37 +268,7 @@ export const OrdersView: React.FC = () => {
   }
 
   return (
-    <div
-      className="space-y-4"
-      onTouchStart={(e) => {
-        const scroller = e.currentTarget.closest('main') as HTMLElement | null;
-        if (scroller && scroller.scrollTop > 4) return;
-        pullStartYRef.current = e.touches[0]?.clientY ?? null;
-      }}
-      onTouchMove={(e) => {
-        if (pullStartYRef.current === null || refreshingOrders) return;
-        const currentY = e.touches[0]?.clientY;
-        if (currentY === undefined) return;
-        const delta = currentY - pullStartYRef.current;
-        if (delta > 0) {
-          setPullDist(Math.min(64, Math.round(delta * 0.45)));
-        }
-      }}
-      onTouchEnd={() => {
-        if (pullDist >= 42 && !refreshingOrders) {
-          void refreshOrders();
-        }
-        pullStartYRef.current = null;
-        setPullDist(0);
-      }}
-    >
-      <PullToRefreshSeeds
-        pullDist={pullDist}
-        refreshing={refreshingOrders}
-        hint={t.pullToRefreshHint}
-        releaseHint={t.pullToRefreshRelease}
-        refreshingLabel={t.refreshingLabel}
-      />
+    <div className="space-y-4">
 
       {/* Buy Again horizontal snap strip sized so next card peeks */}
       {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
@@ -370,39 +333,6 @@ export const OrdersView: React.FC = () => {
           )}
         </section>
       )}
-
-      {/* Weekly Auto-order full-row tappable 44x24 switch */}
-      <button
-        type="button"
-        role="switch"
-        aria-checked={autoOrder}
-        aria-label={t.autoOrderTitle}
-        onClick={toggleAutoOrder}
-        className="v4-card w-full min-h-[64px] p-4 flex items-center gap-3 text-left hover:border-[var(--border-strong)] transition-colors"
-      >
-        <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
-          <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
-        </span>
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-sm sm:text-base text-[var(--text-primary)]">
-            {t.autoOrderTitle}
-          </div>
-          <div className="text-xs text-[var(--text-muted)]">
-            {autoOrder ? t.autoOrderOnSub : t.autoOrderOffSub}
-          </div>
-        </div>
-        <span
-          className={`w-11 h-6 rounded-full relative transition-colors duration-150 flex-none ${
-            autoOrder ? 'bg-[var(--anor)]' : 'bg-[var(--border-strong)]'
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-150 ${
-              autoOrder ? 'left-[22px]' : 'left-0.5'
-            }`}
-          />
-        </span>
-      </button>
 
       {/* Segment switch */}
       <div className="grid grid-cols-3 bg-[var(--bg-raised)] rounded-[12px] p-1 gap-1">
@@ -490,17 +420,19 @@ export const OrdersView: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                  {o.status === "Yo'lda" ? (
+                  {(o.status === 'Yuborildi' || o.status === 'Tasdiqlandi' || o.status === "Yo'lda") && (
                     <div className="flex-1 min-w-[140px]">
-                      <PillButton level="primary" fullWidth onClick={() => openPage('track')}>
+                      <PillButton level="primary" fullWidth onClick={() => openOrderTrack(o.id)}>
                         <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
                         <span>{t.trackOrderBtn}</span>
                       </PillButton>
                     </div>
-                  ) : (
-                    <div className="flex-1 min-w-[140px]">
+                  )}
+
+                  {o.status === 'Yetkazildi' && (
+                    <div className="flex-1 min-w-[130px]">
                       <PillButton
-                        level="primary"
+                        level="tonal"
                         fullWidth
                         onClick={() => repeatOrderToCart(o.items)}
                       >
@@ -544,7 +476,7 @@ export const OrderDetailView: React.FC = () => {
     repeatOrderToCart,
     setSheet,
     openPage,
-    goTab,
+    openOrderTrack,
   } = useStore();
 
   const order = orders.find((o) => o.id === selectedOrderId) || orders[0];
@@ -667,6 +599,16 @@ export const OrderDetailView: React.FC = () => {
       </section>
 
       <div className="space-y-2">
+        {(order.status === 'Yuborildi' || order.status === 'Tasdiqlandi' || order.status === "Yo'lda") && (
+          <PillButton
+            level="primary"
+            fullWidth
+            onClick={() => openOrderTrack(order.id)}
+          >
+            <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            <span>{t.trackOrderBtn}</span>
+          </PillButton>
+        )}
         {order.status === 'Yetkazildi' && !rating && (
           <PillButton
             level="tonal"
@@ -677,21 +619,20 @@ export const OrderDetailView: React.FC = () => {
             <span>{t.rateOrderBtn}</span>
           </PillButton>
         )}
-        <PillButton
-          level="primary"
-          fullWidth
-          onClick={() => repeatOrderToCart(order.items)}
-        >
-          <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          <span>{t.repeatOrderBtn}</span>
-        </PillButton>
+        {order.status === 'Yetkazildi' && (
+          <PillButton
+            level="tonal"
+            fullWidth
+            onClick={() => repeatOrderToCart(order.items)}
+          >
+            <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
+            <span>{t.repeatOrderBtn}</span>
+          </PillButton>
+        )}
         <PillButton
           level="outline"
           fullWidth
-          onClick={() => {
-            goTab('me');
-            openPage('chat');
-          }}
+          onClick={() => openPage('chat')}
         >
           <MessageCircle className="w-[18px] h-[18px] text-[var(--anor-text)]" strokeWidth={1.5} />
           <span>{t.writeOperatorBtn}</span>
@@ -711,7 +652,7 @@ export const OrderDetailView: React.FC = () => {
 };
 
 export const TrackView: React.FC = () => {
-  const { orders, selectedOrderId, confirmOrderHandover, goTab, openPage, t } = useStore();
+  const { orders, selectedOrderId, confirmOrderHandover, sendChatMessage, openPage, t } = useStore();
   const [copiedCode, setCopiedCode] = useState(false);
   const [issueSent, setIssueSent] = useState(false);
   const [handoverDone, setHandoverDone] = useState(false);
@@ -812,10 +753,7 @@ export const TrackView: React.FC = () => {
           <button
             type="button"
             aria-label={t.writeOperatorBtn}
-            onClick={() => {
-              goTab('me');
-              openPage('chat');
-            }}
+            onClick={() => openPage('chat')}
             className="w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-primary)] flex items-center justify-center flex-none"
           >
             <MessageCircle className="w-[18px] h-[18px] text-[var(--anor-text)]" strokeWidth={1.5} />
@@ -856,10 +794,7 @@ export const TrackView: React.FC = () => {
           <span className="font-medium text-[var(--warning)]">{t.issueSentInline}</span>
           <button
             type="button"
-            onClick={() => {
-              goTab('me');
-              openPage('chat');
-            }}
+            onClick={() => openPage('chat')}
             className="min-h-[44px] px-2 font-semibold text-[var(--anor-text)] whitespace-nowrap"
           >
             {t.writeOperatorBtn}
@@ -887,7 +822,12 @@ export const TrackView: React.FC = () => {
           <PillButton
             level="outline"
             fullWidth
-            onClick={() => setIssueSent(true)}
+            onClick={() => {
+              if (!issueSent) {
+                sendChatMessage(t.reportIssueChatMsg(activeOrder?.id || selectedOrderId || 2481));
+                setIssueSent(true);
+              }
+            }}
           >
             {t.reportIssueBtn}
           </PillButton>

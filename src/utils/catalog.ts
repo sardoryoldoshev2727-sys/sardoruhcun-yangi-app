@@ -25,6 +25,7 @@ export const CATEGORIES = [
 
 export const CATALOG_CHIPS = [
   'Hammasi',
+  'Faqat bor',
   'Javonim',
   '1 L',
   '0.33 L',
@@ -39,8 +40,9 @@ export function matchesCatalogChip(
   isFavorite: (id: number) => boolean,
 ): boolean {
   if (chip === 'Hammasi') return true;
+  if (chip === 'Faqat bor') return !p.out;
   if (chip === 'Javonim') return inShelf(p.id);
-  if (chip === 'Aksiya') return Boolean(p.promoPct && p.promoPct > 0);
+  if (chip === 'Aksiya') return Boolean((p.promoPct && p.promoPct > 0) || (p.giftBuyBoxes && p.giftFreeBoxes));
   if (chip === 'Yoqqanlar') return isFavorite(p.id);
   if (chip === '1 L') return p.vol === '1 L' || p.cat === '1 L';
   if (chip === '0.33 L') {
@@ -455,11 +457,15 @@ export function computeCartPromoBreakdown(
   };
 }
 
+export function getLastDeliveredOrder(orders: OrderRecord[]): OrderRecord | null {
+  return orders.find((o) => o.status === 'Yetkazildi' && o.items.length > 0) || null;
+}
+
 export function getLastDeliveredBuyAgainItems(
   orders: OrderRecord[],
   productsById: Record<number, Product>,
 ): { product: Product; qty: number }[] {
-  const delivered = orders.find((o) => o.status === 'Yetkazildi' && o.items.length > 0);
+  const delivered = getLastDeliveredOrder(orders);
   if (!delivered) return [];
   const list: { product: Product; qty: number }[] = [];
   for (const item of delivered.items) {
@@ -521,12 +527,29 @@ export function computeSuggestedNorm(productId: number, orders: OrderRecord[], f
   return Math.max(1, Math.round(avg));
 }
 
-export function computeShelfNeed(norm: number, stock: number): number {
-  return Math.max(0, Math.round(norm) - Math.max(0, Math.floor(stock)));
+export function computeShelfNeed(
+  norm: number,
+  stock: number,
+  loosePieces = 0,
+  boxSize = 9,
+): number {
+  const effectiveStock =
+    Math.max(0, Math.round(stock)) +
+    Math.max(0, Math.round(loosePieces)) / Math.max(1, boxSize);
+  const diff = Math.round(norm) - effectiveStock;
+  return Math.max(0, Math.ceil(Math.round(diff * 1e6) / 1e6));
 }
 
-export function isShelfItemLow(norm: number, stock: number): boolean {
-  return norm > 0 && stock < 0.3 * norm;
+export function isShelfItemLow(
+  norm: number,
+  stock: number,
+  loosePieces = 0,
+  boxSize = 9,
+): boolean {
+  const effectiveStock =
+    Math.max(0, Math.round(stock)) +
+    Math.max(0, Math.round(loosePieces)) / Math.max(1, boxSize);
+  return norm > 0 && effectiveStock < 0.3 * norm;
 }
 
 export function formatHalfBoxes(val: number): string {

@@ -6,12 +6,15 @@ import { EmptyState, ErrorState } from '../components/StateFeedback';
 import { AnorThreeSeeds, PillButton, TweenSom } from '../components/V4Primitives';
 import { useStore } from '../context/StoreContext';
 import { getDayLabel, getSlotLabel } from '../i18n';
-import { DAYS, SLOTS, computeCartEstimatedProfit, computeCartPromoBreakdown, formatSom } from '../utils/catalog';
+import { DAYS, SLOTS, computeCartEstimatedProfit, computeCartPromoBreakdown, formatSom, getLastDeliveredOrder } from '../utils/catalog';
 
 export const CartView: React.FC = () => {
   const {
     cart,
     cartSubtotal,
+    orders,
+    shelf,
+    getShelfNeed,
     productsById,
     productsLoading,
     loadError,
@@ -28,7 +31,8 @@ export const CartView: React.FC = () => {
     setSlot,
     setNote,
     setSheet,
-    fillShelfToCart,
+    fillShelfNeedsToCart,
+    repeatLastOrder,
     goTab,
   } = useStore();
 
@@ -49,19 +53,36 @@ export const CartView: React.FC = () => {
   }
 
   if (ids.length === 0) {
+    const totalShelfNeed = shelf.reduce((sum, s) => sum + getShelfNeed(s[0]), 0);
+    const lastDelivered = getLastDeliveredOrder(orders);
+    const primaryLabel =
+      totalShelfNeed > 0
+        ? t.shelfNeedAddBtn(totalShelfNeed)
+        : lastDelivered
+          ? t.repeatLastOrder
+          : t.goToCatalog;
+    const handlePrimary = () => {
+      if (totalShelfNeed > 0) {
+        fillShelfNeedsToCart(false);
+        return;
+      }
+      if (lastDelivered) {
+        repeatLastOrder();
+        return;
+      }
+      goTab('cat');
+    };
+
     return (
       <div className="max-w-sm mx-auto pt-2">
         <EmptyState
           variant="cart"
           title={t.emptyCartTitle}
           subtitle={t.emptyCartSub}
-          actionLabel={t.addUsualOrder}
-          onAction={() => {
-            fillShelfToCart(false);
-            goTab('cart');
-          }}
-          secondaryActionLabel={t.goToCatalog}
-          onSecondaryAction={() => goTab('cat')}
+          actionLabel={primaryLabel}
+          onAction={handlePrimary}
+          secondaryActionLabel={primaryLabel !== t.goToCatalog ? t.goToCatalog : undefined}
+          onSecondaryAction={primaryLabel !== t.goToCatalog ? () => goTab('cat') : undefined}
         />
       </div>
     );
@@ -135,7 +156,7 @@ export const CartView: React.FC = () => {
             </div>
 
             <div className="flex justify-between text-xs text-[var(--text-muted)] tabular-nums">
-              <span>500k · 5%</span>
+              <span>{lang === 'ru' ? '500 тыс. · 5%' : '500 ming · 5%'}</span>
               <span>1 {lang === 'ru' ? 'млн' : 'mln'} · 7%</span>
               <span>2 {lang === 'ru' ? 'млн' : 'mln'} · 10%</span>
             </div>
