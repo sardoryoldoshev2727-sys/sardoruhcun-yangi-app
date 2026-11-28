@@ -27,6 +27,7 @@ import {
 } from '../api';
 import { TRANSLATIONS, type Translations } from '../i18n';
 import { getTelegramColorScheme, initTelegramApp, syncTelegramTheme, triggerHaptic } from '../telegram';
+import { forgetDevicePin, rememberDevicePin } from '../utils/devicePin';
 import type {
   BoxDiscountNudge,
   BoxDiscountTier,
@@ -1485,6 +1486,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
       try {
         const created = await apiPlaceOrder(payload);
+        rememberDevicePin(pin);
         triggerHaptic('success');
         setOrders((prev) => [created, ...prev]);
         setLastOrderId(created.id);
@@ -1553,6 +1555,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Panel buyurtmani rad etdi (PIN noto'g'ri / qulflangan / juda oson PIN va h.k.) — sababini aniq ko'rsatamiz
           triggerHaptic('error');
           const reason = err instanceof Error && err.message ? err.message : '';
+          // PIN rad etilsa yoki qulflansa — eslab qolingan PIN o'chadi, keyingi safar qayta so'raladi
+          if (/PIN|qulf|urinish|блок|попыт/i.test(reason)) forgetDevicePin();
           showToast({
             icon: 'info',
             title: lang === 'ru' ? 'Заказ не отправлен' : 'Buyurtma yuborilmadi',

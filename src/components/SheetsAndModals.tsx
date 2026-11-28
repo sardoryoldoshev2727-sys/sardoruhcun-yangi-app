@@ -28,6 +28,7 @@ import {
   isShelfItemLow,
   shortName,
 } from '../utils/catalog';
+import { DEVICE_PIN_MAX_TOTAL, getDevicePin } from '../utils/devicePin';
 import { CartStepper } from './ProductCard';
 import { ProductVisual } from './ProductVisual';
 import { ProfitCalculatorCard } from './ProfitCalculatorCard';
@@ -432,6 +433,9 @@ export const SheetsAndModals: React.FC = () => {
       )}
 
       {sheet?.type === 'confirmOrder' && (() => {
+        // PIN shu telefonda eslab qolingan bo'lsa va buyurtma 2 mln dan kichik — PIN so'ralmaydi
+        const rememberedPin = getDevicePin();
+        const savedPin = rememberedPin && checkoutQuote.total < DEVICE_PIN_MAX_TOTAL ? rememberedPin : null;
         const cartEntries = Object.entries(cart)
           .map(([id, q]) => ({ product: productsById[Number(id)], qty: q }))
           .filter((x): x is { product: NonNullable<typeof x.product>; qty: number } =>
@@ -541,12 +545,32 @@ export const SheetsAndModals: React.FC = () => {
                   </PillButton>
                 </div>
                 <div className="flex-[1.6]">
-                  <PillButton level="buy" size="lg" fullWidth onClick={() => setSheet({ type: 'pin' })}>
-                    <Lock className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                    <span>{t.confirmAndEnterPin}</span>
-                  </PillButton>
+                  {savedPin ? (
+                    <PillButton
+                      level="buy"
+                      size="lg"
+                      fullWidth
+                      disabled={submittingOrder}
+                      onClick={() => void placeOrder(savedPin)}
+                    >
+                      <Check className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                      <span>{t.confirmAndSendOrder}</span>
+                    </PillButton>
+                  ) : (
+                    <PillButton level="buy" size="lg" fullWidth onClick={() => setSheet({ type: 'pin' })}>
+                      <Lock className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                      <span>{t.confirmAndEnterPin}</span>
+                    </PillButton>
+                  )}
                 </div>
               </div>
+              <p className="text-center text-xs text-[var(--text-muted)] mt-3">
+                {savedPin
+                  ? t.devicePinRemembered
+                  : checkoutQuote.total >= DEVICE_PIN_MAX_TOTAL && getDevicePin()
+                    ? t.devicePinBigOrder
+                    : t.devicePinFirstTime}
+              </p>
             </motion.div>
           </motion.div>
         );

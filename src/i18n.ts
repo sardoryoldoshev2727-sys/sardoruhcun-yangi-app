@@ -268,6 +268,10 @@ export interface Translations {
   commentLabel: string;
   noCommentLabel: string;
   confirmAndEnterPin: string;
+  confirmAndSendOrder: string;
+  devicePinRemembered: string;
+  devicePinFirstTime: string;
+  devicePinBigOrder: string;
   pinTitleOrder: string;
   pinTitleChange: string;
   pinSubOrder: string;
@@ -769,6 +773,10 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     commentLabel: 'Izoh',
     noCommentLabel: 'Izohsiz',
     confirmAndEnterPin: 'Tasdiqlash · PIN kiritish',
+    confirmAndSendOrder: 'Buyurtmani yuborish',
+    devicePinRemembered: "PIN shu telefonda eslab qolingan — qayta so'ralmaydi",
+    devicePinFirstTime: "PIN bir marta kiritiladi, keyin shu telefonda eslab qolinadi",
+    devicePinBigOrder: "2 mln so'mdan katta buyurtma — xavfsizlik uchun PIN so'raladi",
     pinTitleOrder: 'PIN-kodni kiriting',
     pinTitleChange: 'Yangi PIN-kod',
     pinSubOrder: 'Buyurtmani tasdiqlash uchun',
@@ -1284,6 +1292,10 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     commentLabel: 'Комментарий',
     noCommentLabel: 'Без комментария',
     confirmAndEnterPin: 'Подтвердить · Ввести PIN',
+    confirmAndSendOrder: 'Отправить заказ',
+    devicePinRemembered: 'PIN сохранён на этом телефоне — повторно не спрашиваем',
+    devicePinFirstTime: 'PIN вводится один раз и запоминается на этом телефоне',
+    devicePinBigOrder: 'Заказ больше 2 млн сум — для безопасности нужен PIN',
     pinTitleOrder: 'Введите PIN-код',
     pinTitleChange: 'Новый PIN-код',
     pinSubOrder: 'Для подтверждения заказа',
