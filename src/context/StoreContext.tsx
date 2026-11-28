@@ -291,6 +291,7 @@ interface StoreContextValue {
   isShelfLow: (id: number) => boolean;
   setShelfNorm: (id: number, norm: number) => void;
   adjustShelfStock: (id: number, deltaBoxes: number) => void;
+  adjustShelfLoose: (id: number, deltaPieces: number) => void;
   saveShelfCheck: (
     stocks: Record<number, number>,
     loosePieces?: Record<number, number>,
@@ -422,7 +423,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [lastPlacedOrder, setLastPlacedOrder] = useState<OrderRecord | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(2481);
   const [navDirection, setNavDirection] = useState<NavDirection>('tab');
-  const [unreadChat, setUnreadChat] = useState<number>(2);
+  const [unreadChat, setUnreadChat] = useState<number>(0);
 
   const [cart, setCart] = useState<Record<number, number>>(initial.cart);
   const [shelf, setShelf] = useState<ShelfItem[]>(initial.shelf);
@@ -496,7 +497,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const prevDiscountPctRef = useRef<number | null>(null);
   const userMutatedCartRef = useRef<boolean>(false);
   const promptedRatingIdsRef = useRef<Set<number>>(new Set());
-  const prevChatCountRef = useRef<number>(DEFAULT_CHAT_SEED.length);
+  const prevInChatCountRef = useRef<number>(DEFAULT_CHAT_SEED.filter((m) => m[0] === 'in').length);
+  const mountTimeRef = useRef<number>(Date.now());
   const t = TRANSLATIONS[lang];
 
   const dismissToast = useCallback(() => {
@@ -556,7 +558,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     operatorTimerRef.current = window.setTimeout(() => {
       setOperatorBanner(null);
       operatorTimerRef.current = null;
-    }, 6500);
+    }, 6000);
   }, []);
 
   const loadAllData = useCallback(async () => {
@@ -810,33 +812,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [cart]);
 
-  // Calm Operator Chat Card when new incoming operator message arrives outside chat view
+  // Operator Chat Banner ONLY when a NEW incoming ('in') message arrives after initial hydration
   useEffect(() => {
-    if (chat.length > prevChatCountRef.current) {
-      const latest = chat[chat.length - 1];
-      if (latest && latest[0] === 'in' && pageRef.current !== 'chat') {
-        showOperatorBanner(shop?.operatorName || 'Madina', latest[1]);
+    const incomingMsgs = chat.filter((m) => m[0] === 'in');
+    const inCount = incomingMsgs.length;
+    if (
+      inCount > prevInChatCountRef.current &&
+      Date.now() - mountTimeRef.current > 1500 &&
+      pageRef.current !== 'chat'
+    ) {
+      const latestIn = incomingMsgs[incomingMsgs.length - 1];
+      if (latestIn) {
+        showOperatorBanner(shop?.operatorName || 'Madina', latestIn[1]);
       }
     }
-    prevChatCountRef.current = chat.length;
+    prevInChatCountRef.current = inCount;
   }, [chat, shop?.operatorName, showOperatorBanner]);
-
-  // Scheduled operator message preview (7s after open)
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (pageRef.current === 'chat') return;
-      setUnreadChat((c) => c + 1);
-      setChat((prev) => [
-        ...prev,
-        [
-          'in',
-          "Dilnoza opa, ertaga Anor 1 L ga aksiya bor — 10 quti olsangiz 1 quti sovg'a.",
-          '13:20',
-        ],
-      ]);
-    }, 7000);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   const productsById = useMemo(() => {
     const map: Record<number, Product> = {};
@@ -1013,9 +1004,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPage(nextPage);
     setSheet(null);
     setEditShelf(false);
+    dismissOperatorBanner();
     if (nextPage === 'chat') {
       setUnreadChat(0);
-      dismissOperatorBanner();
     }
     if (nextPage === 'notif') {
       setNotifs((prev) => prev.map((n) => [n[0], n[1], n[2], n[3], 0]));
@@ -1031,6 +1022,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNavDirection('back');
     setSheet(null);
     setEditShelf(false);
+    dismissOperatorBanner();
     if (prev) {
       if (prev.tab === 'home' && tabRef.current !== 'home') {
         setHomeVisitEpoch((e) => e + 1);
@@ -1045,7 +1037,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTab('home');
       setPage(null);
     }
-  }, []);
+  }, [dismissOperatorBanner]);
 
   const openPage = useCallback((p: SubPageId) => {
     // openPage(null) = «Orqaga» (kelgan joyga qaytish)
@@ -1061,9 +1053,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNavDirection('forward');
     setPage(p);
     setSheet(null);
+    dismissOperatorBanner();
     if (p === 'chat') {
       setUnreadChat(0);
-      dismissOperatorBanner();
     }
     if (p === 'notif') {
       setNotifs((prev) => prev.map((n) => [n[0], n[1], n[2], n[3], 0]));
@@ -1217,6 +1209,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
     triggerHaptic('add');
   }, []);
+
+  const adjustShelfLoose = useCallback(
+    (id: number, deltaPieces: number) => {
+      const maxLoose = Math.max(1, productsById[id]?.blk || 9) - 1;
+      setShelfLoosePieces((prev) => {
+        const cur = typeof prev[id] === 'number' ? Math.round(prev[id]) : 0;
+        const next = Math.max(0, Math.min(maxLoose, cur + Math.round(deltaPieces)));
+        return { ...prev, [id]: next };
+      });
+      triggerHaptic('add');
+    },
+    [productsById],
+  );
 
   const saveShelfCheck = useCallback(
     (
@@ -1703,6 +1708,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     isShelfLow,
     setShelfNorm,
     adjustShelfStock,
+    adjustShelfLoose,
     saveShelfCheck,
     fillShelfNeedsToCart,
     fillShelfNormsToCart,

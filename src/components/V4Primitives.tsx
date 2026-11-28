@@ -50,6 +50,36 @@ export const TweenSom: React.FC<{ value: number; className?: string }> = ({
   return <span className={`tabular-nums ${className}`}>{formatSom(animated)}</span>;
 };
 
+export const RollingNumber: React.FC<{
+  value: number;
+  suffix?: string;
+  className?: string;
+}> = ({ value, suffix, className = '' }) => {
+  const prevRef = useRef<number>(value);
+  const dir = value >= prevRef.current ? 1 : -1;
+  useEffect(() => {
+    prevRef.current = value;
+  }, [value]);
+
+  return (
+    <span className={`inline-flex items-center justify-center overflow-hidden tabular-nums ${className}`}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={value}
+          initial={{ y: dir * 7, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: dir * -7, opacity: 0 }}
+          transition={{ duration: 0.14, ease: [0.2, 0, 0, 1] }}
+          className="inline-block"
+        >
+          {value}
+          {suffix ? ` ${suffix}` : ''}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+};
+
 export const AnorSeedIcon: React.FC<{
   filled: boolean;
   variant?: 'velvet' | 'surface';
@@ -479,9 +509,9 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
               type="button"
               aria-label={`${qty} ${unitLabel}`}
               onClick={onQtyTap}
-              className="relative z-10 min-w-[28px] h-11 px-1 text-center font-semibold text-sm tabular-nums hover:bg-black/10"
+              className="relative z-10 min-w-[28px] h-11 px-1 text-center font-semibold text-sm tabular-nums hover:bg-black/10 flex items-center justify-center"
             >
-              {qty}
+              <RollingNumber value={qty} />
             </button>
             <button
               type="button"
@@ -494,36 +524,6 @@ export const GreenAddControl: React.FC<GreenAddControlProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-};
-
-export const PullToRefreshSeeds: React.FC<{
-  pullDist: number;
-  refreshing: boolean;
-  hint: string;
-  releaseHint: string;
-  refreshingLabel: string;
-}> = ({ pullDist, refreshing, hint, releaseHint, refreshingLabel }) => {
-  const activeCount = refreshing ? 3 : pullDist >= 42 ? 3 : pullDist >= 24 ? 2 : pullDist >= 10 ? 1 : 0;
-
-  return (
-    <div
-      className="flex items-center justify-center gap-2.5 overflow-hidden transition-[height,opacity] duration-200"
-      style={{
-        height: refreshing || pullDist > 4 ? `${refreshing ? 36 : Math.min(44, pullDist)}px` : '0px',
-        opacity: refreshing || pullDist > 4 ? 1 : 0,
-      }}
-      aria-live="polite"
-    >
-      <div className="inline-flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <AnorSeedIcon key={i} filled={i < activeCount} variant="surface" size={12} />
-        ))}
-      </div>
-      <span className="text-xs font-medium text-[var(--text-muted)]">
-        {refreshing ? refreshingLabel : pullDist >= 42 ? releaseHint : hint}
-      </span>
     </div>
   );
 };

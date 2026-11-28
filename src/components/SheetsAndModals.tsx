@@ -31,7 +31,7 @@ import {
 import { CartStepper } from './ProductCard';
 import { ProductVisual } from './ProductVisual';
 import { ProfitCalculatorCard } from './ProfitCalculatorCard';
-import { PillButton } from './V4Primitives';
+import { PillButton, RollingNumber } from './V4Primitives';
 
 const QUICK_PRESETS = [1, 2, 3, 5, 10, 15, 20, 25];
 
@@ -261,7 +261,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 border-t md:border border-[var(--border-hairline)]"
             >
@@ -452,7 +452,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 max-h-[88dvh] overflow-y-auto border-t md:border border-[var(--border-hairline)]"
             >
@@ -587,7 +587,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 max-h-[90dvh] overflow-y-auto border-t md:border border-[var(--border-hairline)] space-y-4"
             >
@@ -770,7 +770,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 max-h-[85dvh] overflow-y-auto border-t md:border border-[var(--border-hairline)]"
             >
@@ -834,7 +834,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 border-t md:border border-[var(--border-hairline)]"
             >
@@ -924,7 +924,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ y: '100%', opacity: 0.92 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0.85 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 border-t md:border border-[var(--border-hairline)] space-y-4"
           >
@@ -1073,7 +1073,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-6 border-t md:border border-[var(--border-hairline)]"
             >
@@ -1242,7 +1242,7 @@ export const SheetsAndModals: React.FC = () => {
               initial={{ y: '100%', opacity: 0.92 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.85 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-md bg-[var(--bg-card)] rounded-t-[20px] md:rounded-[20px] p-4 pb-6 max-h-[90dvh] flex flex-col border-t md:border border-[var(--border-hairline)]"
             >
@@ -1355,7 +1355,7 @@ export const SheetsAndModals: React.FC = () => {
                               <Minus className="w-4 h-4" strokeWidth={1.75} />
                             </button>
                             <span className="min-w-[28px] text-center text-sm font-semibold tabular-nums">
-                              {curNorm}
+                              <RollingNumber value={curNorm} />
                             </span>
                             <button
                               type="button"
@@ -1381,7 +1381,7 @@ export const SheetsAndModals: React.FC = () => {
                             <Minus className="w-[18px] h-[18px]" strokeWidth={1.75} />
                           </button>
                           <span className="min-w-[54px] text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums">
-                            {curStock} {t.boxUnit}
+                            <RollingNumber value={curStock} suffix={` ${t.boxUnit}`} />
                           </span>
                           <button
                             type="button"
@@ -1405,7 +1405,7 @@ export const SheetsAndModals: React.FC = () => {
                             <Minus className="w-3.5 h-3.5" strokeWidth={1.75} />
                           </button>
                           <span className="min-w-[56px] px-1 text-center text-xs font-medium text-[var(--text-secondary)] tabular-nums whitespace-nowrap">
-                            +{curLoose} {t.pieceUnit}
+                            +<RollingNumber value={curLoose} suffix={` ${t.pieceUnit}`} />
                           </span>
                           <button
                             type="button"
@@ -1466,7 +1466,7 @@ export const SheetsAndModals: React.FC = () => {
             initial={{ y: '100%', opacity: 0.94 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0.85 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.85 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => {
               guideTouchStartX.current = e.touches[0]?.clientX ?? null;

@@ -72,18 +72,18 @@ export const PromoView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-[var(--text-primary)] leading-tight">
+        <h2 className="text-[17px] font-semibold text-[var(--text-primary)] leading-tight">
           {t.promoTitle}
         </h2>
-        <p className="text-sm font-normal text-[var(--text-secondary)] mt-1">
+        <p className="text-[13px] font-normal text-[var(--text-secondary)] mt-1">
           {t.promoSub}
         </p>
       </div>
 
       <img src={ART.promo} alt="" aria-hidden="true" loading="lazy" decoding="async"
-        className="w-full aspect-[16/9] object-cover rounded-[20px] v4-art-in" />
+        className="w-full aspect-[16/9] object-cover rounded-[16px] v4-art-in" />
 
       {/* Top Segmented Filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
@@ -94,7 +94,7 @@ export const PromoView: React.FC = () => {
               key={seg.id}
               type="button"
               onClick={() => setFilter(seg.id)}
-              className={`flex-none min-h-[44px] px-4 rounded-full text-xs sm:text-sm font-medium border transition-colors whitespace-nowrap ${
+              className={`flex-none min-h-[44px] px-4 rounded-full text-[13px] font-medium border transition-colors whitespace-nowrap ${
                 active
                   ? 'bg-[var(--ink-fill)] text-[var(--ink-text)] border-[var(--ink-fill)]'
                   : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-hairline)]'
@@ -110,11 +110,11 @@ export const PromoView: React.FC = () => {
       {filter !== 'new' && (
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+            <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">
               {filter === 'gift' ? t.promoFilterGift : t.currentDiscounts}
             </h3>
             {promoDeals.length > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-medium tabular-nums">
+              <span className="px-2.5 py-1 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[13px] font-medium tabular-nums">
                 {promoDeals.length}
               </span>
             )}
@@ -149,7 +149,7 @@ export const PromoView: React.FC = () => {
                   <div
                     key={prod.id}
                     onClick={() => setSheet({ type: 'prod', id: prod.id })}
-                    className="v4-card rounded-[16px] p-3.5 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden hover:border-[var(--border-strong)] transition-colors"
+                    className="v4-card v4-press rounded-[16px] p-4 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden hover:border-[var(--border-strong)] transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <ProductVisual
@@ -180,11 +180,11 @@ export const PromoView: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="text-sm sm:text-[15px] font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
+                        <div className="text-[15px] font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
                           {name} {prod.vol}
                         </div>
 
-                        <div className="text-xs text-[var(--text-muted)] tabular-nums">
+                        <div className="text-[13px] text-[var(--text-muted)] tabular-nums">
                           {t.boxMetaLine(prod.blk)}
                         </div>
                       </div>
@@ -193,7 +193,7 @@ export const PromoView: React.FC = () => {
                     {/* Product-specific Promo / Gift Info */}
                     {hasGift ? (
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
+                        <div className="flex items-center justify-between gap-2 text-[13px] font-medium flex-wrap">
                           <span
                             className={`inline-flex items-center gap-1.5 tabular-nums ${
                               giftUnlocked ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'
@@ -223,7 +223,7 @@ export const PromoView: React.FC = () => {
                       </div>
                     ) : (
                       hasPct && (
-                        <div className="flex items-center justify-between gap-2 text-xs font-medium flex-wrap">
+                        <div className="flex items-center justify-between gap-2 text-[13px] font-medium flex-wrap">
                           <span className="text-[var(--text-secondary)]">
                             {t.promoCardDiscountNote(prod.promoPct || 0)}
                           </span>
@@ -247,7 +247,7 @@ export const PromoView: React.FC = () => {
                             {formatSom(prod.box)}
                           </div>
                         )}
-                        <div className="text-base font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap leading-tight">
+                        <div className="text-[16px] font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap leading-tight">
                           {formatNumberThin(promoBox)}{' '}
                           <span className="text-xs font-normal text-[var(--text-muted)]">
                             so&apos;m
@@ -275,25 +275,25 @@ export const PromoView: React.FC = () => {
 
       {/* Chegirma zinapoyasi */}
       {filter === 'all' || filter === 'discount' ? (
-        <section className="v4-card p-4 space-y-4">
+        <section className="v4-card rounded-[16px] p-4 space-y-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="w-9 h-9 rounded-[10px] bg-[var(--bg-raised)] text-[var(--anor-text)] flex items-center justify-center flex-none">
                   <Tag className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 </span>
-                <h3 className="text-base font-semibold text-[var(--text-primary)] leading-tight">
+                <h3 className="text-[17px] font-semibold text-[var(--text-primary)] leading-tight">
                   {t.discountLadderTitle}
                 </h3>
               </div>
-              <p className="text-xs text-[var(--text-muted)] mt-1.5">
+              <p className="text-[13px] text-[var(--text-muted)] mt-1.5">
                 {t.discountLadderSub}
               </p>
             </div>
             <AnorThreeSeeds currentSum={currentSum} variant="surface" showLabels={false} />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {TIERS.map(([minSum, pct]) => {
               const reached = currentSum >= minSum;
               const isNext =
@@ -338,7 +338,7 @@ export const PromoView: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2 text-xs font-medium">
+            <div className="flex items-center justify-between gap-2 text-[13px] font-medium">
               <span className="text-[var(--text-primary)] tabular-nums">
                 {t.discountLadderCurrentCart(formatSom(currentSum))}
               </span>
@@ -376,11 +376,11 @@ export const PromoView: React.FC = () => {
       {(filter === 'all' || filter === 'new') && (
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+            <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">
               {t.newArrivals}
             </h3>
             {newProducts.length > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-xs font-medium tabular-nums">
+              <span className="px-2.5 py-1 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[13px] font-medium tabular-nums">
                 {newProducts.length}
               </span>
             )}
@@ -408,16 +408,16 @@ export const PromoView: React.FC = () => {
       <button
         type="button"
         onClick={() => openPage('chat')}
-        className="v4-card w-full text-left p-4 flex items-center gap-3 hover:border-[var(--border-strong)] transition-colors duration-150"
+        className="v4-card v4-press w-full rounded-[16px] text-left p-4 flex items-center gap-3 hover:border-[var(--border-strong)] transition-colors duration-150"
       >
         <span className="w-11 h-11 rounded-[12px] bg-[var(--bg-raised)] text-[var(--anor-text)] flex items-center justify-center flex-none">
           <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </span>
         <div className="flex-1 min-w-0">
-          <strong className="block text-sm font-medium text-[var(--text-primary)] leading-snug break-words">
+          <strong className="block text-[15px] font-medium text-[var(--text-primary)] leading-snug break-words">
             {t.promoOperatorTitle}
           </strong>
-          <span className="block text-xs text-[var(--text-muted)] mt-0.5 truncate">
+          <span className="block text-[13px] text-[var(--text-muted)] mt-0.5 truncate">
             {t.promoOperatorSub(shop?.operatorName || 'Madina')}
           </span>
         </div>

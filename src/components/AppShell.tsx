@@ -46,7 +46,7 @@ import {
 } from '../utils/catalog';
 import { HomeView } from '../views/HomeView';
 import { ListRowsSkeleton } from './Skeletons';
-import { CoachMarkSpotlight, PillButton, TweenSom } from './V4Primitives';
+import { CoachMarkSpotlight, PillButton, RollingNumber, TweenSom } from './V4Primitives';
 import { SheetsAndModals } from './SheetsAndModals';
 
 // Sahifalar kerak bo'lganda yuklanadi (ilova tezroq ochiladi)
@@ -307,6 +307,21 @@ export const AppShell: React.FC = () => {
     </button>
   );
 
+  const desktopOnlyThemeToggleBtn = (
+    <button
+      type="button"
+      aria-label={t.darkModeTitle}
+      onClick={toggleTheme}
+      className="hidden md:flex w-11 h-11 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] items-center justify-center flex-none transition-colors"
+    >
+      {darkMode ? (
+        <Sun className="w-[18px] h-[18px]" strokeWidth={1.5} />
+      ) : (
+        <Moon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+      )}
+    </button>
+  );
+
   const headerBackBtn = (
     <button
       type="button"
@@ -349,7 +364,7 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{t.notifTitle}</h1>
+          <h1 className="flex-1 text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">{t.notifTitle}</h1>
           {themeToggleBtn}
         </>
       );
@@ -359,7 +374,7 @@ export const AppShell: React.FC = () => {
         <>
           {headerBackBtn}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
+            <h1 className="text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.orderNumberPrefix}{selectedOrderId || 2481}
             </h1>
             <small className="block text-xs text-[var(--text-secondary)] tabular-nums truncate">
@@ -374,7 +389,7 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">
+          <h1 className="flex-1 text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.orderDetailTitle} #{selectedOrderId}
           </h1>
           {themeToggleBtn}
@@ -384,7 +399,7 @@ export const AppShell: React.FC = () => {
     if (page === 'success') {
       return (
         <>
-          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)]">{t.successTitle}</h1>
+          <h1 className="flex-1 text-[17px] font-semibold leading-tight text-[var(--text-primary)]">{t.successTitle}</h1>
           {themeToggleBtn}
         </>
       );
@@ -397,7 +412,7 @@ export const AppShell: React.FC = () => {
             M
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
+            <h1 className="text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">
               {shop?.operatorName || 'Madina'}
             </h1>
             <small className="block text-xs text-[var(--success)] truncate">
@@ -412,7 +427,7 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.promoHeaderShort}
           </h1>
           {themeToggleBtn}
@@ -423,7 +438,7 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 min-w-0 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.profileTitle}
           </h1>
           {themeToggleBtn}
@@ -462,7 +477,7 @@ export const AppShell: React.FC = () => {
       return (
         <>
           {headerBackBtn}
-          <h1 className="flex-1 text-base font-semibold text-[var(--text-primary)] truncate">{titles[page]}</h1>
+          <h1 className="flex-1 text-[17px] font-semibold leading-tight text-[var(--text-primary)] truncate">{titles[page]}</h1>
           {themeToggleBtn}
         </>
       );
@@ -471,8 +486,8 @@ export const AppShell: React.FC = () => {
     if (tab === 'cat') {
       return (
         <>
-          <div className="flex-1 min-w-0 pl-1">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.navCatalog}
             </h1>
             <small className="block text-[11px] text-[var(--text-muted)] truncate">
@@ -487,7 +502,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'shelf') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.shelfHeaderShort}
           </h1>
           {profileHeaderBtn}
@@ -499,7 +514,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'promo') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.promoHeaderShort}
           </h1>
           {themeToggleBtn}
@@ -510,8 +525,8 @@ export const AppShell: React.FC = () => {
     if (tab === 'cart') {
       return (
         <>
-          <div className="flex-1 min-w-0 pl-1">
-            <h1 className="text-base font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
               {t.cartHeaderShort}
             </h1>
             {cartCount > 0 && (
@@ -528,12 +543,12 @@ export const AppShell: React.FC = () => {
     if (tab === 'ord') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.ordersHeaderShort}
           </h1>
           {refreshOrdersHeaderBtn}
           {profileHeaderBtn}
-          {themeToggleBtn}
+          {desktopOnlyThemeToggleBtn}
         </>
       );
     }
@@ -541,7 +556,7 @@ export const AppShell: React.FC = () => {
     if (tab === 'me') {
       return (
         <>
-          <h1 className="flex-1 min-w-0 pl-1 text-base font-semibold text-[var(--text-primary)] whitespace-nowrap">
+          <h1 className="flex-1 min-w-0 text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
             {t.profileTitle}
           </h1>
           {themeToggleBtn}
@@ -562,17 +577,17 @@ export const AppShell: React.FC = () => {
       );
     }
 
-    // Home top bar: logo + store name ONCE + Termiz · date + bell + profile + theme
+    // Home top bar: logo + store name ONCE + Termiz · date + max 2 action buttons right
     return (
       <>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
           <img
             src={LOGO}
             alt="Lal Anaar"
             className="w-9 h-9 rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-hairline)] object-contain p-1 flex-none"
           />
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-base font-semibold leading-tight text-[var(--text-primary)] truncate">
+            <h1 className="text-[20px] sm:text-[22px] font-semibold leading-tight text-[var(--text-primary)] truncate">
               {shop?.name || "«Baraka» do'koni"}
             </h1>
             <small className="block text-[11px] text-[var(--text-secondary)] truncate">
@@ -594,7 +609,7 @@ export const AppShell: React.FC = () => {
           )}
         </button>
         {profileHeaderBtn}
-        {themeToggleBtn}
+        {desktopOnlyThemeToggleBtn}
       </>
     );
   };
@@ -744,7 +759,7 @@ export const AppShell: React.FC = () => {
             )}
 
             {/* Calm Neutral V4 Header */}
-            <header className="h-14 px-2.5 sm:px-3 bg-[var(--bg-app)] border-b border-[var(--border-hairline)] flex items-center gap-1.5 sm:gap-2 flex-none z-20">
+            <header className="h-14 px-4 bg-[var(--bg-app)] border-b border-[var(--border-hairline)] flex items-center gap-2 flex-none z-20">
               {renderTopBar()}
             </header>
 
@@ -925,7 +940,7 @@ export const AppShell: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Calm Operator Chat Card above bottom nav / floating cart bar */}
+            {/* Calm Operator Chat Card above bottom nav / floating cart bar (swipeable to dismiss) */}
             <AnimatePresence>
               {operatorBanner && page !== 'chat' && !undoSnackbar && (
                 <motion.div
@@ -936,7 +951,17 @@ export const AppShell: React.FC = () => {
                   transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
                   className={`absolute left-3 right-3 ${overlayBottomOffset} z-25 flex justify-center pointer-events-none`}
                 >
-                  <div className="pointer-events-auto w-full max-w-md v4-card rounded-[16px] p-3 flex items-center gap-3">
+                  <motion.div
+                    drag="x"
+                    dragConstraints={{ left: -120, right: 120 }}
+                    dragElastic={0.35}
+                    onDragEnd={(_, info) => {
+                      if (Math.abs(info.offset.x) > 55) {
+                        dismissOperatorBanner();
+                      }
+                    }}
+                    className="pointer-events-auto w-full max-w-md v4-card rounded-[16px] p-3 flex items-center gap-3 touch-pan-y cursor-grab active:cursor-grabbing"
+                  >
                     <span className="w-9 h-9 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] font-semibold text-sm flex items-center justify-center flex-none">
                       {operatorBanner.name.charAt(0).toUpperCase()}
                     </span>
@@ -966,7 +991,7 @@ export const AppShell: React.FC = () => {
                     >
                       <X className="w-4 h-4" strokeWidth={1.5} />
                     </button>
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1137,7 +1162,7 @@ export const AppShell: React.FC = () => {
                                 onClick={() => setSheet({ type: 'quickQty', id })}
                                 className="min-w-[30px] h-11 px-1 text-center text-sm font-semibold text-[var(--text-primary)] tabular-nums"
                               >
-                                {q}
+                                <RollingNumber value={q} />
                               </button>
                               <button
                                 type="button"

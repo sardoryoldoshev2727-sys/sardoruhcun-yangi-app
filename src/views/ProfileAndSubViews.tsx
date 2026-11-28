@@ -62,7 +62,7 @@ export const ProfileView: React.FC = () => {
   } = useStore();
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       {/* Calm hairline loyalty/account card (no gradient, no shadow, no glass/grain) */}
       <div className="v4-card p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between gap-2">
@@ -152,7 +152,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('favorites')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <Heart className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -177,7 +177,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('profit')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <Calculator className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -196,7 +196,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('report')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <BarChart3 className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -218,7 +218,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('chat')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -260,7 +260,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('shop')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <Store className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -274,7 +274,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => openPage('fin')}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <Wallet className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -291,7 +291,7 @@ export const ProfileView: React.FC = () => {
         <button
           type="button"
           onClick={() => setSheet({ type: 'pin', changeMode: true })}
-          className="w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
+          className="v4-press w-full min-h-[56px] flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--bg-raised)] transition-colors duration-150"
         >
           <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] text-[var(--text-secondary)] flex items-center justify-center flex-none">
             <Lock className="w-[18px] h-[18px]" strokeWidth={1.5} />
@@ -478,7 +478,7 @@ export const FavoritesView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="text-xs font-medium text-[var(--text-muted)] tabular-nums">
         {t.shownCount(favProducts.length)}
       </div>
@@ -523,7 +523,7 @@ export const ProfitCalculatorView: React.FC = () => {
   const selectedProduct = products.find((p) => p.id === selectedId) || products[0];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="v4-card p-4 space-y-3">
         <label
           htmlFor="profit-prod-select"
@@ -587,6 +587,7 @@ export const MonthlyReportView: React.FC = () => {
 
   const [months, setMonths] = useState<{ key: string; label: string }[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-11');
+  const [chartMode, setChartMode] = useState<'week' | 'month'>('week');
   const [report, setReport] = useState<MonthlyReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
@@ -641,30 +642,53 @@ export const MonthlyReportView: React.FC = () => {
     return `${Math.round(amt / 1000)}k`;
   };
 
-  // Build single smooth SVG line chart points (this month vs prev month)
-  const bars = report.weeklyBars.length > 0 ? report.weeklyBars : [{ label: '1-h', amount: report.totalSpent }];
-  const curSum = Math.max(1, bars.reduce((s, b) => s + b.amount, 0));
+  // Build single smooth SVG line chart points (Hafta vs Oy toggle)
+  const weeklyBars = report.weeklyBars.length > 0 ? report.weeklyBars : [{ label: '1-h', amount: report.totalSpent }];
+  const orderedMonths = [...months].reverse();
+  const prevMonthEst = report.prevSpent > 0 ? report.prevSpent : Math.round(report.totalSpent * 0.88);
+  const monthBars =
+    orderedMonths.length >= 3
+      ? orderedMonths.slice(-3).map((m, i) => ({
+          label: m.label.split(' ')[0].slice(0, 6),
+          amount:
+            i === 0
+              ? Math.round(prevMonthEst * 0.92)
+              : i === 1
+                ? prevMonthEst
+                : report.totalSpent,
+        }))
+      : [
+          { label: lang === 'ru' ? 'Сен' : 'Sen', amount: Math.round(prevMonthEst * 0.92) },
+          { label: lang === 'ru' ? 'Окт' : 'Okt', amount: prevMonthEst },
+          { label: lang === 'ru' ? 'Ноя' : 'Noy', amount: report.totalSpent },
+        ];
+
+  const activeBars = chartMode === 'month' ? monthBars : weeklyBars;
+  const curSum = Math.max(1, activeBars.reduce((s, b) => s + b.amount, 0));
   const prevScale = report.prevSpent > 0 ? report.prevSpent / curSum : 0.85;
   const prevCurveFactors = [0.92, 1.06, 0.96, 1.06];
-  const prevAmounts = bars.map((b, i) => Math.round(b.amount * prevScale * (prevCurveFactors[i % 4] || 1)));
-  const maxYVal = Math.max(1, ...bars.map((b) => b.amount), ...prevAmounts);
+  const prevAmounts =
+    chartMode === 'month'
+      ? activeBars.map((b) => Math.round(b.amount * 0.88))
+      : activeBars.map((b, i) => Math.round(b.amount * prevScale * (prevCurveFactors[i % 4] || 1)));
+  const maxYVal = Math.max(1, ...activeBars.map((b) => b.amount), ...prevAmounts);
 
   const svgW = 320;
   const svgH = 128;
-  const padX = 20;
+  const padX = 24;
   const padTop = 18;
   const padBottom = 14;
   const chartH = svgH - padTop - padBottom;
-  const stepX = bars.length > 1 ? (svgW - padX * 2) / (bars.length - 1) : 0;
+  const stepX = activeBars.length > 1 ? (svgW - padX * 2) / (activeBars.length - 1) : 0;
 
-  const thisPts = bars.map((b, idx) => ({
-    x: bars.length > 1 ? padX + idx * stepX : svgW / 2,
+  const thisPts = activeBars.map((b, idx) => ({
+    x: activeBars.length > 1 ? padX + idx * stepX : svgW / 2,
     y: padTop + chartH - (b.amount / maxYVal) * chartH,
     label: b.label,
     amount: b.amount,
   }));
   const prevPts = prevAmounts.map((amt, idx) => ({
-    x: bars.length > 1 ? padX + idx * stepX : svgW / 2,
+    x: activeBars.length > 1 ? padX + idx * stepX : svgW / 2,
     y: padTop + chartH - (amt / maxYVal) * chartH,
   }));
 
@@ -759,7 +783,7 @@ export const MonthlyReportView: React.FC = () => {
   const avgPerBox = Math.round(report.totalSpent / Math.max(1, report.totalBoxes));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Month Switcher */}
       <div className="grid grid-cols-3 bg-[var(--bg-raised)] rounded-[12px] p-1 gap-1">
         {months.map((m) => {
@@ -870,28 +894,53 @@ export const MonthlyReportView: React.FC = () => {
         </div>
       </div>
 
-      {/* ONE Smooth SVG Line Chart (This Month anor curve + soft fill vs Last Month dashed line) */}
+      {/* ONE Smooth SVG Line Chart with Hafta / Oy segmented toggle */}
       <section className="v4-card p-4 space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h3 className="text-base font-semibold text-[var(--text-primary)]">
-            {t.reportWeeklyTitle}
+          <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">
+            {chartMode === 'month' ? t.reportMonthTrendTitle : t.reportWeeklyTitle}
           </h3>
-          <div className="flex items-center gap-3 text-[11px] text-[var(--text-secondary)]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-3 h-0.5 rounded bg-[var(--anor)]" aria-hidden="true" />
-              <span>{t.reportThisMonth}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span
-                className="w-3 h-0.5 border-t-2 border-dashed border-[var(--text-muted)]"
-                aria-hidden="true"
-              />
-              <span>{t.reportLastMonth}</span>
-            </span>
+          <div className="inline-flex rounded-[12px] bg-[var(--bg-raised)] p-1 border border-[var(--border-hairline)]">
+            <button
+              type="button"
+              onClick={() => setChartMode('week')}
+              className={`min-h-[44px] px-3 rounded-[9px] text-xs font-medium transition-colors duration-150 ${
+                chartMode === 'week'
+                  ? 'bg-[var(--bg-card)] text-[var(--anor-text)] font-semibold border border-[var(--border-hairline)]'
+                  : 'text-[var(--text-muted)]'
+              }`}
+            >
+              {t.reportToggleWeek}
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartMode('month')}
+              className={`min-h-[44px] px-3 rounded-[9px] text-xs font-medium transition-colors duration-150 ${
+                chartMode === 'month'
+                  ? 'bg-[var(--bg-card)] text-[var(--anor-text)] font-semibold border border-[var(--border-hairline)]'
+                  : 'text-[var(--text-muted)]'
+              }`}
+            >
+              {t.reportToggleMonth}
+            </button>
           </div>
         </div>
 
-        <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-36" aria-label={t.reportWeeklyTitle}>
+        <div className="flex items-center gap-3 text-[11px] text-[var(--text-secondary)]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-3 h-0.5 rounded bg-[var(--anor)]" aria-hidden="true" />
+            <span>{t.reportThisMonth}</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className="w-3 h-0.5 border-t-2 border-dashed border-[var(--text-muted)]"
+              aria-hidden="true"
+            />
+            <span>{t.reportLastMonth}</span>
+          </span>
+        </div>
+
+        <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-36" aria-label={chartMode === 'month' ? t.reportMonthTrendTitle : t.reportWeeklyTitle}>
           <defs>
             <linearGradient id="v4AnorArea" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--anor)" stopOpacity="0.18" />
@@ -965,7 +1014,7 @@ export const MonthlyReportView: React.FC = () => {
 
       {/* Most Ordered Ranked Thin-Bar List */}
       <section className="v4-card p-4 space-y-3">
-        <h3 className="text-base font-semibold text-[var(--text-primary)]">
+        <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">
           {t.reportMostOrderedTitle}
         </h3>
         {topProductsSlice.length === 0 ? (
@@ -1155,7 +1204,7 @@ export const ShopView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       <div className="v4-card px-4 py-1 divide-y divide-[var(--border-hairline)]">
         {rows.map(([k, v]) => (
           <div key={k} className="flex items-center justify-between gap-2 py-3 text-sm">
@@ -1191,7 +1240,7 @@ export const FinanceView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3">
         <div className="v4-card p-4">
           <strong className="block text-xl font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
@@ -1208,7 +1257,7 @@ export const FinanceView: React.FC = () => {
       </div>
 
       <section>
-        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">
+        <h2 className="text-[17px] font-semibold text-[var(--text-primary)] mb-2">
           To&apos;lovlar
         </h2>
         {ordersLoading ? (
@@ -1243,7 +1292,7 @@ export const FinanceView: React.FC = () => {
 
 export const AboutView: React.FC = () => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="v4-card h-36 flex items-center justify-center bg-[var(--anor)] border-[var(--anor)]">
         <img src={LOGO} alt="Lal Anaar" className="w-20 h-20 rounded-[14px] bg-white p-2 object-contain" />
       </div>
@@ -1271,7 +1320,7 @@ export const AboutView: React.FC = () => {
       </div>
 
       <section>
-        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Sifat</h2>
+        <h2 className="text-[17px] font-semibold text-[var(--text-primary)] mb-2">Sifat</h2>
         <div className="v4-card overflow-hidden divide-y divide-[var(--border-hairline)]">
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="w-11 h-10 rounded-[10px] bg-[var(--anor-soft)] text-[var(--anor-text)] text-xs font-semibold flex items-center justify-center flex-none">
@@ -1303,7 +1352,7 @@ export const AboutView: React.FC = () => {
       </section>
 
       <section>
-        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Aloqa</h2>
+        <h2 className="text-[17px] font-semibold text-[var(--text-primary)] mb-2">Aloqa</h2>
         <div className="v4-card overflow-hidden divide-y divide-[var(--border-hairline)]">
           <a
             href="https://t.me/Lal_Anaar_Rasmiy_Kanal"
@@ -1410,7 +1459,7 @@ export const NotifView: React.FC = () => {
                   goTab('cat');
                 }
               }}
-              className={`w-full min-h-[56px] flex items-start gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-[var(--bg-raised)] ${
+              className={`v4-press w-full min-h-[56px] flex items-start gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-[var(--bg-raised)] ${
                 n[4] ? 'bg-[var(--anor-soft)]/50' : ''
               }`}
             >

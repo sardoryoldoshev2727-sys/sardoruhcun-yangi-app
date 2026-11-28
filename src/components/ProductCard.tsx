@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Check, Heart, Minus, Plus, Trash2, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, Heart, Minus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { getProductName } from '../i18n';
 import type { Product, ShelfItem } from '../types';
@@ -14,7 +14,7 @@ import {
   shortName,
 } from '../utils/catalog';
 import { ProductVisual } from './ProductVisual';
-import { GreenAddControl } from './V4Primitives';
+import { GreenAddControl, RollingNumber } from './V4Primitives';
 
 interface StepperProps {
   product: Product;
@@ -133,10 +133,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
       <div
         onClick={() => setSheet({ type: 'prod', id: product.id })}
-        className="v4-card h-full rounded-[16px] p-2.5 flex flex-col cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)]"
+        className={`v4-card h-full rounded-[16px] p-4 flex flex-col cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)] ${
+          product.out ? 'opacity-60' : 'v4-press'
+        }`}
       >
-        {/* Single neutral tile + top-left badge + bottom-right signature green + (disabled if out) */}
-        <div className="relative rounded-[10px] overflow-hidden">
+        <div className="relative rounded-[12px] overflow-hidden">
           <ProductVisual product={product} size="grid" />
 
           {badge && (
@@ -164,36 +165,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Name (max 2 lines, weight 500) */}
-        <div className="mt-2.5 px-0.5 font-medium text-sm leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.45rem] break-words">
+        <div className="mt-3 font-medium text-sm leading-snug text-[var(--text-primary)] line-clamp-2 min-h-[2.45rem] break-words">
           {displayName} {product.vol}
         </div>
 
-        {/* Inline "Javonga qo'shish" / "Javondan olish" + small muted heart (44px tap targets) */}
-        <div className="px-0.5 -my-1 flex items-center justify-between gap-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onShelf) {
-                setSheet({ type: 'confirmRemoveShelf', id: product.id });
-              } else {
+        {/* Shelf status: neutral chip "Javonda" (removal inside product sheet) or "+ Javonga qo'shish", plus heart */}
+        <div className="-my-0.5 mt-1 flex items-center justify-between gap-1">
+          {onShelf ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSheet({ type: 'prod', id: product.id });
+              }}
+              className="min-h-[44px] inline-flex items-center min-w-0"
+            >
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] text-[11px] font-medium truncate">
+                <Check className="w-3 h-3 flex-none" strokeWidth={1.75} />
+                <span className="truncate">{t.catalogShelfStatusChip}</span>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
                 addShelfItem(product.id);
-              }
-            }}
-            className="min-h-[44px] inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors min-w-0"
-          >
-            {onShelf ? (
-              <span className="inline-flex items-center gap-1 text-[var(--anor-text)] truncate">
-                <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                <span className="truncate">{t.shelfRemoveAction}</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 truncate">
-                <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                <span className="truncate">{t.shelfAddAction}</span>
-              </span>
-            )}
-          </button>
+              }}
+              className="min-h-[44px] inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors min-w-0"
+            >
+              <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+              <span className="truncate">{t.shelfAddAction}</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -202,7 +206,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               toggleFavorite(product.id);
             }}
-            className="w-11 h-11 -mr-1.5 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] transition-colors"
+            className="w-11 h-11 -mr-2 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] transition-colors flex-none"
           >
             <Heart
               className={`w-[18px] h-[18px] ${
@@ -214,26 +218,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Pack meta */}
-        <div className="px-0.5 text-xs font-normal text-[var(--text-muted)] tabular-nums truncate">
+        <div className="text-[13px] font-normal text-[var(--text-muted)] tabular-nums truncate">
           {t.boxMetaLine(product.blk)}
         </div>
 
-        {/* Profit per box with global markup + single-line wholesale box price */}
-        <div className="mt-auto pt-1.5 px-0.5 pb-0.5">
+        {/* Bold box price + muted profit line */}
+        <div className="mt-auto pt-2">
           {!product.out && (
-            <div className="text-[11px] font-medium text-[var(--success)] tabular-nums truncate mb-0.5">
+            <div className="text-[12px] font-normal text-[var(--text-muted)] tabular-nums truncate mb-0.5">
               {t.cardBoxProfit(formatSom(boxProfit))}
             </div>
           )}
           {product.out ? (
-            <div className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
+            <div className="text-[15px] font-medium text-[var(--text-muted)] whitespace-nowrap">
               {t.outOfStock}
             </div>
           ) : (
             <div className="flex items-baseline gap-1.5 whitespace-nowrap overflow-hidden">
-              <div className="text-base sm:text-[17px] font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
+              <div className="text-[16px] sm:text-[17px] font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                 {formatNumberThin(effectiveBox)}{' '}
-                <span className="text-xs font-normal text-[var(--text-muted)]">
+                <span className="text-[12px] font-normal text-[var(--text-muted)]">
                   so&apos;m
                 </span>
               </div>
@@ -254,8 +258,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const lineNet = Math.round(lineGross * (1 - (product.promoPct || 0) / 100));
 
     return (
-      <div className={`relative rounded-[16px] overflow-hidden ${swipeX < 0 ? "bg-[var(--anor)]" : ""}`}>
-        {/* Swipe-left-to-remove background reveal */}
+      <div className={`relative rounded-[16px] overflow-hidden ${swipeX < 0 ? 'bg-[var(--anor)]' : ''}`}>
         <button
           type="button"
           aria-label={t.clearCartBtn + ': ' + displayName}
@@ -306,7 +309,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             setSheet({ type: 'prod', id: product.id });
           }}
           style={{ transform: `translateX(${swipeX}px)` }}
-          className="relative z-10 v4-card rounded-[16px] p-3 flex items-stretch gap-3 cursor-pointer transition-transform duration-150 ease-out"
+          className="relative z-10 v4-card rounded-[16px] p-4 flex items-stretch gap-3 cursor-pointer transition-transform duration-150 ease-out"
         >
           <ProductVisual product={product} size="row" />
           <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -314,7 +317,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
                 {displayName} {product.vol}
               </div>
-              <div className="text-xs text-[var(--text-muted)] mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
+              <div className="text-[13px] text-[var(--text-muted)] mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
                 <span>{t.boxMetaLine(product.blk)}</span>
                 <span>·</span>
                 {hasPromo ? (
@@ -331,7 +334,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
               <div>
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
+                  <span className="text-[16px] sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
                     {formatSom(lineNet)}
                   </span>
                   {hasPromo && (
@@ -340,7 +343,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     </span>
                   )}
                 </div>
-                <div className="text-xs font-normal text-[var(--text-secondary)] tabular-nums">
+                <div className="text-[13px] font-normal text-[var(--text-secondary)] tabular-nums">
                   {qty} {t.boxUnit} ({qty * product.blk} {t.pieceUnit})
                 </div>
               </div>
@@ -361,9 +364,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   type="button"
                   aria-label={`${qty} ${t.boxUnit}`}
                   onClick={() => setSheet({ type: 'quickQty', id: product.id })}
-                  className="min-w-[30px] h-11 px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums hover:bg-[var(--bg-raised)] transition-colors"
+                  className="min-w-[30px] h-11 px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums hover:bg-[var(--bg-raised)] transition-colors flex items-center justify-center"
                 >
-                  {qty}
+                  <RollingNumber value={qty} />
                 </button>
                 <button
                   type="button"
@@ -385,8 +388,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => setSheet({ type: 'prod', id: product.id })}
-      className={`v4-card h-full rounded-[16px] p-3 flex items-stretch gap-3 cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)] ${
-        product.out ? 'opacity-70' : ''
+      className={`v4-card h-full rounded-[16px] p-4 flex items-stretch gap-3 cursor-pointer transition-colors duration-150 hover:border-[var(--border-strong)] ${
+        product.out ? 'opacity-60' : 'v4-press'
       }`}
     >
       <ProductVisual product={product} size="row" />
@@ -395,7 +398,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="flex items-start justify-between gap-1">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-[var(--text-muted)]">
+                <span className="text-[13px] font-medium text-[var(--text-muted)]">
                   {brand}
                 </span>
                 {renderBadge(product, t)}
@@ -411,7 +414,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 e.stopPropagation();
                 toggleFavorite(product.id);
               }}
-              className="w-11 h-11 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] flex-none"
+              className="w-11 h-11 -mr-2 -mt-2 flex items-center justify-center rounded-full text-[var(--text-muted)] hover:text-[var(--anor-text)] flex-none"
             >
               <Heart
                 className={`w-[18px] h-[18px] ${
@@ -422,59 +425,68 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onShelf) {
-                  setSheet({ type: 'confirmRemoveShelf', id: product.id });
-                } else {
+          <div className="flex items-center gap-2.5 flex-wrap mt-0.5">
+            {onShelf ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSheet({ type: 'prod', id: product.id });
+                }}
+                className="min-h-[44px] -my-2 inline-flex items-center"
+              >
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--text-secondary)] text-[11px] font-medium">
+                  <Check className="w-3 h-3 flex-none" strokeWidth={1.75} />
+                  <span>{t.catalogShelfStatusChip}</span>
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
                   addShelfItem(product.id);
-                }
-              }}
-              className="min-h-[44px] -my-1.5 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            >
-              {onShelf ? (
-                <span className="inline-flex items-center gap-1 text-[var(--anor-text)]">
-                  <Check className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                  <span>{t.shelfRemoveAction}</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
-                  <span>{t.shelfAddAction}</span>
-                </span>
-              )}
-            </button>
-            <span className="text-xs text-[var(--text-muted)] tabular-nums">
+                }}
+                className="min-h-[44px] -my-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                <Plus className="w-3.5 h-3.5 flex-none" strokeWidth={1.75} />
+                <span>{t.shelfAddAction}</span>
+              </button>
+            )}
+            <span className="text-[13px] text-[var(--text-muted)] tabular-nums">
               {t.boxMetaLine(product.blk)} · {pack}
             </span>
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+        <div className="flex items-end justify-between gap-2 mt-3 flex-wrap">
           <div>
             {!product.out && (
-              <div className="text-[11px] font-medium text-[var(--success)] tabular-nums mb-0.5">
+              <div className="text-[12px] font-normal text-[var(--text-muted)] tabular-nums mb-0.5">
                 {t.cardBoxProfit(formatSom(boxProfit))}
               </div>
             )}
-            <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-              <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
-                {formatNumberThin(effectiveBox)}{' '}
-                <span className="text-xs font-normal text-[var(--text-muted)]">
-                  so&apos;m
-                </span>
+            {product.out ? (
+              <div className="text-[15px] font-medium text-[var(--text-muted)] whitespace-nowrap">
+                {t.outOfStock}
               </div>
-              {hasPromo && (
-                <span className="text-xs font-normal text-[var(--text-muted)] line-through tabular-nums whitespace-nowrap">
-                  {formatNumberThin(product.box)}
-                </span>
-              )}
-            </div>
+            ) : (
+              <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+                <div className="text-[16px] sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
+                  {formatNumberThin(effectiveBox)}{' '}
+                  <span className="text-xs font-normal text-[var(--text-muted)]">
+                    so&apos;m
+                  </span>
+                </div>
+                {hasPromo && (
+                  <span className="text-xs font-normal text-[var(--text-muted)] line-through tabular-nums whitespace-nowrap">
+                    {formatNumberThin(product.box)}
+                  </span>
+                )}
+              </div>
+            )}
             <div
-              className={`text-xs tabular-nums ${
+              className={`text-[13px] tabular-nums ${
                 inCart
                   ? 'font-medium text-[var(--success)]'
                   : 'font-normal text-[var(--text-muted)]'
@@ -505,30 +517,54 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
     getShelfStock,
     getShelfLoose,
     getShelfNeed,
-    isShelfLow,
     adjustShelfStock,
+    adjustShelfLoose,
+    setExactQty,
     setSheet,
     updateShelfUsual,
     removeShelfItem,
   } = useStore();
   const [id] = item;
+  const [localNormEdit, setLocalNormEdit] = useState(false);
+  const [showLooseStepper, setShowLooseStepper] = useState(false);
+
+  useEffect(() => {
+    setLocalNormEdit(false);
+  }, [editMode]);
+
+  const showNormControls = editMode || localNormEdit;
   const inCart = (cart[id] || 0) > 0;
   const norm = getShelfNorm(id);
   const stock = getShelfStock(id);
   const loose = getShelfLoose(id);
   const need = getShelfNeed(id);
-  const low = isShelfLow(id);
   const effectiveStock = stock + loose / Math.max(1, product.blk);
-  const pct = Math.max(6, Math.min(100, Math.round((effectiveStock / Math.max(1, norm)) * 100)));
+  const ratio = effectiveStock / Math.max(1, norm);
+  const pct = Math.max(4, Math.min(100, Math.round(ratio * 100)));
+  const barTone =
+    ratio < 0.3
+      ? 'bg-[var(--error)]'
+      : ratio < 0.6
+        ? 'bg-[var(--warning)]'
+        : 'bg-[var(--success)]';
+  const badgeTone =
+    ratio < 0.3
+      ? 'bg-[var(--error-soft)] text-[var(--error)]'
+      : ratio < 0.6
+        ? 'bg-[var(--warning-soft)] text-[var(--warning)]'
+        : 'bg-[var(--success-soft)] text-[var(--success)]';
+  const statusLabel =
+    ratio < 0.3 ? t.shelfSegCritical : ratio < 0.6 ? t.shelfSegLow : t.shelfSegOk;
+
   const displayName = shortName(getProductName(product, lang));
 
   return (
     <div
       onClick={() => {
-        if (!editMode) setSheet({ type: 'prod', id: product.id });
+        if (!showNormControls) setSheet({ type: 'prod', id: product.id });
       }}
-      className={`v4-card rounded-[16px] p-3 flex flex-col gap-3 transition-colors duration-150 ${
-        editMode ? '' : 'cursor-pointer hover:border-[var(--border-strong)]'
+      className={`v4-card rounded-[16px] p-4 flex flex-col gap-3 transition-colors duration-150 ${
+        showNormControls ? '' : 'cursor-pointer hover:border-[var(--border-strong)]'
       }`}
     >
       <div className="flex items-stretch gap-3">
@@ -536,31 +572,43 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-2">
-              <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
+              <div className="font-medium text-[15px] leading-snug text-[var(--text-primary)] line-clamp-2 break-words pt-1">
                 {displayName} {product.vol}
               </div>
-              {low ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-[11px] font-medium flex-none mt-0.5">
-                  {t.shelfLowBadge}
+              <div className="flex items-center gap-1 flex-none -mr-1.5 -mt-1.5">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${badgeTone}`}>
+                  {statusLabel}
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--bg-raised)] text-[var(--text-secondary)] text-[11px] font-medium flex-none mt-0.5">
-                  <Check className="w-3 h-3" strokeWidth={1.75} />
-                  <span>{t.shelfStatusOk}</span>
-                </span>
-              )}
+                <button
+                  type="button"
+                  aria-label={`${t.shelfNormLabel} ${t.editLabel}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocalNormEdit((v) => !v);
+                  }}
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
+                    showNormControls
+                      ? 'bg-[var(--anor-soft)] text-[var(--anor-text)]'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-raised)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {showNormControls ? (
+                    <Check className="w-4 h-4" strokeWidth={1.75} />
+                  ) : (
+                    <Pencil className="w-4 h-4" strokeWidth={1.5} />
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="text-xs text-[var(--text-secondary)] mt-1.5 tabular-nums flex items-center gap-1.5 flex-wrap">
+            <div className="text-[13px] text-[var(--text-secondary)] mt-1 tabular-nums flex items-center gap-1.5 flex-wrap">
               <span>
                 {t.shelfNormLabel}: <strong className="font-semibold text-[var(--text-primary)]">{norm}</strong>
               </span>
               <span>·</span>
               <span>
                 {t.shelfStockLabel}:{' '}
-                <strong className={`font-semibold ${low ? 'text-[var(--warning)]' : 'text-[var(--text-primary)]'}`}>
-                  {stock}
-                </strong>
+                <strong className="font-semibold text-[var(--text-primary)]">{stock}</strong>
                 {loose > 0 && (
                   <span className="text-[var(--text-muted)]">
                     {' '}(+{loose} {t.pieceUnit})
@@ -576,44 +624,50 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
               </span>
             </div>
 
-            <div className="mt-1.5 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
+            <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--bg-raised)] overflow-hidden">
               <div
-                className={`h-full rounded-full transition-[width] duration-200 ease-out ${
-                  low ? 'bg-[var(--warning)]' : 'bg-[var(--success)]'
-                }`}
+                className={`h-full rounded-full transition-[width] duration-200 ease-out ${barTone}`}
                 style={{ width: `${pct}%` }}
               />
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-2 mt-2.5 flex-wrap">
+          <div className="flex items-center justify-between gap-2 mt-3 flex-wrap">
             <div>
-              <div className="text-base sm:text-lg font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
-                {formatNumberThin(product.box)}{' '}
-                <span className="text-xs font-normal text-[var(--text-muted)]">
-                  so&apos;m
-                </span>
+              <div className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight tabular-nums whitespace-nowrap">
+                {formatSom(product.box)}
               </div>
               {inCart && (
-                <div className="text-xs font-medium text-[var(--success)] tabular-nums">
+                <div className="text-[12px] font-medium text-[var(--success)] tabular-nums mt-0.5">
                   {t.inCartQty(cart[id])}
                 </div>
               )}
             </div>
 
-            {!editMode && <CartStepper product={product} />}
+            {!showNormControls && need > 0 && !product.out && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExactQty(id, Math.max(cart[id] || 0, need));
+                }}
+                className="v4-press min-h-[44px] px-3.5 rounded-full border border-[var(--success)] text-[var(--success)] bg-[var(--success-soft)]/35 hover:bg-[var(--success-soft)] text-xs font-semibold tabular-nums whitespace-nowrap"
+              >
+                {t.shelfNeedQuickChip(need)}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Visible Stock / Norm Controls */}
+      {/* Single Primary Control: "Qoldi" stepper (+ optional "+ dona" link) or Norm edit */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="pt-2.5 border-t border-[var(--border-hairline)] flex items-center justify-between gap-2 flex-wrap"
+        className="pt-3 border-t border-[var(--border-hairline)] space-y-2.5"
       >
-        {editMode ? (
-          <>
-            <span className="text-xs font-medium text-[var(--text-secondary)]">
+        {showNormControls ? (
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-[13px] font-medium text-[var(--text-secondary)]">
               {t.shelfNormLabel} ({t.boxUnit})
             </span>
             <div className="flex items-center gap-2">
@@ -626,8 +680,8 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                 >
                   <Minus className="w-4 h-4" strokeWidth={1.75} />
                 </button>
-                <span className="min-w-[28px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
-                  {norm}
+                <span className="min-w-[30px] text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
+                  <RollingNumber value={norm} />
                 </span>
                 <button
                   type="button"
@@ -642,40 +696,82 @@ export const ShelfRowCard: React.FC<ShelfRowCardProps> = ({ item, product, editM
                 type="button"
                 aria-label={t.shelfRemoveAction}
                 onClick={() => removeShelfItem(id)}
-                className="min-h-[44px] px-3 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] inline-flex items-center gap-1.5 text-xs font-medium"
+                className="min-h-[44px] px-3 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] inline-flex items-center gap-1.5 text-xs font-medium v4-press"
               >
                 <X className="w-4 h-4 flex-none" strokeWidth={1.5} />
                 <span>{t.shelfRemoveAction}</span>
               </button>
             </div>
-          </>
+          </div>
         ) : (
           <>
-            <span className="text-xs font-medium text-[var(--text-secondary)]">
-              {t.shelfStockLabel} ({t.boxUnit})
-            </span>
-            <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-raised)] px-1">
-              <button
-                type="button"
-                aria-label={`${t.shelfStockLabel} −`}
-                disabled={stock <= 0}
-                onClick={() => adjustShelfStock(id, -1)}
-                className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-35"
-              >
-                <Minus className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-              <span className="min-w-[52px] px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
-                {stock} {t.boxUnit}
-              </span>
-              <button
-                type="button"
-                aria-label={`${t.shelfStockLabel} +`}
-                onClick={() => adjustShelfStock(id, 1)}
-                className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--bg-card)]"
-              >
-                <Plus className="w-4 h-4" strokeWidth={1.75} />
-              </button>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-medium text-[var(--text-secondary)]">
+                  {t.shelfStockLabel}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowLooseStepper((v) => !v)}
+                  className="min-h-[44px] px-2.5 rounded-full text-xs font-medium text-[var(--anor-text)] hover:bg-[var(--anor-soft)] transition-colors tabular-nums"
+                >
+                  {loose > 0 ? `+${loose} ${t.pieceUnit}` : t.shelfLooseLabel}
+                </button>
+              </div>
+
+              <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-strong)] bg-[var(--bg-raised)] px-1">
+                <button
+                  type="button"
+                  aria-label={`${t.shelfStockLabel} −`}
+                  disabled={stock <= 0}
+                  onClick={() => adjustShelfStock(id, -1)}
+                  className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-35"
+                >
+                  <Minus className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+                <span className="min-w-[60px] px-1 text-center font-semibold text-sm text-[var(--text-primary)] tabular-nums">
+                  <RollingNumber value={stock} suffix={t.boxUnit} />
+                </span>
+                <button
+                  type="button"
+                  aria-label={`${t.shelfStockLabel} +`}
+                  onClick={() => adjustShelfStock(id, 1)}
+                  className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--bg-card)]"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+              </div>
             </div>
+
+            {showLooseStepper && (
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span className="text-xs font-normal text-[var(--text-muted)]">
+                  {t.shelfLooseLabel} ({t.pieceUnit})
+                </span>
+                <div className="inline-flex items-center h-11 rounded-full border border-[var(--border-hairline)] bg-[var(--bg-card)] px-1">
+                  <button
+                    type="button"
+                    aria-label={`${t.shelfLooseLabel} −`}
+                    disabled={loose <= 0}
+                    onClick={() => adjustShelfLoose(id, -1)}
+                    className="w-11 h-11 rounded-l-full flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-raised)] disabled:opacity-35"
+                  >
+                    <Minus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </button>
+                  <span className="min-w-[54px] px-1 text-center font-medium text-xs text-[var(--text-primary)] tabular-nums">
+                    <RollingNumber value={loose} suffix={t.pieceUnit} />
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`${t.shelfLooseLabel} +`}
+                    onClick={() => adjustShelfLoose(id, 1)}
+                    className="w-11 h-11 rounded-r-full flex items-center justify-center text-[var(--anor-text)] hover:bg-[var(--bg-raised)]"
+                  >
+                    <Plus className="w-3.5 h-3.5" strokeWidth={1.75} />
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

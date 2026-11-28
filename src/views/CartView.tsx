@@ -104,13 +104,13 @@ export const CartView: React.FC = () => {
     : t.discountNudgeMax(discountNudge.currentPct);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-4 items-start">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-6 items-start">
         {/* Left Column: Top bar + Savings + Ladder + Cart items + Add more */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Clean top row: count + secondary Clear button */}
           <div className="flex items-center justify-between gap-2 px-0.5">
-            <span className="text-xs sm:text-sm font-medium text-[var(--text-secondary)] tabular-nums">
+            <span className="text-[13px] font-medium text-[var(--text-secondary)] tabular-nums">
               {t.productsCountLine(boxCount)}
             </span>
             <PillButton
@@ -124,7 +124,7 @@ export const CartView: React.FC = () => {
           </div>
 
           {totalSavings > 0 && (
-            <div className="rounded-[16px] px-4 py-3 bg-[var(--success-soft)] border border-[var(--border-hairline)] flex items-center gap-2.5 text-sm font-medium text-[var(--success)]">
+            <div className="rounded-[16px] p-4 bg-[var(--success-soft)] border border-[var(--border-hairline)] flex items-center gap-2.5 text-[15px] font-medium text-[var(--success)]">
               <Sparkles className="w-[18px] h-[18px] flex-none" strokeWidth={1.5} />
               <span className="tabular-nums">
                 {t.savingsRibbon(formatSom(totalSavings))}
@@ -133,7 +133,7 @@ export const CartView: React.FC = () => {
           )}
 
           {/* Discount ladder card with AnorThreeSeeds */}
-          <div className="v4-card p-4 space-y-3">
+          <div className="v4-card rounded-[16px] p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="w-9 h-9 rounded-[10px] bg-[var(--bg-raised)] text-[var(--anor-text)] flex items-center justify-center flex-none">
@@ -155,7 +155,7 @@ export const CartView: React.FC = () => {
               />
             </div>
 
-            <div className="flex justify-between text-xs text-[var(--text-muted)] tabular-nums">
+            <div className="flex justify-between text-[13px] text-[var(--text-muted)] tabular-nums">
               <span>{lang === 'ru' ? '500 тыс. · 5%' : '500 ming · 5%'}</span>
               <span>1 {lang === 'ru' ? 'млн' : 'mln'} · 7%</span>
               <span>2 {lang === 'ru' ? 'млн' : 'mln'} · 10%</span>
@@ -178,9 +178,9 @@ export const CartView: React.FC = () => {
         </div>
 
         {/* Right Column: Schedule + Bill Breakdown */}
-        <div className="space-y-4">
-          <section className="v4-card p-4 space-y-3">
-            <h2 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        <div className="space-y-6">
+          <section className="v4-card rounded-[16px] p-4 space-y-3">
+            <h2 className="text-[17px] font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Calendar className="w-[18px] h-[18px] text-[var(--anor-text)]" strokeWidth={1.5} />
               <span>{t.whenDeliverTitle}</span>
             </h2>
@@ -202,7 +202,7 @@ export const CartView: React.FC = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {SLOTS.map((_, i) => {
                 const caption = i === 0 ? t.slotCaptionMorning : t.slotCaptionAfternoon;
                 const range = i === 0 ? '9–13' : '13–18';
@@ -211,7 +211,7 @@ export const CartView: React.FC = () => {
                     key={i}
                     type="button"
                     onClick={() => setSlot(i)}
-                    className={`min-h-[56px] px-3 py-2 rounded-[12px] border flex items-center justify-center gap-2 transition-colors duration-150 ${
+                    className={`v4-press min-h-[56px] px-3 py-2 rounded-[12px] border flex items-center justify-center gap-2 transition-colors duration-150 ${
                       i === slot
                         ? 'bg-[var(--anor-soft)] border-[var(--anor)] text-[var(--anor-text)]'
                         : 'bg-[var(--bg-raised)] border-[var(--border-hairline)] text-[var(--text-secondary)]'
@@ -222,7 +222,7 @@ export const CartView: React.FC = () => {
                       <span className="block text-[11px] font-normal opacity-80 whitespace-nowrap">
                         {caption}
                       </span>
-                      <span className="block text-sm font-semibold tabular-nums whitespace-nowrap">
+                      <span className="block text-[15px] font-semibold tabular-nums whitespace-nowrap">
                         {range}
                       </span>
                     </div>
@@ -243,31 +243,31 @@ export const CartView: React.FC = () => {
             </div>
           </section>
 
-          <section className="v4-card p-4 space-y-2.5 text-[13px]">
-            <h2 className="text-base font-semibold text-[var(--text-primary)]">
+          <section className="v4-card rounded-[16px] p-4 space-y-3 text-[13px]">
+            <h2 className="text-[17px] font-semibold text-[var(--text-primary)]">
               {t.orderSummaryTitle}
             </h2>
 
-            <div className="flex justify-between text-[var(--text-secondary)]">
+            <div className="flex justify-between items-center text-[var(--text-secondary)]">
               <span>{t.billProductsGross(boxCount)}</span>
-              <span className="font-medium tabular-nums whitespace-nowrap text-[var(--text-primary)]">
+              <span className="text-[15px] font-medium tabular-nums whitespace-nowrap text-[var(--text-primary)]">
                 {formatSom(grossSubtotal)}
               </span>
             </div>
 
             {promoSavings > 0 && (
-              <div className="flex justify-between text-[var(--text-secondary)]">
+              <div className="flex justify-between items-center text-[var(--text-secondary)]">
                 <span>{t.billPromoDiscount}</span>
-                <span className="font-semibold text-[var(--success)] tabular-nums whitespace-nowrap">
+                <span className="text-[15px] font-semibold text-[var(--success)] tabular-nums whitespace-nowrap">
                   −{formatSom(promoSavings)}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-between text-[var(--text-secondary)]">
+            <div className="flex justify-between items-center text-[var(--text-secondary)]">
               <span>{t.billOrderDiscount(discountPct)}</span>
               <span
-                className={`font-semibold tabular-nums whitespace-nowrap ${
+                className={`text-[15px] font-semibold tabular-nums whitespace-nowrap ${
                   discountAmount > 0 ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'
                 }`}
               >
@@ -275,22 +275,31 @@ export const CartView: React.FC = () => {
               </span>
             </div>
 
-            <div className="flex justify-between text-[var(--text-secondary)]">
+            <div className="flex justify-between items-center text-[var(--text-secondary)]">
               <span>{t.deliveryLabel}</span>
-              <span className="font-medium text-[var(--success)]">{t.freeLabel}</span>
+              <span className="text-[15px] font-medium text-[var(--success)]">{t.freeLabel}</span>
             </div>
 
-            <div className="flex justify-between text-[var(--text-secondary)]">
+            <div className="flex justify-between items-center text-[var(--text-secondary)]">
               <span>{t.paymentTypeLabel}</span>
-              <span>{t.paymentMethodsValue}</span>
+              <span className="text-[15px] text-[var(--text-primary)]">{t.paymentMethodsValue}</span>
+            </div>
+
+            <div className="pt-3 border-t border-dashed border-[var(--border-hairline)] flex items-baseline justify-between gap-2">
+              <span className="text-[13px] font-medium text-[var(--text-muted)]">
+                {t.totalDueLabel}
+              </span>
+              <span className="text-[28px] font-semibold leading-none tracking-tight text-[var(--text-primary)] tabular-nums whitespace-nowrap">
+                <TweenSom value={total} />
+              </span>
             </div>
 
             {estimatedProfit > 0 && (
-              <div className="pt-2.5 border-t border-dashed border-[var(--border-hairline)] flex items-center justify-between gap-2">
-                <span className="font-medium text-[var(--success)]">
+              <div className="pt-2 border-t border-[var(--border-hairline)] flex items-center justify-between gap-2">
+                <span className="text-[13px] font-medium text-[var(--success)]">
                   {t.estimatedCartProfit(formatSom(estimatedProfit))}
                 </span>
-                <span className="text-[11px] text-[var(--text-muted)]">
+                <span className="text-xs text-[var(--text-muted)]">
                   +{markupPct}%
                 </span>
               </div>
@@ -300,13 +309,13 @@ export const CartView: React.FC = () => {
       </div>
 
       {/* Always-visible Sticky Bottom Checkout Bar (never blocks checkout, Green purchase CTA) */}
-      <div className="sticky bottom-0 -mx-3 md:-mx-6 px-3.5 md:px-6 py-3 bg-[var(--bg-card)] border-t border-[var(--border-hairline)] z-20">
+      <div className="sticky bottom-0 -mx-3 md:-mx-6 px-4 md:px-6 py-3 bg-[var(--bg-card)] border-t border-[var(--border-hairline)] z-20">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <span className="block text-[11px] sm:text-xs font-normal text-[var(--text-muted)] leading-tight tabular-nums">
               {t.cartStickyTotalLabel(totalSavings > 0 ? formatSom(totalSavings) : null)}
             </span>
-            <div className="text-[20px] sm:text-[22px] font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
+            <div className="text-[22px] sm:text-[26px] font-semibold leading-tight text-[var(--text-primary)] whitespace-nowrap">
               <TweenSom value={total} />
             </div>
             {estimatedProfit > 0 && (

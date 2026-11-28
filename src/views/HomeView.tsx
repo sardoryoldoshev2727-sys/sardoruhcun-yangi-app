@@ -113,7 +113,7 @@ export const HomeView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* 1) Velvet Cart Card */}
       <div className="relative pb-4">
         <div
@@ -133,7 +133,7 @@ export const HomeView: React.FC = () => {
 
           <div className="relative z-10 space-y-3.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-[13px] font-medium text-white/85 tabular-nums">
+              <span className="text-[13px] font-medium text-white/85 tabular-nums">
                 {t.velvetCartTitle(cartCount)}
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/15 text-[11px] font-medium text-white whitespace-nowrap">
@@ -144,7 +144,7 @@ export const HomeView: React.FC = () => {
 
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="text-[30px] sm:text-[34px] font-medium leading-none tracking-tight text-white whitespace-nowrap">
+                <div className="text-[30px] sm:text-[32px] font-medium leading-none tracking-tight text-white whitespace-nowrap">
                   <TweenSom value={checkoutQuote.total} />
                 </div>
                 <div className="mt-2.5 flex items-center gap-2.5 flex-wrap">
@@ -194,14 +194,14 @@ export const HomeView: React.FC = () => {
 
       {/* 2) One Smart Action Card (only when uncounted OR shelf has a need) */}
       {!hasCountedToday ? (
-        <section className="v4-card p-3.5 space-y-2.5">
-          <div className="flex items-start justify-between gap-2.5">
+        <section className="v4-card rounded-[16px] p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1 flex items-start gap-2.5">
               <span className="w-9 h-9 rounded-[10px] bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center flex-none">
                 <ClipboardCheck className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </span>
               <div className="min-w-0 flex-1 pt-0.5">
-                <div className="text-sm font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
+                <div className="text-[15px] font-medium text-[var(--text-primary)] leading-snug line-clamp-2 break-words">
                   {t.shelfReminderShort}
                 </div>
               </div>
@@ -211,15 +211,15 @@ export const HomeView: React.FC = () => {
               type="button"
               data-coach="home"
               onClick={() => setSheet({ type: 'shelfCheck' })}
-              className="min-h-[44px] px-4 rounded-full bg-[var(--anor)] text-white hover:bg-[var(--anor-pressed)] text-xs font-medium whitespace-nowrap flex-none inline-flex items-center gap-1.5 transition-colors"
+              className="v4-press min-h-[44px] px-4 rounded-full bg-[var(--anor)] text-white hover:bg-[var(--anor-pressed)] text-xs font-medium whitespace-nowrap flex-none inline-flex items-center gap-1.5 transition-colors"
             >
               <span>{t.shelfCountBtn}</span>
             </button>
           </div>
 
           {streakCount > 0 && (
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)]">
-              <span className="text-xs font-medium text-[var(--text-secondary)] tabular-nums">
+            <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[var(--border-hairline)]">
+              <span className="text-[13px] font-medium text-[var(--text-secondary)] tabular-nums">
                 {t.shelfStreakLabel(streakCount)}
               </span>
               <div className="flex items-center gap-1.5" aria-hidden="true">
@@ -243,8 +243,8 @@ export const HomeView: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-hairline)] flex-wrap">
-            <div className="text-xs text-[var(--text-secondary)] leading-snug flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[var(--border-hairline)] flex-wrap">
+            <div className="text-[13px] text-[var(--text-secondary)] leading-snug flex items-center gap-1.5 min-w-0">
               <Clock className="w-3.5 h-3.5 text-[var(--anor-text)] flex-none" strokeWidth={1.5} />
               <span>
                 {countdown.isBeforeCutoff ? t.cutoffShortPrefix : t.cutoffTomorrowShortPrefix}
@@ -256,17 +256,17 @@ export const HomeView: React.FC = () => {
           </div>
         </section>
       ) : totalNeedAll > 0 ? (
-        <section className="v4-card p-3.5 space-y-3" data-coach="home">
-          <div className="flex items-start justify-between gap-2.5">
+        <section className="v4-card rounded-[16px] p-4 space-y-3" data-coach="home">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1 flex items-start gap-2.5">
               <span className="w-9 h-9 rounded-[10px] bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-none">
                 <PackagePlus className="w-[18px] h-[18px]" strokeWidth={1.75} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[var(--text-primary)] leading-snug">
+                <div className="text-[15px] font-medium text-[var(--text-primary)] leading-snug">
                   {t.smartActionFillTitle(totalNeedAll)}
                 </div>
-                <div className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
+                <div className="text-[13px] text-[var(--text-secondary)] mt-0.5 tabular-nums">
                   {t.smartActionFillSub(lowShelfItems.length)}
                 </div>
               </div>
@@ -286,16 +286,16 @@ export const HomeView: React.FC = () => {
 
       {/* 3) Active Order Strip OR Last Delivered Order Repeat */}
       {activeOrder ? (
-        <section className="v4-card p-3.5 flex items-center justify-between gap-3">
+        <section className="v4-card rounded-[16px] p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <span className="w-10 h-10 rounded-[10px] bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center flex-none">
               <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
             </span>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-[var(--text-primary)] truncate tabular-nums">
+              <div className="text-[15px] font-medium text-[var(--text-primary)] truncate tabular-nums">
                 {t.orderNumberPrefix}{activeOrder.id} · {getStatusLabel(activeOrder.status, lang)}
               </div>
-              <div className="text-xs text-[var(--text-muted)] truncate tabular-nums">
+              <div className="text-[13px] text-[var(--text-muted)] truncate tabular-nums">
                 {activeOrder.boxCount} {t.boxUnit} · {formatSom(activeOrder.totalSum)}
               </div>
             </div>
@@ -309,16 +309,16 @@ export const HomeView: React.FC = () => {
           </PillButton>
         </section>
       ) : lastDeliveredOrder ? (
-        <section className="v4-card p-3.5 flex items-center justify-between gap-3">
+        <section className="v4-card rounded-[16px] p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <span className="w-10 h-10 rounded-[10px] bg-[var(--bg-raised)] border border-[var(--border-hairline)] text-[var(--anor-text)] flex items-center justify-center flex-none">
               <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
             </span>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-[var(--text-primary)] truncate tabular-nums">
+              <div className="text-[15px] font-medium text-[var(--text-primary)] truncate tabular-nums">
                 {t.lastDeliveredRepeatTitle(lastDeliveredOrder.id)}
               </div>
-              <div className="text-xs text-[var(--text-muted)] truncate tabular-nums">
+              <div className="text-[13px] text-[var(--text-muted)] truncate tabular-nums">
                 {lastDeliveredOrder.boxCount} {t.boxUnit} · {formatSom(lastDeliveredOrder.totalSum)}
               </div>
             </div>
@@ -352,7 +352,7 @@ export const HomeView: React.FC = () => {
           }
           setCarouselPaused(false);
         }}
-        className="v4-card p-4 overflow-hidden min-h-[144px] flex flex-col justify-between space-y-2"
+        className="v4-card rounded-[16px] p-4 overflow-hidden min-h-[144px] flex flex-col justify-between space-y-2.5"
       >
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[var(--anor-soft)] text-[var(--anor-text)] text-[11px] font-medium">
@@ -361,7 +361,7 @@ export const HomeView: React.FC = () => {
           <button
             type="button"
             onClick={() => openPage('promo')}
-            className="min-h-[44px] -my-2 px-1.5 inline-flex items-center gap-1 text-xs font-medium text-[var(--anor-text)] whitespace-nowrap"
+            className="min-h-[44px] -my-2 px-1.5 inline-flex items-center gap-1 text-[13px] font-medium text-[var(--anor-text)] whitespace-nowrap"
           >
             <span>{t.allPromosLink}</span>
             <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
@@ -378,10 +378,10 @@ export const HomeView: React.FC = () => {
             className="flex items-center justify-between gap-3"
           >
             <div className="flex-1 min-w-0 space-y-1.5">
-              <h3 className="text-base font-semibold leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
+              <h3 className="text-[17px] font-semibold leading-snug text-[var(--text-primary)] line-clamp-2 break-words">
                 {currentSlide.title}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] line-clamp-1">
+              <p className="text-[13px] text-[var(--text-secondary)] line-clamp-1">
                 {currentSlide.subtitle}
               </p>
               <div className="pt-0.5">
@@ -394,7 +394,7 @@ export const HomeView: React.FC = () => {
                       goTab(currentSlide.targetTab);
                     }
                   }}
-                  className="min-h-[44px] -my-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[var(--anor-text)] hover:opacity-80 transition-opacity"
+                  className="min-h-[44px] -my-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--anor-text)] hover:opacity-80 transition-opacity"
                 >
                   <span>{currentSlide.cta}</span>
                   <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
@@ -405,7 +405,7 @@ export const HomeView: React.FC = () => {
             {heroProduct && (
               <div
                 onClick={() => setSheet({ type: 'prod', id: heroProduct.id })}
-                className="cursor-pointer flex-none"
+                className="cursor-pointer flex-none v4-press"
               >
                 <img
                   src={[ART.heroAnor, ART.heroOlxori, ART.discount][slideIdx % 3]}
@@ -445,16 +445,16 @@ export const HomeView: React.FC = () => {
       <button
         type="button"
         onClick={() => openPage('chat')}
-        className="v4-card w-full min-h-[60px] p-3.5 flex items-center gap-3 text-left hover:border-[var(--border-strong)] transition-colors"
+        className="v4-card v4-press w-full min-h-[60px] rounded-[16px] p-4 flex items-center gap-3 text-left hover:border-[var(--border-strong)] transition-colors"
       >
         <span className="w-10 h-10 rounded-[10px] bg-[var(--anor-soft)] text-[var(--anor-text)] flex items-center justify-center flex-none">
           <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+          <div className="text-[15px] font-medium text-[var(--text-primary)] truncate">
             {t.osonChat}
           </div>
-          <div className="text-xs text-[var(--text-muted)] truncate">
+          <div className="text-[13px] text-[var(--text-muted)] truncate">
             {t.operatorOnline(shop?.operatorName || 'Madina')}
           </div>
         </div>

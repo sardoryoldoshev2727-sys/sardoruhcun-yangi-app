@@ -92,6 +92,19 @@ html.dark {
   background-color: var(--bg-card);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+/* Interactive card press feedback */
+.v4-press {
+  transition:
+    transform var(--dur-press) var(--ease-state),
+    border-color var(--dur-state) var(--ease-state),
+    background-color var(--dur-state) var(--ease-state);
+}
+
+.v4-press:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Pill interactive feel */
@@ -120,7 +133,7 @@ html.dark {
 }
 
 .buy-green-btn:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.97);
   background: var(--buy-green-pressed);
 }
 

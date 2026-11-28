@@ -432,6 +432,19 @@ export interface Translations {
   lastDeliveredRepeatTitle: (id: number) => string;
   promoCardDiscountNote: (pct: number) => string;
   reportIssueChatMsg: (orderId: number) => string;
+  // Round 11: Polish & Dribbble-level hierarchy
+  shelfHeroZeroTitle: string;
+  shelfHeroNeedTitle: (boxes: number) => string;
+  shelfSegCritical: string;
+  shelfSegLow: string;
+  shelfSegOk: string;
+  shelfNeedQuickChip: (boxes: number) => string;
+  catalogShelfStatusChip: string;
+  catalogPromoStripTitle: string;
+  reportToggleWeek: string;
+  reportToggleMonth: string;
+  reportMonthTrendTitle: string;
+  ordersHeroActiveTitle: string;
 }
 
 export const TRANSLATIONS: Record<Lang, Translations> = {
@@ -937,6 +950,18 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     lastDeliveredRepeatTitle: (id) => `Oxirgi yetkazilgan #${id}`,
     promoCardDiscountNote: (pct) => `Mahsulot aksiyasi · −${pct}% chegirma`,
     reportIssueChatMsg: (orderId) => `Buyurtma #${orderId}: mahsulotda kamchilik bor, tekshirib bering.`,
+    shelfHeroZeroTitle: 'Javon normada',
+    shelfHeroNeedTitle: (boxes) => `${boxes} quti kerak`,
+    shelfSegCritical: 'Tugayapti',
+    shelfSegLow: 'Kam',
+    shelfSegOk: 'Yetarli',
+    shelfNeedQuickChip: (boxes) => `Kerak ${boxes} → savatga`,
+    catalogShelfStatusChip: 'Javonda',
+    catalogPromoStripTitle: 'Haftalik aksiyalar',
+    reportToggleWeek: 'Hafta',
+    reportToggleMonth: 'Oy',
+    reportMonthTrendTitle: "Oylar bo'yicha xaridlar",
+    ordersHeroActiveTitle: 'Faol buyurtma',
   },
   ru: {
     appName: 'LAL ANAAR',
@@ -1440,6 +1465,18 @@ export const TRANSLATIONS: Record<Lang, Translations> = {
     lastDeliveredRepeatTitle: (id) => `Последний доставленный #${id}`,
     promoCardDiscountNote: (pct) => `Акция на товар · скидка −${pct}%`,
     reportIssueChatMsg: (orderId) => `Заказ #${orderId}: есть замечание по товару, проверьте пожалуйста.`,
+    shelfHeroZeroTitle: 'Полка в норме',
+    shelfHeroNeedTitle: (boxes) => `Нужно ${boxes} кор.`,
+    shelfSegCritical: 'Мало',
+    shelfSegLow: 'Средне',
+    shelfSegOk: 'Достаточно',
+    shelfNeedQuickChip: (boxes) => `Нужно ${boxes} → в корзину`,
+    catalogShelfStatusChip: 'На полке',
+    catalogPromoStripTitle: 'Акции недели',
+    reportToggleWeek: 'Неделя',
+    reportToggleMonth: 'Месяц',
+    reportMonthTrendTitle: 'Покупки по месяцам',
+    ordersHeroActiveTitle: 'Активный заказ',
   },
 };
 

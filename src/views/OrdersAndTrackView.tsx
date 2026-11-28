@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ART } from '../data/assets';
+import { motion } from 'motion/react';
 import {
   Check,
   CheckCircle2,
@@ -29,10 +30,10 @@ import { getDayLabel, getProductName, getSlotLabel, getStatusLabel } from '../i1
 import type { Lang, OrderStatus } from '../types';
 import {
   computeCartEstimatedProfit,
-  formatNumberThin,
   formatSom,
   getLastDeliveredBuyAgainItems,
   getPromoBoxPrice,
+  shortName,
 } from '../utils/catalog';
 
 function statusMeta(status: OrderStatus) {
@@ -164,8 +165,8 @@ const VerticalOrderTimeline: React.FC<{
   const icons = [ClipboardCheck, CheckCircle2, Package, Truck, Home];
 
   return (
-    <section className="v4-card p-4 space-y-3">
-      <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
+    <section className="v4-card rounded-[16px] p-4 space-y-3">
+      <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">{title}</h3>
       <div className="space-y-0">
         {labels.map((label, idx) => {
           const Icon = icons[idx] || Package;
@@ -249,12 +250,12 @@ export const OrdersView: React.FC = () => {
     t,
   } = useStore();
 
-  const filtered = orders.filter((o) => {
-    if (orderSeg === 0) return !['Yetkazildi', 'Bekor qilindi'].includes(o.status);
-    if (orderSeg === 1) return o.status === 'Yetkazildi';
-    return o.status === 'Bekor qilindi';
-  });
+  const activeOrders = orders.filter((o) => !['Yetkazildi', 'Bekor qilindi'].includes(o.status));
+  const deliveredOrders = orders.filter((o) => o.status === 'Yetkazildi');
+  const cancelledOrders = orders.filter((o) => o.status === 'Bekor qilindi');
 
+  const isCancelledTab = orderSeg === 2;
+  const pastOrders = isCancelledTab ? cancelledOrders : deliveredOrders;
   const buyAgainItems = getLastDeliveredBuyAgainItems(orders, productsById);
 
   if (loadError) {
@@ -267,64 +268,152 @@ export const OrdersView: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-4">
+  if (ordersLoading || refreshingOrders) {
+    return <OrdersSkeleton />;
+  }
 
-      {/* Buy Again horizontal snap strip sized so next card peeks */}
-      {(ordersLoading || productsLoading || buyAgainItems.length > 0) && (
-        <section className="space-y-2">
+  return (
+    <div className="space-y-6">
+      {/* 1) Bright Active Order Hero Card */}
+      {activeOrders.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[17px] font-semibold text-[var(--text-primary)]">
+              {t.ordersHeroActiveTitle}
+            </h2>
+            {activeOrders.length > 1 && (
+              <span className="text-[13px] font-medium text-[var(--anor-text)] tabular-nums">
+                {activeOrders.length}
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {activeOrders.map((heroOrder, idx) => {
+              const st = statusMeta(heroOrder.status);
+              const isPrimaryHero = idx === 0;
+              return (
+                <div
+                  key={heroOrder.id}
+                  onClick={() => openOrderDetail(heroOrder.id)}
+                  className={`v4-card v4-press rounded-[16px] p-4 space-y-3 cursor-pointer hover:border-[var(--border-strong)] transition-colors ${
+                    isPrimaryHero ? 'border-[var(--anor)]/30' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[13px] font-medium text-[var(--text-muted)] tabular-nums">
+                      {t.orderNumberPrefix}{heroOrder.id} ·{' '}
+                      {getDayLabel(heroOrder.deliveryDay, lang)},{' '}
+                      {getSlotLabel(heroOrder.deliverySlot, lang)}
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${st.cls}`}
+                    >
+                      {st.icon}
+                      <span>{getStatusLabel(heroOrder.status, lang)}</span>
+                    </span>
+                  </div>
+
+                  {heroOrder.pendingSync && (
+                    <div className="text-xs font-medium text-[var(--warning)]">
+                      {t.pendingSyncBadge}
+                    </div>
+                  )}
+
+                  <div className="flex items-baseline justify-between gap-3 pb-3 border-b border-[var(--border-hairline)]">
+                    <span className="text-[13px] text-[var(--text-secondary)] tabular-nums">
+                      {heroOrder.boxCount} {t.boxUnit}
+                    </span>
+                    <div className="text-[28px] sm:text-[32px] font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap leading-none">
+                      {formatSom(heroOrder.totalSum)}
+                    </div>
+                  </div>
+
+                  <MiniHorizontalSteps
+                    status={heroOrder.status}
+                    labels={t.miniStepsShort}
+                    lang={lang}
+                  />
+
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                    {heroOrder.items.slice(0, 4).map((it) => {
+                      const prod = productsById[it.productId];
+                      return prod ? (
+                        <ProductVisual key={it.productId} product={prod} size="mini" />
+                      ) : null;
+                    })}
+                  </div>
+
+                  <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex-1">
+                      <PillButton
+                        level="primary"
+                        fullWidth
+                        onClick={() => openOrderTrack(heroOrder.id)}
+                      >
+                        <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                        <span>{t.trackOrderBtn}</span>
+                      </PillButton>
+                    </div>
+                    <PillButton level="outline" onClick={() => openOrderDetail(heroOrder.id)}>
+                      {t.detailsBtn}
+                    </PillButton>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 2) Compact "Yana buyurtma qilish" row BELOW active order */}
+      {(productsLoading || buyAgainItems.length > 0) && (
+        <section className="space-y-3">
           <div>
-            <h2 className="text-base font-semibold text-[var(--text-primary)] leading-tight">
+            <h2 className="text-[17px] font-semibold text-[var(--text-primary)] leading-tight">
               {t.buyAgainTitle}
             </h2>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
+            <p className="text-[13px] text-[var(--text-muted)] mt-0.5 truncate">
               {t.buyAgainSub}
             </p>
           </div>
-          {ordersLoading || productsLoading ? (
+          {productsLoading ? (
             <HorizontalStripSkeleton count={3} />
           ) : (
             <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-pl-3 -mx-3 px-3 md:mx-0 md:px-0 py-0.5">
               {buyAgainItems.map(({ product, qty }) => {
-                const name = getProductName(product, lang);
+                const name = shortName(getProductName(product, lang));
                 const promoPrice = getPromoBoxPrice(product);
                 const curQty = cart[product.id] || 0;
                 return (
                   <div
                     key={product.id}
                     onClick={() => setSheet({ type: 'prod', id: product.id })}
-                    className="v4-card snap-start w-[144px] sm:w-44 flex-none p-2.5 cursor-pointer flex flex-col justify-between hover:border-[var(--border-strong)] transition-colors"
+                    className="v4-card v4-press snap-start min-w-[208px] flex-none rounded-[16px] p-3 cursor-pointer flex items-center gap-2.5 hover:border-[var(--border-strong)] transition-colors"
                   >
-                    <div className="relative rounded-[10px] overflow-hidden">
-                      <ProductVisual product={product} size="grid" />
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-hairline)] text-[var(--text-primary)] text-[11px] font-medium tabular-nums">
-                        {qty} {t.boxUnit}
-                      </span>
-                      <div
-                        className="absolute bottom-2 right-2 z-20"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <GreenAddControl
-                          qty={curQty}
-                          addLabel={t.addToCart}
-                          removeLabel={t.removeFromCart}
-                          unitLabel={t.boxUnit}
-                          onAdd={() => updateQty(product.id, curQty === 0 ? qty : 1)}
-                          onRemove={() => updateQty(product.id, -1)}
-                          onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-2 px-0.5">
-                      <div className="text-xs font-medium text-[var(--text-primary)] line-clamp-2 min-h-[2rem] leading-snug">
+                    <ProductVisual product={product} size="mini" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium text-[var(--text-primary)] truncate">
                         {name} {product.vol}
                       </div>
-                      <div className="mt-1 text-sm font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap">
-                        {formatNumberThin(promoPrice)}{' '}
-                        <span className="text-[11px] font-normal text-[var(--text-muted)]">
-                          so&apos;m
-                        </span>
+                      <div className="text-[15px] font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap mt-0.5">
+                        {formatSom(promoPrice)}
                       </div>
+                    </div>
+                    <div
+                      className="flex-none"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <GreenAddControl
+                        compactPill
+                        qty={curQty}
+                        addLabel={t.addToCart}
+                        removeLabel={t.removeFromCart}
+                        unitLabel={t.boxUnit}
+                        onAdd={() => updateQty(product.id, curQty === 0 ? qty : 1)}
+                        onRemove={() => updateQty(product.id, -1)}
+                        onQtyTap={() => setSheet({ type: 'quickQty', id: product.id })}
+                      />
                     </div>
                   </div>
                 );
@@ -334,133 +423,123 @@ export const OrdersView: React.FC = () => {
         </section>
       )}
 
-      {/* Segment switch */}
-      <div className="grid grid-cols-3 bg-[var(--bg-raised)] rounded-[12px] p-1 gap-1">
-        {[t.segActive, t.segDelivered, t.segCancelled].map((label, i) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => setOrderSeg(i)}
-            className={`min-h-[44px] rounded-[10px] text-sm transition-colors duration-150 ${
-              i === orderSeg
-                ? 'bg-[var(--bg-card)] text-[var(--anor-text)] font-medium border border-[var(--border-hairline)]'
-                : 'text-[var(--text-muted)] font-normal'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 3) Delivered / Cancelled Tabbed History List */}
+      <section className="space-y-3">
+        <div className="grid grid-cols-2 bg-[var(--bg-raised)] rounded-[12px] p-1 gap-1">
+          {[
+            { segVal: 1, label: t.segDelivered, active: !isCancelledTab },
+            { segVal: 2, label: t.segCancelled, active: isCancelledTab },
+          ].map((item) => (
+            <button
+              key={item.segVal}
+              type="button"
+              onClick={() => setOrderSeg(item.segVal)}
+              className={`min-h-[44px] rounded-[10px] text-sm transition-colors duration-150 ${
+                item.active
+                  ? 'bg-[var(--bg-card)] text-[var(--anor-text)] font-medium border border-[var(--border-hairline)]'
+                  : 'text-[var(--text-muted)] font-normal'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
 
-      {ordersLoading || refreshingOrders ? (
-        <OrdersSkeleton />
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          variant="orders"
-          title={t.emptyOrdersTitle}
-          actionLabel={t.emptyOrdersCta}
-          onAction={() => goTab('cat')}
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {filtered.map((o) => {
-            const st = statusMeta(o.status);
-            const rating = ratings[o.id];
-            return (
-              <div
-                key={o.id}
-                onClick={() => openOrderDetail(o.id)}
-                className="v4-card p-4 cursor-pointer hover:border-[var(--border-strong)] transition-colors duration-150"
-              >
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="text-xs font-medium text-[var(--text-muted)] tabular-nums">
-                    {t.orderNumberPrefix}{o.id} <span aria-hidden="true">·</span> {o.dateLabel}
-                  </div>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${st.cls}`}
-                  >
-                    {st.icon}
-                    <span>{getStatusLabel(o.status, lang)}</span>
-                  </span>
-                </div>
-
-                {o.pendingSync && (
-                  <div className="mb-2 text-xs font-medium text-[var(--warning)]">
-                    {t.pendingSyncBadge}
-                  </div>
-                )}
-
-                <div className="flex items-baseline justify-between gap-3 mb-3 pb-3 border-b border-[var(--border-hairline)]">
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] tabular-nums">
-                    <span>
-                      {o.boxCount} {t.boxUnit}
-                    </span>
-                    {rating && (
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] font-medium"
-                        aria-label={t.ratedBadgeLabel(rating.stars)}
-                      >
-                        <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.5} />
-                        <span>{rating.stars}</span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xl font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap leading-none">
-                    {formatSom(o.totalSum)}
-                  </div>
-                </div>
-
-                <MiniHorizontalSteps status={o.status} labels={t.miniStepsShort} lang={lang} />
-
-                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
-                  {o.items.slice(0, 4).map((it) => {
-                    const prod = productsById[it.productId];
-                    return prod ? <ProductVisual key={it.productId} product={prod} size="mini" /> : null;
-                  })}
-                </div>
-
-                <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                  {(o.status === 'Yuborildi' || o.status === 'Tasdiqlandi' || o.status === "Yo'lda") && (
-                    <div className="flex-1 min-w-[140px]">
-                      <PillButton level="primary" fullWidth onClick={() => openOrderTrack(o.id)}>
-                        <Truck className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                        <span>{t.trackOrderBtn}</span>
-                      </PillButton>
+        {pastOrders.length === 0 ? (
+          <EmptyState
+            variant="orders"
+            title={t.emptyOrdersTitle}
+            actionLabel={t.emptyOrdersCta}
+            onAction={() => goTab('cat')}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {pastOrders.map((o) => {
+              const st = statusMeta(o.status);
+              const rating = ratings[o.id];
+              return (
+                <div
+                  key={o.id}
+                  onClick={() => openOrderDetail(o.id)}
+                  className="v4-card v4-press rounded-[16px] p-4 cursor-pointer hover:border-[var(--border-strong)] transition-colors duration-150"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="text-[13px] font-medium text-[var(--text-muted)] tabular-nums">
+                      {t.orderNumberPrefix}{o.id} <span aria-hidden="true">·</span> {o.dateLabel}
                     </div>
-                  )}
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${st.cls}`}
+                    >
+                      {st.icon}
+                      <span>{getStatusLabel(o.status, lang)}</span>
+                    </span>
+                  </div>
 
-                  {o.status === 'Yetkazildi' && (
-                    <div className="flex-1 min-w-[130px]">
+                  <div className="flex items-baseline justify-between gap-3 mb-3 pb-3 border-b border-[var(--border-hairline)]">
+                    <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)] tabular-nums">
+                      <span>
+                        {o.boxCount} {t.boxUnit}
+                      </span>
+                      {rating && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--warning-soft)] text-[var(--warning)] text-xs font-medium"
+                          aria-label={t.ratedBadgeLabel(rating.stars)}
+                        >
+                          <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.5} />
+                          <span>{rating.stars}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[17px] font-semibold text-[var(--text-primary)] tabular-nums whitespace-nowrap leading-none">
+                      {formatSom(o.totalSum)}
+                    </div>
+                  </div>
+
+                  <MiniHorizontalSteps status={o.status} labels={t.miniStepsShort} lang={lang} />
+
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
+                    {o.items.slice(0, 4).map((it) => {
+                      const prod = productsById[it.productId];
+                      return prod ? (
+                        <ProductVisual key={it.productId} product={prod} size="mini" />
+                      ) : null;
+                    })}
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                    {o.status === 'Yetkazildi' && (
+                      <div className="flex-1 min-w-[130px]">
+                        <PillButton
+                          level="tonal"
+                          fullWidth
+                          onClick={() => repeatOrderToCart(o.items)}
+                        >
+                          <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                          <span>{t.repeatOrderBtn}</span>
+                        </PillButton>
+                      </div>
+                    )}
+
+                    {o.status === 'Yetkazildi' && !rating && (
                       <PillButton
                         level="tonal"
-                        fullWidth
-                        onClick={() => repeatOrderToCart(o.items)}
+                        onClick={() => setSheet({ type: 'rateOrder', orderId: o.id })}
                       >
-                        <Repeat className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                        <span>{t.repeatOrderBtn}</span>
+                        <Star className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                        <span>{t.rateOrderBtn}</span>
                       </PillButton>
-                    </div>
-                  )}
+                    )}
 
-                  {o.status === 'Yetkazildi' && !rating && (
-                    <PillButton
-                      level="tonal"
-                      onClick={() => setSheet({ type: 'rateOrder', orderId: o.id })}
-                    >
-                      <Star className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                      <span>{t.rateOrderBtn}</span>
+                    <PillButton level="outline" onClick={() => openOrderDetail(o.id)}>
+                      {t.detailsBtn}
                     </PillButton>
-                  )}
-
-                  <PillButton level="outline" onClick={() => openOrderDetail(o.id)}>
-                    {t.detailsBtn}
-                  </PillButton>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 };
@@ -487,10 +566,10 @@ export const OrderDetailView: React.FC = () => {
   const rating = ratings[order.id];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="v4-card p-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] tabular-nums">
+          <h2 className="text-[17px] font-semibold text-[var(--text-primary)] tabular-nums">
             {t.orderNumberPrefix}{order.id}
           </h2>
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${st.cls}`}>
@@ -549,7 +628,7 @@ export const OrderDetailView: React.FC = () => {
       )}
 
       <section className="v4-card p-4 space-y-3">
-        <h3 className="text-base font-semibold text-[var(--text-primary)]">
+        <h3 className="text-[17px] font-semibold text-[var(--text-primary)]">
           {t.itemsListTitle}
         </h3>
         <div className="divide-y divide-[var(--border-hairline)]">
@@ -671,7 +750,7 @@ export const TrackView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Route Card */}
       <div className="v4-card p-4 space-y-4">
         <div className="flex items-start justify-between gap-2">
@@ -772,7 +851,7 @@ export const TrackView: React.FC = () => {
       <button
         type="button"
         onClick={copyPickupCode}
-        className="v4-card w-full p-4 text-center"
+        className="v4-card v4-press w-full p-4 text-center"
       >
         <div className="inline-flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]">
           <span>{t.pickupCodeLabel}</span>
@@ -870,12 +949,20 @@ export const SuccessView: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto pt-4">
-      <div className="v4-card rounded-[20px] p-5 sm:p-6 space-y-5 text-center">
-        <img src={ART.success} alt="" aria-hidden="true" decoding="async"
-          className="w-40 h-40 mx-auto object-cover rounded-[24px] v4-art-in" />
+      <div className="v4-card rounded-[20px] p-5 sm:p-6 space-y-6 text-center">
+        <motion.img
+          src={ART.success}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-40 h-40 mx-auto object-cover rounded-[24px]"
+        />
 
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">
+          <h2 className="text-[22px] font-semibold text-[var(--text-primary)] leading-tight">
             {t.successTitle}
           </h2>
           <p className="text-sm font-medium text-[var(--anor-text)] mt-1 tabular-nums">
@@ -883,7 +970,7 @@ export const SuccessView: React.FC = () => {
           </p>
         </div>
 
-        <div className="rounded-[12px] bg-[var(--bg-raised)] p-4 text-left space-y-2.5 text-sm">
+        <div className="rounded-[16px] bg-[var(--bg-raised)] p-4 text-left space-y-2.5 text-sm">
           {lastPlacedOrder && (
             <>
               <div className="flex justify-between gap-2">
@@ -900,9 +987,9 @@ export const SuccessView: React.FC = () => {
                   </strong>
                 </div>
               )}
-              <div className="flex justify-between gap-2 pt-2 border-t border-[var(--border-hairline)]">
-                <span className="font-medium text-[var(--text-primary)]">{t.totalToPayShort}</span>
-                <strong className="font-semibold text-[var(--text-primary)]">
+              <div className="pt-2 border-t border-[var(--border-hairline)] space-y-1">
+                <span className="block text-xs text-[var(--text-muted)]">{t.totalToPayShort}</span>
+                <strong className="block text-[28px] font-semibold leading-none tracking-tight text-[var(--text-primary)]">
                   <TweenSom value={lastPlacedOrder.totalSum} />
                 </strong>
               </div>
